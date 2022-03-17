@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+- hosts: all
+  tasks:
+    - name: Set platform/version specific variables
+      include_role:
+        name: linux-system-roles.bootloader
+        tasks_from: set_vars.yml
+        public: true
+
+    - name: Install test packages
+      package:
+        name: "{{ __bootloader_packages }}"
+        state: present
