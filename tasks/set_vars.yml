@@ -1,4 +1,10 @@
 # SPDX-License-Identifier: MIT
+- name: Ensure ansible_facts used by role
+  setup:
+    gather_subset: min
+  when: not ansible_facts.keys() | list |
+    intersect(__bootloader_required_facts) == __bootloader_required_facts
+
 - name: Set platform/version specific variables
   include_vars: "{{ __bootloader_vars_file }}"
   loop:

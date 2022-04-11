@@ -2,6 +2,6 @@
 ---
 - name: Ensure that the role runs with default parameters
   hosts: all
-
+  gather_facts: false  # for testing the role fact gathering
   roles:
     - linux-system-roles.bootloader
