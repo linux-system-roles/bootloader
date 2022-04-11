@@ -8,3 +8,9 @@
 __bootloader_foo_config: "bootloader.conf"
 __bootloader_packages: []
 __bootloader_services: []
+# ansible_facts required by the role
+__bootloader_required_facts:
+  - distribution
+  - distribution_major_version
+  - distribution_version
+  - os_family
