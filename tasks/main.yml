@@ -2,7 +2,7 @@
 ---
 # Put the tasks for your role here.
 
-- name: set platform/version specific variables
+- name: Set platform/version specific variables
   include_tasks: tasks/set_vars.yml
 
 # Examples of some tasks:
@@ -15,13 +15,13 @@
   service:
     name: "{{ item }}"
     state: started
-    enabled: yes
+    enabled: true
   loop: "{{ __bootloader_services }}"
 
 - name: Generate /etc/{{ __bootloader_foo_config }}
   template:
     src: "{{ __bootloader_foo_config }}.j2"
     dest: /etc/{{ __bootloader_foo_config }}
-    backup: yes
+    backup: true
     mode: 0400
-  notify: bootloader handler to restart services
+  notify: Bootloader handler to restart services

@@ -3,7 +3,7 @@
 # Put handlers for tasks here.
 
 # Example:
-- name: bootloader handler to restart services
+- name: Bootloader handler to restart services
   service:
     name: "{{ item }}"
     state: restarted
