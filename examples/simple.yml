@@ -4,6 +4,5 @@
   hosts: all
   vars:
     bootloader_foo: example variable value
-
   roles:
     - linux-system-roles.bootloader
