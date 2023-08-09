@@ -1,4 +1,5 @@
 # Role Name
+
 ![CI Testing](https://github.com/linux-system-roles/bootloader/workflows/tox/badge.svg)
 
 An Ansible role for bootloader and kernel command line management.
