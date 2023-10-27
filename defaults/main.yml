@@ -1,8 +1,10 @@
-# SPDX-License-Identifier: MIT
 ---
-# Here is the right place to put the role's input variables.
-# This file also serves as a documentation for such a variables.
+bootloader_settings: []
+bootloader_timeout: 5
 
-# Examples of role input variables:
-bootloader_foo: "foo"
-bootloader_bar: "bar"
+bootloader_password: null
+bootloader_remove_password: false
+
+bootloader_reboot_ok: false
+
+bootloader_gather_facts: false

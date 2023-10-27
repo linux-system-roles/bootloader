@@ -1,10 +1,24 @@
 # SPDX-License-Identifier: MIT
 ---
-# Put handlers for tasks here.
+# EL 7 workaround for https://bugzilla.redhat.com/show_bug.cgi?id=1152027
+- name: Fix default kernel boot parameters
+  shell: |-
+    set -o pipefail
+    grubby --info=DEFAULT | awk '/^args/ {print $0}'
+    cat {{ __bootloader_default_grub }}
+    eval $(grubby --info=DEFAULT | awk '/^args/ {print $0}')
+    sed -i -e "s|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"$args\"|" \
+      {{ __bootloader_default_grub }}
+    cat {{ __bootloader_default_grub }}
+  changed_when: true
+  when: >-
+    (ansible_distribution in ['CentOS', 'RedHat'] and
+    ansible_facts.distribution_major_version is version('7', '=')) or
+    ansible_distribution == 'Fedora'
 
-# Example:
-- name: Bootloader handler to restart services
-  service:
-    name: "{{ item }}"
-    state: restarted
-  loop: "{{ __bootloader_services }}"
+- name: Rebuild grub config
+  command: grub2-mkconfig -o {{ __bootloader_grub_conf }}
+  changed_when: true
+
+- name: Reboot system
+  include_tasks: tasks/reboot.yml

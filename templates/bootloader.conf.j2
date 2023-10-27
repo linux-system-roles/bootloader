@@ -1,9 +1,0 @@
-# SPDX-License-Identifier: MIT
-#
-# Example of a template of configuration file
-#
-{{ ansible_managed | comment }}
-{{ "system_role:bootloader" | comment(prefix="", postfix="") }}
-[foo]
-foo = {{ bootloader_foo }}
-bar = {{ bootloader_bar }}

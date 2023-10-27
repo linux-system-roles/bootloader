@@ -1,13 +1,5 @@
 # SPDX-License-Identifier: MIT
 ---
-# Put the role's internal variables here that are not distribution specific.
-# You can override these by defining the same variable with a different
-# value in a platform/version specific file in vars/
-
-# Examples of non-distribution specific (generic) internal variables:
-__bootloader_foo_config: "bootloader.conf"
-__bootloader_packages: []
-__bootloader_services: []
 # ansible_facts required by the role
 __bootloader_required_facts:
   - distribution
@@ -19,3 +11,6 @@ __bootloader_required_facts:
 # the 'gather_subset' parameter of the 'setup' module
 __bootloader_required_facts_subsets: "{{ ['!all', '!min'] +
   __bootloader_required_facts }}"
+__bootloader_packages:
+  - grubby
+__bootloader_default_grub: /etc/default/grub

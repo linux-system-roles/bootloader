@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Reboot system when bootloader_reboot_ok is true
+  reboot:
+  when: bootloader_reboot_ok | bool
+
+- name: Notify about reboot
+  when: not bootloader_reboot_ok
+  debug:
+    msg: >-
+      Boot loader settings have been modified.
+      A reboot is required in order to apply the changes.
+
+- name: Set bootloader_reboot_required
+  set_fact:
+    bootloader_reboot_required: "{{ not bootloader_reboot_ok }}"
