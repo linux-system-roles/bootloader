@@ -1,27 +1,76 @@
 # SPDX-License-Identifier: MIT
 ---
-# Put the tasks for your role here.
-
 - name: Set platform/version specific variables
   include_tasks: tasks/set_vars.yml
 
-# Examples of some tasks:
 - name: Ensure required packages are installed
   package:
     name: "{{ __bootloader_packages }}"
     state: present
 
-- name: Ensure required services are enabled and started
-  service:
-    name: "{{ item }}"
-    state: started
-    enabled: true
-  loop: "{{ __bootloader_services }}"
+- name: Ensure boot loader settings
+  bootloader_settings:
+    bootloader_settings: "{{ bootloader_settings }}"
+  notify:
+    - Fix default kernel boot parameters
+    - Reboot system
 
-- name: Generate /etc/{{ __bootloader_foo_config }}
-  template:
-    src: "{{ __bootloader_foo_config }}.j2"
-    dest: /etc/{{ __bootloader_foo_config }}
-    backup: true
-    mode: 0400
-  notify: Bootloader handler to restart services
+- name: Update boot loader timeout configuration
+  lineinfile:
+    path: "{{ __bootloader_default_grub }}"
+    regexp: '^GRUB_TIMEOUT=.*'
+    line: 'GRUB_TIMEOUT={{ bootloader_timeout }}'
+  notify: Rebuild grub config
+
+- name: Determine platform type
+  stat:
+    path: /sys/firmware/efi
+  register: __bootloader_efi_dir
+
+- name: Set boot loader configuration files
+  vars:
+    efi_path: "{{
+      ansible_distribution in ['CentOS', 'RedHat'] and
+      ansible_facts.distribution_major_version | int < 9 and
+      __bootloader_efi_dir.stat.exists }}"
+  set_fact:
+    __bootloader_grub_conf: >-
+      {{ efi_path | ternary('/boot/efi/EFI/redhat/grub.cfg',
+      '/boot/grub2/grub.cfg') }}
+    __bootloader_user_conf: >-
+      {{ efi_path | ternary('/boot/efi/EFI/redhat/user.cfg',
+      '/boot/grub2/user.cfg') }}
+
+- name: Update boot loader password
+  when: bootloader_password is not none
+  block:
+    - name: Generate boot loader password
+      shell: >-
+        set -euo pipefail;
+        ( echo {{ bootloader_password | quote }} ;
+        echo {{ bootloader_password | quote }} )
+        | LC_ALL=C grub2-mkpasswd-pbkdf2
+        | grep -v '[eE]nter password:'
+        | sed -e "s/PBKDF2 hash of your password is //"
+      register: __bootloader_pass_hash
+      changed_when: true
+      no_log: true
+
+    - name: Put boot loader password to {{ __bootloader_user_conf }}
+      copy:
+        content: GRUB2_PASSWORD={{ __bootloader_pass_hash.stdout }}
+        dest: "{{ __bootloader_user_conf }}"
+        mode: 0600
+      changed_when: true
+      no_log: true
+
+- name: Remove boot loader password configuration
+  file:
+    path: "{{ __bootloader_user_conf }}"
+    state: absent
+  when: bootloader_remove_password | bool
+
+# Keep at the end of tasks to collect latest info
+- name: Collect bootloader facts
+  bootloader_facts:
+  when: bootloader_gather_facts | bool

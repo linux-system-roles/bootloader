@@ -6,66 +6,237 @@ An Ansible role for bootloader and kernel command line management.
 
 ## Requirements
 
-Any pre-requisites that may not be covered by Ansible itself or the role should
-be mentioned here. For instance, if the role uses the EC2 module, it may be a
-good idea to mention in this section that the `boto` package is required.
+None
 
 ## Role Variables
 
-A description of all input variables (i.e. variables that are defined in
-`defaults/main.yml`) for the role should go here as these form an API of the
-role.
+### bootloader_gather_facts
 
-Variables that are not intended as input, like variables defined in
-`vars/main.yml`, variables that are read from other roles and/or the global
-scope (ie. hostvars, group vars, etc.) can be also mentioned here but keep in
-mind that as these are probably not part of the role API they may change during
-the lifetime.
+Whether to gather `bootloader_facts` that contain bot information for all kernels.
 
-Example of setting the variables:
+Default: `false`
 
-```yaml
-bootloader_foo: "oof"
-bootloader_bar: "baz"
-```
+Type: `bool`
 
-### Variables Exported by the Role
+### bootloader_settings
 
-This section is optional.  Some roles may export variables for playbooks to
-use later.  These are analogous to "return values" in Ansible modules.  For
-example, if a role performs some action that will require a system reboot, but
-the user wants to defer the reboot, the role might set a variable like
-`bootloader_reboot_needed: true` that the playbook can use to reboot at a more
-convenient time.
+With this variable, list kernels and their command line parameters that you want to set.
+
+Required keys:
+
+1. `kernel` - with this, specify the kernel to update settings for.
+You can specify one or more kernels using the following criteria, you can use only single criteria at a time:
+
+    * `kernel_path` - a specific kernel path, can be a list of paths
+    * `kernel_index` - a specific kernel index, can be a list of indexes
+    * `kernel_title` - a specific kernel title, can be a list of titles
+    * `DEFAULT` - to update the default entry
+    * `ALL` - to update all of the entries
+
+2. `options` - with this, specify settings to update
+
+    * `name` - The name of the setting. `name` is omitted when using `replaced`.
+    * `value` - The value for the setting. You must omit `value` if the setting has no value, e.g. `quiet`.
+    * `state` - `present` (default) or `absent`. The value `absent` means to remove a setting with `name` name - name must be provided.
+    * `previous` - Optional - the only value is `replaced` - this is used to specify that the previous settings should be replaced with the given settings.
 
 Example:
 
-`bootloader_reboot_needed` - default `false` - if `true`, this means
-a reboot is needed to apply the changes made by the role
+```yaml
+bootloader_settings:
+  - kernel:
+      kernel_path: /boot/vmlinuz-0-rescue-1
+    options:
+      - name: console
+        value: tty0
+        state: present
+      - previous: replaced
+  - kernel:
+      kernel_index: [1, 2, 3]
+    options:
+      - name: print-fatal-signals
+        value: 1
+  - kernel:
+      kernel_title: Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8
+    options:
+      - name: no_timer_check
+  - kernel:
+      kernel_path: /boot/vmlinuz-0-rescue-1
+    options:
+      - name: console
+        value: tty0
+      - name: print-fatal-signals
+        value: 1
+      - name: no_timer_check
+        state: present
+      - previous: replaced
+  - kernel: ALL
+    options:
+      - name: debug
+        state: present
+  - kernel: DEFAULT
+    options:
+      - name: quiet
+        state: present
+```
+
+Default: `{}`
+
+Type: `dict`
+
+### bootloader_timeout
+
+With this variable, you can customize the loading time of the GRUB bootloader.
+
+Default: `5`
+
+Type: `int`
+
+### bootloader_password
+
+With this variable, you can protect boot parameters with a password.
+
+__WARNING__: Changing bootloader password is not idempotent.
+
+Boot loader username is always `root`.
+
+This should come from vault.
+
+If unset, current configuration is not touched.
+
+Default: `null`
+
+Type: `string`
+
+### bootloader_remove_password
+
+By setting this variable to `true`, you can remove bootloader password.
+
+Default: `false`
+
+Type: `bool`
+
+### bootloader_reboot_ok
+
+If `true`, if the role detects that something was changed that requires a reboot to take effect, the role will reboot the managed host.
+
+If `false`, it is up to you to determine when to reboot the managed host.
+
+The role will returns the variable `bootloader_reboot_required` (see below) with a value of `true` to indicate that some change has occurred which needs a reboot to take effect.
+
+Default: `false`
+
+Type: `bool`
+
+### Variables Exported by the Role
+
+The role exports the following variables:
+
+#### bootloader_reboot_needed
+
+Default `false` - if `true`, this means a reboot is needed to apply the changes made by the role
+
+#### bootloader_facts
+
+Contains boot information for all kernels.
+
+The role returns this variable when you set `bootloader_gather_facts: true`.
+
+For example:
+
+```yaml
+"bootloader_facts": [
+    {
+        "args": "ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet",
+        "id": "luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet",
+        "index": "3",
+        "initrd": "/boot/initramfs-0-rescue-c44543d15b2c4e898912c2497f734e67.img",
+        "kernel": "/boot/vmlinuz-0-rescue-c44543d15b2c4e898912c2497f734e67",
+        "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
+        "title": "Fedora Linux (0-rescue-c44543d15b2c4e898912c2497f734e67) 36 (Workstation Edition)",
+        "default": True
+    },
+    {
+        "args": "ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
+        "id": "luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
+        "index": "2",
+        "initrd": "/boot/initramfs-6.3.12-100.fc37.x86_64.img $tuned_initrd",
+        "kernel": "/boot/vmlinuz-6.3.12-100.fc37.x86_64",
+        "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
+        "title": "Fedora Linux (6.3.12-100.fc37.x86_64) 37 (Workstation Edition)",
+        "default": False
+    },
+    {
+        "args": "ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
+        "id": "luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
+        "index": "1",
+        "initrd": "/boot/initramfs-6.4.15-100.fc37.x86_64.img $tuned_initrd",
+        "kernel": "/boot/vmlinuz-6.4.15-100.fc37.x86_64",
+        "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
+        "title": "Fedora Linux (6.4.15-100.fc37.x86_64) 37 (Workstation Edition)",
+        "default": False
+    },
+    {
+        "args": "ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
+        "id": "luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
+        "index": "0",
+        "initrd": "/boot/initramfs-6.5.7-100.fc37.x86_64.img $tuned_initrd",
+        "kernel": "/boot/vmlinuz-6.5.7-100.fc37.x86_64",
+        "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
+        "title": "Fedora Linux (6.5.7-100.fc37.x86_64) 37 (Workstation Edition)",
+        "default": False
+    }
+]
+```
 
 ## Example Playbook
-
-Including an example of how to use your role (for instance, with variables
-passed in as parameters) is always nice for users too:
 
 ```yaml
 - hosts: all
   vars:
-    bootloader_foo: "foo foo!"
-    bootloader_bar: "progress bar"
-
+    bootloader_settings:
+      - kernel:
+          kernel_path: /boot/vmlinuz-0-rescue-1
+        options:
+          - name: console
+            value: tty0
+            state: present
+          - previous: replaced
+      - kernel:
+          kernel_index: [1, 2, 3]
+        options:
+          - name: print-fatal-signals
+            value: 1
+      - kernel:
+          kernel_title: Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8
+        options:
+          - name: no_timer_check
+      - kernel:
+          kernel_path: /boot/vmlinuz-0-rescue-1
+        options:
+          - name: console
+            value: tty0
+          - name: print-fatal-signals
+            value: 1
+          - name: no_timer_check
+            state: present
+          - previous: replaced
+      - kernel: ALL
+        options:
+          - name: debug
+            state: present
+      - kernel: DEFAULT
+        options:
+          - name: quiet
+            state: present
+    bootloader_timeout: 5
+    bootloader_password: null
+    bootloader_remove_password: false
+    bootloader_reboot_ok: true
   roles:
     - linux-system-roles.bootloader
 ```
 
-More examples can be provided in the [`examples/`](examples) directory. These
-can be useful especially for documentation.
-
 ## License
 
-Whenever possible, please prefer MIT.
-
-## Author Information
-
-An optional section for the role authors to include contact information, or a
-website (HTML is not allowed).
+MIT
