@@ -146,7 +146,9 @@ def run_module():
     if "Permission denied" in stderr:
         module.fail_json(msg="You must run this as sudo", **result)
     rc, default_kernel, stderr = module.run_command("grubby --default-index")
-    result["ansible_facts"]["bootloader_facts"] = get_facts(kernels_info, default_kernel)
+    result["ansible_facts"]["bootloader_facts"] = get_facts(
+        kernels_info, default_kernel
+    )
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results
