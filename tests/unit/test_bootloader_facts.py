@@ -56,7 +56,7 @@ FACTS = [
         "kernel": "/boot/vmlinuz-6.5.12-100.fc37.x86_64",
         "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
         "title": "Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)",
-        "default": False
+        "default": False,
     },
     {
         "args": "ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
@@ -66,7 +66,7 @@ FACTS = [
         "kernel": "/boot/vmlinuz-6.5.10-100.fc37.x86_64",
         "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
         "title": "Fedora Linux (6.5.10-100.fc37.x86_64) 37 (Workstation Edition)",
-        "default": False
+        "default": False,
     },
     {
         "args": "ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
@@ -76,7 +76,7 @@ FACTS = [
         "kernel": "/boot/vmlinuz-6.5.7-100.fc37.x86_64",
         "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
         "title": "Fedora Linux (6.5.7-100.fc37.x86_64) 37 (Workstation Edition)",
-        "default": True
+        "default": True,
     },
     {
         "args": "ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet",
@@ -86,13 +86,9 @@ FACTS = [
         "kernel": "/boot/vmlinuz-0-rescue-c44543d15b2c4e898912c2497f734e67",
         "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
         "title": "Fedora Linux (0-rescue-c44543d15b2c4e898912c2497f734e67) 36 (Workstation Edition)",
-        "default": False
+        "default": False,
     },
-    {
-        "index": "4",
-        "kernel": "non linux entry",
-        "default": False
-    },
+    {"index": "4", "kernel": "non linux entry", "default": False},
 ]
 
 

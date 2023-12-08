@@ -53,7 +53,8 @@ import re
 
 from ansible.module_utils.basic import AnsibleModule
 
-# import ansible.module_utils.six as ansible_six
+# This is a bit of a mystery - bug in pylint?
+# pylint: disable=import-error
 import ansible.module_utils.six.moves as ansible_six_moves
 
 
