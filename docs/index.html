@@ -138,70 +138,249 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><a href="#requirements" id="toc-requirements">Requirements</a></li>
 <li><a href="#role-variables" id="toc-role-variables">Role Variables</a>
 <ul>
+<li><a href="#bootloader_gather_facts"
+id="toc-bootloader_gather_facts">bootloader_gather_facts</a></li>
+<li><a href="#bootloader_settings"
+id="toc-bootloader_settings">bootloader_settings</a></li>
+<li><a href="#bootloader_timeout"
+id="toc-bootloader_timeout">bootloader_timeout</a></li>
+<li><a href="#bootloader_password"
+id="toc-bootloader_password">bootloader_password</a></li>
+<li><a href="#bootloader_remove_password"
+id="toc-bootloader_remove_password">bootloader_remove_password</a></li>
+<li><a href="#bootloader_reboot_ok"
+id="toc-bootloader_reboot_ok">bootloader_reboot_ok</a></li>
 <li><a href="#variables-exported-by-the-role"
 id="toc-variables-exported-by-the-role">Variables Exported by the
-Role</a></li>
+Role</a>
+<ul>
+<li><a href="#bootloader_reboot_needed"
+id="toc-bootloader_reboot_needed">bootloader_reboot_needed</a></li>
+<li><a href="#bootloader_facts"
+id="toc-bootloader_facts">bootloader_facts</a></li>
+</ul></li>
 </ul></li>
 <li><a href="#example-playbook" id="toc-example-playbook">Example
 Playbook</a></li>
 <li><a href="#license" id="toc-license">License</a></li>
-<li><a href="#author-information" id="toc-author-information">Author
-Information</a></li>
 </ul>
 </nav>
 <hr>
 <p>An Ansible role for bootloader and kernel command line
 management.</p>
 <h1 id="requirements">Requirements</h1>
-<p>Any pre-requisites that may not be covered by Ansible itself or the
-role should be mentioned here. For instance, if the role uses the EC2
-module, it may be a good idea to mention in this section that the
-<code>boto</code> package is required.</p>
+<p>None</p>
 <h1 id="role-variables">Role Variables</h1>
-<p>A description of all input variables (i.e. variables that are defined
-in <code>defaults/main.yml</code>) for the role should go here as these
-form an API of the role.</p>
-<p>Variables that are not intended as input, like variables defined in
-<code>vars/main.yml</code>, variables that are read from other roles
-and/or the global scope (ie. hostvars, group vars, etc.) can be also
-mentioned here but keep in mind that as these are probably not part of
-the role API they may change during the lifetime.</p>
-<p>Example of setting the variables:</p>
+<h2 id="bootloader_gather_facts">bootloader_gather_facts</h2>
+<p>Whether to gather <code>bootloader_facts</code> that contain bot
+information for all kernels.</p>
+<p>Default: <code>false</code></p>
+<p>Type: <code>bool</code></p>
+<h2 id="bootloader_settings">bootloader_settings</h2>
+<p>With this variable, list kernels and their command line parameters
+that you want to set.</p>
+<p>Required keys:</p>
+<ol type="1">
+<li><p><code>kernel</code> - with this, specify the kernel to update
+settings for. You can specify one or more kernels using the following
+criteria, you can use only single criteria at a time:</p>
+<ul>
+<li><code>kernel_path</code> - a specific kernel path, can be a list of
+paths</li>
+<li><code>kernel_index</code> - a specific kernel index, can be a list
+of indexes</li>
+<li><code>kernel_title</code> - a specific kernel title, can be a list
+of titles</li>
+<li><code>DEFAULT</code> - to update the default entry</li>
+<li><code>ALL</code> - to update all of the entries</li>
+</ul></li>
+<li><p><code>options</code> - with this, specify settings to update</p>
+<ul>
+<li><code>name</code> - The name of the setting. <code>name</code> is
+omitted when using <code>replaced</code>.</li>
+<li><code>value</code> - The value for the setting. You must omit
+<code>value</code> if the setting has no value, e.g.
+<code>quiet</code>.</li>
+<li><code>state</code> - <code>present</code> (default) or
+<code>absent</code>. The value <code>absent</code> means to remove a
+setting with <code>name</code> name - name must be provided.</li>
+<li><code>previous</code> - Optional - the only value is
+<code>replaced</code> - this is used to specify that the previous
+settings should be replaced with the given settings.</li>
+</ul></li>
+</ol>
+<p>Example:</p>
 <div class="sourceCode" id="cb1"><pre
-class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bootloader_foo</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;oof&quot;</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bootloader_bar</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;baz&quot;</span></span></code></pre></div>
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bootloader_settings</span><span class="kw">:</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">kernel_path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-0-rescue-1</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">previous</span><span class="kw">:</span><span class="at"> replaced</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">kernel_index</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="dv">1</span><span class="kw">,</span><span class="at"> </span><span class="dv">2</span><span class="kw">,</span><span class="at"> </span><span class="dv">3</span><span class="kw">]</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> print-fatal-signals</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">value</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">kernel_title</span><span class="kw">:</span><span class="at"> Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> no_timer_check</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">kernel_path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-0-rescue-1</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> print-fatal-signals</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">value</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> no_timer_check</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">previous</span><span class="kw">:</span><span class="at"> replaced</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span><span class="at"> ALL</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> debug</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span><span class="at"> DEFAULT</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> quiet</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span></code></pre></div>
+<p>Default: <code>{}</code></p>
+<p>Type: <code>dict</code></p>
+<h2 id="bootloader_timeout">bootloader_timeout</h2>
+<p>With this variable, you can customize the loading time of the GRUB
+bootloader.</p>
+<p>Default: <code>5</code></p>
+<p>Type: <code>int</code></p>
+<h2 id="bootloader_password">bootloader_password</h2>
+<p>With this variable, you can protect boot parameters with a
+password.</p>
+<p><strong>WARNING</strong>: Changing bootloader password is not
+idempotent.</p>
+<p>Boot loader username is always <code>root</code>.</p>
+<p>This should come from vault.</p>
+<p>If unset, current configuration is not touched.</p>
+<p>Default: <code>null</code></p>
+<p>Type: <code>string</code></p>
+<h2 id="bootloader_remove_password">bootloader_remove_password</h2>
+<p>By setting this variable to <code>true</code>, you can remove
+bootloader password.</p>
+<p>Default: <code>false</code></p>
+<p>Type: <code>bool</code></p>
+<h2 id="bootloader_reboot_ok">bootloader_reboot_ok</h2>
+<p>If <code>true</code>, if the role detects that something was changed
+that requires a reboot to take effect, the role will reboot the managed
+host.</p>
+<p>If <code>false</code>, it is up to you to determine when to reboot
+the managed host.</p>
+<p>The role will returns the variable
+<code>bootloader_reboot_required</code> (see below) with a value of
+<code>true</code> to indicate that some change has occurred which needs
+a reboot to take effect.</p>
+<p>Default: <code>false</code></p>
+<p>Type: <code>bool</code></p>
 <h2 id="variables-exported-by-the-role">Variables Exported by the
 Role</h2>
-<p>This section is optional. Some roles may export variables for
-playbooks to use later. These are analogous to "return values" in
-Ansible modules. For example, if a role performs some action that will
-require a system reboot, but the user wants to defer the reboot, the
-role might set a variable like
-<code>bootloader_reboot_needed: true</code> that the playbook can use to
-reboot at a more convenient time.</p>
-<p>Example:</p>
-<p><code>bootloader_reboot_needed</code> - default <code>false</code> -
-if <code>true</code>, this means a reboot is needed to apply the changes
-made by the role</p>
-<h1 id="example-playbook">Example Playbook</h1>
-<p>Including an example of how to use your role (for instance, with
-variables passed in as parameters) is always nice for users too:</p>
+<p>The role exports the following variables:</p>
+<h3 id="bootloader_reboot_needed">bootloader_reboot_needed</h3>
+<p>Default <code>false</code> - if <code>true</code>, this means a
+reboot is needed to apply the changes made by the role</p>
+<h3 id="bootloader_facts">bootloader_facts</h3>
+<p>Contains boot information for all kernels.</p>
+<p>The role returns this variable when you set
+<code>bootloader_gather_facts: true</code>.</p>
+<p>For example:</p>
 <div class="sourceCode" id="cb2"><pre
-class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">hosts</span><span class="kw">:</span><span class="at"> all</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">vars</span><span class="kw">:</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_foo</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;foo foo!&quot;</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_bar</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;progress bar&quot;</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">roles</span><span class="kw">:</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> linux-system-roles.bootloader</span></span></code></pre></div>
-<p>More examples can be provided in the <a
-href="examples"><code>examples/</code></a> directory. These can be
-useful especially for documentation.</p>
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&quot;bootloader_facts&quot;</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;args&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet&quot;</span><span class="kw">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;id&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet&quot;</span><span class="kw">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;index&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;3&quot;</span><span class="kw">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;initrd&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/initramfs-0-rescue-c44543d15b2c4e898912c2497f734e67.img&quot;</span><span class="kw">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;kernel&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/vmlinuz-0-rescue-c44543d15b2c4e898912c2497f734e67&quot;</span><span class="kw">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;root&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;UUID=65c70529-e9ad-4778-9001-18fe8c525285&quot;</span><span class="kw">,</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;title&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Fedora Linux (0-rescue-c44543d15b2c4e898912c2497f734e67) 36 (Workstation Edition)&quot;</span><span class="kw">,</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;default&quot;</span><span class="kw">:</span><span class="at"> </span><span class="ch">True</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">},</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">{</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;args&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;id&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;index&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;2&quot;</span><span class="kw">,</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;initrd&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/initramfs-6.3.12-100.fc37.x86_64.img $tuned_initrd&quot;</span><span class="kw">,</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;kernel&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/vmlinuz-6.3.12-100.fc37.x86_64&quot;</span><span class="kw">,</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;root&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;UUID=65c70529-e9ad-4778-9001-18fe8c525285&quot;</span><span class="kw">,</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;title&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Fedora Linux (6.3.12-100.fc37.x86_64) 37 (Workstation Edition)&quot;</span><span class="kw">,</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;default&quot;</span><span class="kw">:</span><span class="at"> </span><span class="ch">False</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">},</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">{</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;args&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;id&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;index&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;1&quot;</span><span class="kw">,</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;initrd&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/initramfs-6.4.15-100.fc37.x86_64.img $tuned_initrd&quot;</span><span class="kw">,</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;kernel&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/vmlinuz-6.4.15-100.fc37.x86_64&quot;</span><span class="kw">,</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;root&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;UUID=65c70529-e9ad-4778-9001-18fe8c525285&quot;</span><span class="kw">,</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;title&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Fedora Linux (6.4.15-100.fc37.x86_64) 37 (Workstation Edition)&quot;</span><span class="kw">,</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;default&quot;</span><span class="kw">:</span><span class="at"> </span><span class="ch">False</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">},</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">{</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;args&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;id&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;index&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;0&quot;</span><span class="kw">,</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;initrd&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/initramfs-6.5.7-100.fc37.x86_64.img $tuned_initrd&quot;</span><span class="kw">,</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;kernel&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/vmlinuz-6.5.7-100.fc37.x86_64&quot;</span><span class="kw">,</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;root&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;UUID=65c70529-e9ad-4778-9001-18fe8c525285&quot;</span><span class="kw">,</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;title&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Fedora Linux (6.5.7-100.fc37.x86_64) 37 (Workstation Edition)&quot;</span><span class="kw">,</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;default&quot;</span><span class="kw">:</span><span class="at"> </span><span class="ch">False</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">}</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="kw">]</span></span></code></pre></div>
+<h1 id="example-playbook">Example Playbook</h1>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">hosts</span><span class="kw">:</span><span class="at"> all</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">vars</span><span class="kw">:</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_settings</span><span class="kw">:</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">kernel_path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-0-rescue-1</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">previous</span><span class="kw">:</span><span class="at"> replaced</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">kernel_index</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="dv">1</span><span class="kw">,</span><span class="at"> </span><span class="dv">2</span><span class="kw">,</span><span class="at"> </span><span class="dv">3</span><span class="kw">]</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> print-fatal-signals</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">kernel_title</span><span class="kw">:</span><span class="at"> Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> no_timer_check</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">kernel_path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-0-rescue-1</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> print-fatal-signals</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> no_timer_check</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">previous</span><span class="kw">:</span><span class="at"> replaced</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span><span class="at"> ALL</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> debug</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span><span class="at"> DEFAULT</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> quiet</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_timeout</span><span class="kw">:</span><span class="at"> </span><span class="dv">5</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_password</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_remove_password</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_reboot_ok</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">roles</span><span class="kw">:</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> linux-system-roles.bootloader</span></span></code></pre></div>
 <h1 id="license">License</h1>
-<p>Whenever possible, please prefer MIT.</p>
-<h1 id="author-information">Author Information</h1>
-<p>An optional section for the role authors to include contact
-information, or a website (HTML is not allowed).</p>
+<p>MIT</p>
 </article>
 </body>
 </html>
