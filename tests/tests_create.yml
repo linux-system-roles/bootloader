@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Test creating, modifying, and removing kernels
+  hosts: all
+  gather_facts: false
+  tags:
+    - tests::reboot
+  vars:
+    bootloader_reboot_ok: true
+  tasks:
+    - name: Get bootloader_facts
+      vars:
+        bootloader_gather_facts: true
+      include_role:
+        name: linux-system-roles.bootloader
+
+    - name: Clone the oldest kernel and initrd for test purposes
+      copy:
+        src: "{{ item }}"
+        remote_src: true
+        dest: "{{ item }}_clone"
+        mode: preserve
+      loop:
+        # - "{{ (bootloader_facts | selectattr('index', 'search', '0') | first).kernel }}"
+        # - "{{ (bootloader_facts | selectattr('index', 'search', '0') | first).initrd }}"
+        - "{{ (bootloader_facts | last).kernel }}"
+        - "{{ (bootloader_facts | last).initrd | regex_replace(' .*$', '') }}"
+
+    - name: Create kernel
+      vars:
+        bootloader_settings:
+          - kernel:
+              path: "{{ (bootloader_facts | last).kernel }}_clone"
+              initrd: "{{ (bootloader_facts | last).initrd |
+                regex_replace(' .*$', '') }}_clone"
+              title: Test kernel
+            options:
+              - name: console
+                value: tty0
+                state: present
+              # - copy_default: true
+      include_role:
+        name: linux-system-roles.bootloader
+
+    - name: Flush handlers
+      meta: flush_handlers
+
+    - name: Ensure bootloader_reboot_required is not set to true
+      assert:
+        that: not bootloader_reboot_required
+
+    - name: Get bootloader_facts
+      vars:
+        bootloader_gather_facts: true
+      include_role:
+        name: linux-system-roles.bootloader
+
+    - name: Verify settings
+      assert:
+        that: >-
+          (bootloader_facts | selectattr('title', 'search', 'Test kernel') |
+          first).args
+          | regex_search('^console=tty0$')

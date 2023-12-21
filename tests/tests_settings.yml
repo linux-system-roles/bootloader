@@ -20,22 +20,19 @@
     - name: Verify that default bootloader is correct in bootloader_gather_facts
       vars:
         default_bootloader: "{{
-          (bootloader_facts | selectattr('index', 'search', '0') | first).kernel
-          }}"
-      shell: >-
-        set -euo pipefail;
-        grubby --info=DEFAULT;
-        grubby --info=DEFAULT |
-        grep -P
-        'kernel=("|){{ default_bootloader }}("|)'
+          (bootloader_facts | selectattr('default', 'equalto', True) |
+          first).kernel }}"
+      command: grubby --default-kernel
       changed_when: false
+      register: __default_kernel_cmd
+      failed_when: default_bootloader != __default_kernel_cmd.stdout
 
-    - name: Replace configuration with settings using kernel_index
+    - name: Replace configuration with settings using kernel index
       vars:
         bootloader_gather_facts: true
         bootloader_settings:
           - kernel:
-              kernel_index: "{{
+              index: "{{
                 (bootloader_facts | selectattr('index', 'search', '0') |
                 first).index }}"
             options:
@@ -76,12 +73,12 @@
       register: __bootloader_default_grub_content
       changed_when: false
 
-    - name: Change some settings using kernel_title
+    - name: Change some settings using kernel title
       vars:
         bootloader_gather_facts: true
         bootloader_settings:
           - kernel:
-              kernel_title: "{{
+              title: "{{
                 (bootloader_facts | selectattr('index', 'search', '0') |
                 first).title }}"
             options:
@@ -114,11 +111,11 @@
       register: __bootloader_default_grub_content
       changed_when: false
 
-    - name: Set existing variable using kernel_path, should report not changed
+    - name: Set existing variable using kernel path, should report not changed
       vars:
         bootloader_settings:
           - kernel:
-              kernel_path: "{{
+              path: "{{
                 (bootloader_facts | selectattr('index', 'search', '0') |
                 first).kernel }}"
             options:
