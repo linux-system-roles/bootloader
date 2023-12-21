@@ -21,192 +21,49 @@ OPTIONS = [
     {"name": "arg_with_int_value_absent", "value": 1, "state": "absent"},
     {"name": "arg_without_val_absent", "state": "absent"},
     {"previous": "replaced"},
+    {"copy_default": True},
 ]
 
-# SETTINGS_EXAMPLE = [
-#     {
-#         "kernel": {
-#             "kernel_index": [
-#                 0,
-#                 1
-#             ]
-#         },
-#         "options": [
-#             {
-#                 "name": "console",
-#                 "value": "tty0"
-#             },
-#             {
-#                 "name": "print-fatal-signals",
-#                 "value": 1
-#             },
-#             {
-#                 "name": "no_timer_check",
-#                 "state": "present"
-#             },
-#             {
-#                 "name": "quiet"
-#             },
-#             {
-#                 "name": "debug"
-#             },
-#             {
-#                 "previous": "replaced"
-#             }
-#         ]
-#     },
-#     {
-#         "kernel": {
-#             "kernel_path": "path1"
-#         },
-#         "options": [
-#             {
-#                 "name": "console",
-#                 "value": "tty0"
-#             },
-#             {
-#                 "name": "print-fatal-signals",
-#                 "value": 1
-#             },
-#             {
-#                 "name": "no_timer_check",
-#                 "state": "present"
-#             },
-#             {
-#                 "name": "quiet"
-#             },
-#             {
-#                 "name": "debug"
-#             }
-#         ]
-#     },
-#     {
-#         "kernel": "ALL",
-#         "options": [
-#             {
-#                 "name": "console",
-#                 "value": "tty0"
-#             },
-#             {
-#                 "name": "print-fatal-signals",
-#                 "value": 1
-#             },
-#             {
-#                 "name": "no_timer_check",
-#                 "state": "present"
-#             },
-#             {
-#                 "name": "quiet"
-#             },
-#             {
-#                 "name": "debug"
-#             }
-#         ]
-#     },
-#     {
-#         "kernel": "INCORRECT_STRING",
-#         "options": [
-#             {
-#                 "name": "console",
-#                 "value": "tty0"
-#             },
-#             {
-#                 "name": "print-fatal-signals",
-#                 "value": 1
-#             },
-#             {
-#                 "name": "no_timer_check",
-#                 "state": "present"
-#             },
-#             {
-#                 "name": "quiet"
-#             },
-#             {
-#                 "name": "debug"
-#             }
-#         ]
-#     }
-# ]
-
 SETTINGS = [
-    {
-        "kernel": "DEFAULT",
-        "options": OPTIONS
-    },
-    {
-        "kernel": "ALL",
-        "options": OPTIONS
-    },
-    {
-        "kernel": "INCORRECT_STRING",
-        "options": OPTIONS
-    },
-    {
-        "kernel": {
-            "index": 1
-        },
-        "options": OPTIONS
-    },
-    {
-        "kernel": {
-            "index": [
-                0,
-                1
-            ]
-        },
-        "options": OPTIONS
-    },
-    {
-        "kernel": {
-            "kernel_index": [
-                0,
-                1
-            ]
-        },
-        "options": OPTIONS
-    },
+    {"kernel": "DEFAULT", "options": OPTIONS},
+    {"kernel": "ALL", "options": OPTIONS},
+    {"kernel": "INCORRECT_STRING", "options": OPTIONS},
+    {"kernel": {"index": 1}, "options": OPTIONS},
+    {"kernel": {"index": [0, 1]}, "options": OPTIONS},
+    {"kernel": {"kernel_index": [0, 1]}, "options": OPTIONS},
     {
         "kernel": {
             "title": "Fedora Linux",
-            "path": "/boot/vmlinuz-6.5.12-100.fc37.x86_64"
+            "path": "/boot/vmlinuz-6.5.12-100.fc37.x86_64",
         },
-        "options": OPTIONS
+        "options": OPTIONS,
     },
     {
-        "kernel": {
-            "title": "Fedora Linux",
-            "path": "/boot/vmlinuz-6"
-        },
-        "options": OPTIONS
+        "kernel": {"title": "Fedora Linux", "path": "/boot/vmlinuz-6"},
+        "options": OPTIONS,
     },
     {
         "kernel": {
             "title": "Fedora Linux",
             "path": "/boot/vmlinuz-6",
-            "initrd": "/boot/initramfs-6.6.img"
-        },
-        "options": OPTIONS
-    },
-    {
-        "kernel": {
-            "initrd": "/boot/initramfs-6.6.img"
-        },
-        "options": OPTIONS
-    },
-    {
-        "kernel": {
-            "initrd": "/boot/initramfs-6.6.img"
+            "initrd": "/boot/initramfs-6.6.img",
         },
         "options": OPTIONS,
-        "state": "test_state"
     },
+    {"kernel": {"initrd": "/boot/initramfs-6.6.img"}, "options": OPTIONS},
     {
-        "kernel": [
-            {
-                "initrd": "/boot/initramfs-6.6.img"
-            }
-        ],
-        "options": OPTIONS
+        "kernel": {"initrd": "/boot/initramfs-6.6.img"},
+        "options": OPTIONS,
+        "state": "test_state",
+    },
+    {"kernel": [{"initrd": "/boot/initramfs-6.6.img"}], "options": OPTIONS},
+    {
+        "kernel": {
+            "title": "Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)",
+            "path": "/boot/vmlinuz-6.5.12-100.fc37.x86_64",
+            "initrd": "/boot/initramfs-6.5.12-100.fc37.x86_64.img $tuned_initrd",
+        },
+        "options": OPTIONS,
     },
 ]
 
@@ -301,64 +158,134 @@ kernels_keys = ["kernel_index", "kernel_path", "kernel_title", "DEFAULT", "ALL"]
 
 class InputValidator(unittest.TestCase):
     """test functions that process bootloader_settings argument"""
+
     def test_validate_kernels(self):
-        err, create_kernel, kernel = bootloader_settings.validate_kernels(SETTINGS[0], FACTS)
-        self.assertEqual(err, "",)
-        self.assertEqual(create_kernel, False)
-        self.assertEqual(kernel, "DEFAULT")
-        err, create_kernel, kernel = bootloader_settings.validate_kernels(SETTINGS[1], FACTS)
-        self.assertEqual(err, "") 
-        self.assertEqual(create_kernel, False)
-        self.assertEqual(kernel, "ALL")
-        err, create_kernel, kernel = bootloader_settings.validate_kernels(SETTINGS[2], FACTS)
-        self.assertEqual(err, "kernel INCORRECT_STRING is of type str, it must be one of 'DEFAULT, ALL'")
-        self.assertEqual(create_kernel, False)
-        self.assertEqual(kernel, "")
-        err, create_kernel, kernel = bootloader_settings.validate_kernels(SETTINGS[3], FACTS)
-        self.assertEqual(err, "")
-        self.assertEqual(create_kernel, False)
-        self.assertEqual(kernel, "1")
-        err, create_kernel, kernel = bootloader_settings.validate_kernels(SETTINGS[4], FACTS)
-        self.assertEqual(err, "kernel value in 'index: [0, 1]' must be of type str or int")
-        self.assertEqual(create_kernel, False)
-        self.assertEqual(kernel, "")
-        err, create_kernel, kernel = bootloader_settings.validate_kernels(SETTINGS[5], FACTS)
-        # initrd can be provided ONLY when creating a kernel
-        self.assertEqual(err, "kernel key in 'kernel_index: [0, 1]' must be one of 'path, index, title, initrd'")
-        self.assertEqual(create_kernel, False)
-        self.assertEqual(kernel, "")
-        err, create_kernel, kernel = bootloader_settings.validate_kernels(SETTINGS[6], FACTS)
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[0], FACTS
+        )
         self.assertEqual(
             err,
-            "A kernel with provided {'path'} already exists and it's other fields are different {'title': ('Fedora Linux', 'Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)')}"
+            "",
         )
-        self.assertEqual(create_kernel, False)
-        self.assertEqual(kernel, "")
-        err, create_kernel, kernel = bootloader_settings.validate_kernels(SETTINGS[7], FACTS)
-        self.assertEqual(err, "To create a kernel, you must provide 3 kernel keys - 'path, title, initrd'")
-        self.assertEqual(create_kernel, False)
-        self.assertEqual(kernel, "")
-        err, create_kernel, kernel = bootloader_settings.validate_kernels(SETTINGS[8], FACTS)
+        self.assertEqual(kernel_action, "modify")
+        self.assertEqual(kernel, "DEFAULT")
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[1], FACTS
+        )
         self.assertEqual(err, "")
-        self.assertEqual(create_kernel, True)
-        self.assertEqual(kernel, "--title='Fedora Linux' --add-kernel=/boot/vmlinuz-6 --initrd=/boot/initramfs-6.6.img")
-        err, create_kernel, kernel = bootloader_settings.validate_kernels(SETTINGS[9], FACTS)
-        self.assertEqual(err, "You can use 'initrd' as a kernel key only when you must create a kernel. To modify an existing kernel, use one of path, title, index")
-        self.assertEqual(create_kernel, False)
+        self.assertEqual(kernel_action, "modify")
+        self.assertEqual(kernel, "ALL")
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[2], FACTS
+        )
+        self.assertEqual(
+            err,
+            "kernel INCORRECT_STRING is of type str, it must be one of 'DEFAULT, ALL'",
+        )
+        self.assertEqual(kernel_action, "")
         self.assertEqual(kernel, "")
-        err, create_kernel, kernel = bootloader_settings.validate_kernels(SETTINGS[10], FACTS)
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[3], FACTS
+        )
+        self.assertEqual(err, "")
+        self.assertEqual(kernel_action, "modify")
+        self.assertEqual(kernel, "1")
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[4], FACTS
+        )
+        self.assertEqual(
+            err, "kernel value in 'index: [0, 1]' must be of type str or int"
+        )
+        self.assertEqual(kernel_action, "")
+        self.assertEqual(kernel, "")
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[5], FACTS
+        )
+        # initrd can be provided ONLY when creating a kernel
+        self.assertEqual(
+            err,
+            "kernel key in 'kernel_index: [0, 1]' must be one of 'path, index, title, initrd'",
+        )
+        self.assertEqual(kernel_action, "")
+        self.assertEqual(kernel, "")
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[6], FACTS
+        )
+        self.assertEqual(
+            err,
+            "A kernel with provided {'path'} already exists and it's other fields are different {'title': ('Fedora Linux', 'Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)')}",
+        )
+        self.assertEqual(kernel_action, "")
+        self.assertEqual(kernel, "")
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[7], FACTS
+        )
+        self.assertEqual(
+            err,
+            "To create a kernel, you must provide 3 kernel keys - 'path, title, initrd'",
+        )
+        self.assertEqual(kernel_action, "")
+        self.assertEqual(kernel, "")
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[8], FACTS
+        )
+        self.assertEqual(err, "")
+        self.assertEqual(kernel_action, "create")
+        self.assertEqual(
+            kernel,
+            "--title='Fedora Linux' --add-kernel=/boot/vmlinuz-6 --initrd=/boot/initramfs-6.6.img",
+        )
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[9], FACTS
+        )
+        self.assertEqual(
+            err,
+            "You can use 'initrd' as a kernel key only when you must create a kernel. To modify an existing kernel, use one of path, title, index",
+        )
+        self.assertEqual(kernel_action, "")
+        self.assertEqual(kernel, "")
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[10], FACTS
+        )
         self.assertEqual(err, "State must be one of 'present, absent'")
-        self.assertEqual(create_kernel, False)
+        self.assertEqual(kernel_action, "")
         self.assertEqual(kernel, "")
-        err, create_kernel, kernel = bootloader_settings.validate_kernels(SETTINGS[11], FACTS)
-        self.assertEqual(err, "kernel value in [{'initrd': '/boot/initramfs-6.6.img'}] must be of type str or dict")
-        self.assertEqual(create_kernel, False)
-        self.assertEqual(kernel, "")    
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[11], FACTS
+        )
+        self.assertEqual(
+            err,
+            "kernel value in [{'initrd': '/boot/initramfs-6.6.img'}] must be of type str or dict",
+        )
+        self.assertEqual(kernel_action, "")
+        self.assertEqual(kernel, "")
+        err, kernel_action, kernel = bootloader_settings.validate_kernels(
+            SETTINGS[12], FACTS
+        )
+        self.assertEqual(err, "")
+        self.assertEqual(kernel_action, "modify")
 
     def test_get_add_kernel_cmd(self):
         kernel = bootloader_settings.get_create_kernel(SETTINGS[8]["kernel"])
-        add_kernel_cmd = bootloader_settings.get_add_kernel_cmd(SETTINGS[8]["options"], kernel)
-        self.assertEqual(add_kernel_cmd, "grubby --title='Fedora Linux' --add-kernel=/boot/vmlinuz-6 --initrd=/boot/initramfs-6.6.img --args='arg_with_str_value=test_value arg_with_int_value=1 arg_without_val arg_with_str_value_absent=test_value arg_with_int_value_absent=1 arg_without_val_absent'")
+        add_kernel_cmd = bootloader_settings.get_add_kernel_cmd(
+            SETTINGS[8]["options"], kernel
+        )
+        self.assertEqual(
+            add_kernel_cmd,
+            "grubby --title='Fedora Linux' --add-kernel=/boot/vmlinuz-6 --initrd=/boot/initramfs-6.6.img --args='arg_with_str_value=test_value arg_with_int_value=1 arg_without_val arg_with_str_value_absent=test_value arg_with_int_value_absent=1 arg_without_val_absent' --copy-default",
+        )
+
+    def test_get_rm_kernel_cmd(self):
+        kernel = bootloader_settings.get_single_kernel(SETTINGS[3]["kernel"])
+        self.assertEqual(
+            kernel,
+            "1",
+        )
+        rm_kernel_cmd = bootloader_settings.get_rm_kernel_cmd(kernel)
+        self.assertEqual(
+            rm_kernel_cmd,
+            "grubby --remove-kernel=1",
+        )
 
     def test_get_boot_args(self):
         bootloader_args = bootloader_settings.get_boot_args(INFO)

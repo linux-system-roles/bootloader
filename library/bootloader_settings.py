@@ -69,6 +69,7 @@ import ansible.module_utils.six.moves as ansible_six_moves
 
 
 def get_facts(kernels_info, default_kernel):
+    """Get kernel facts"""
     kernels_info_lines = kernels_info.strip().split("\n")
     kernels = []
     index_count = 0
@@ -89,12 +90,22 @@ def get_facts(kernels_info, default_kernel):
     return kernels
 
 
-def dict_compare(d1, d2):
-    d1_keys = set(d1.keys())
-    d2_keys = set(d2.keys())
-    shared_keys = d1_keys.intersection(d2_keys)
-    diff = {o: (d1[o], d2[o]) for o in shared_keys if d1[o] != d2[o]}
-    same = set(o for o in shared_keys if d1[o] == d2[o])
+def get_dict_same_keys(dict1, dict2):
+    """Shorten dict2 to the same keys as in dict1"""
+    result = {}
+    for key1 in dict1:
+        if key1 in dict2:
+            result.update({key1: dict2[key1]})
+    return result
+
+
+def compare_dicts(dict1, dict2):
+    """Compare dict1 to dict2 and return same and different entries"""
+    dict1_keys = set(dict1.keys())
+    dict2_keys = set(dict2.keys())
+    shared_keys = dict1_keys.intersection(dict2_keys)
+    diff = {o: (dict1[o], dict2[o]) for o in shared_keys if dict1[o] != dict2[o]}
+    same = set(o for o in shared_keys if dict1[o] == dict2[o])
     return diff, same
 
 
@@ -145,16 +156,18 @@ def get_create_kernel(bootloader_setting_kernel):
 def validate_kernels(bootloader_setting, bootloader_facts):
     """Validate that user passes bootloader_setting correctly"""
     err = ""
-    create_kernel = False
+    kernel_action = ""
     kernel = ""
+    state = ""
     kernel_str_values = ["DEFAULT", "ALL"]
     kernel_keys = ["path", "index", "title", "initrd"]
     kernel_create_keys = ["path", "title", "initrd"]
     kernel_mod_keys = ["path", "title", "index"]
     states = ["present", "absent"]
+    state = bootloader_setting["state"] if "state" in bootloader_setting else "present"
     if "state" in bootloader_setting and bootloader_setting["state"] not in states:
         err = "State must be one of '%s'" % ", ".join(states)
-        return err, create_kernel, kernel
+        return err, kernel_action, kernel
     if (not isinstance(bootloader_setting["kernel"], dict)) and (
         not isinstance(bootloader_setting["kernel"], str)
     ):
@@ -162,7 +175,7 @@ def validate_kernels(bootloader_setting, bootloader_facts):
             "kernel value in %s must be of type str or dict"
             % bootloader_setting["kernel"]
         )
-        return err, create_kernel, kernel
+        return err, kernel_action, kernel
     if (isinstance(bootloader_setting["kernel"], str)) and (
         bootloader_setting["kernel"] not in kernel_str_values
     ):
@@ -170,10 +183,11 @@ def validate_kernels(bootloader_setting, bootloader_facts):
             bootloader_setting["kernel"],
             ", ".join(kernel_str_values),
         )
-        return err, create_kernel, kernel
+        return err, kernel_action, kernel
     if isinstance(bootloader_setting["kernel"], str):
+        kernel_action = "modify" if state == "present" else "remove"
         kernel = escapeval(bootloader_setting["kernel"])
-        return err, create_kernel, kernel
+        return err, kernel_action, kernel
 
     """Process bootloader_setting["kernel"] being dict"""
     """Validate kernel key and value"""
@@ -184,52 +198,55 @@ def validate_kernels(bootloader_setting, bootloader_facts):
                 value,
                 ", ".join(kernel_keys),
             )
-            return err, create_kernel, kernel
+            return err, kernel_action, kernel
         if (not isinstance(value, str)) and (not isinstance(value, int)):
             err = "kernel value in '%s: %s' must be of type str or int" % (key, value)
-            return err, create_kernel, kernel
-
+            return err, kernel_action, kernel
     if len(bootloader_setting["kernel"]) == 1:
         err = validate_kernel_initrd(bootloader_setting["kernel"], kernel_mod_keys)
         if not err:
+            kernel_action = "modify" if state == "present" else "remove"
             kernel = get_single_kernel(bootloader_setting["kernel"])
-        return err, create_kernel, kernel
+        return err, kernel_action, kernel
 
     """Validate with len(bootloader_setting["kernel"]) > 1"""
     for fact in bootloader_facts:
         # Rename kernel to path in fact dict
         if "kernel" in fact:
             fact["path"] = fact.pop("kernel")
-        diff, same = dict_compare(bootloader_setting["kernel"], fact)
+        fact_trunc = get_dict_same_keys(bootloader_setting["kernel"], fact)
+        diff, same = compare_dicts(bootloader_setting["kernel"], fact_trunc)
+        # diff, same = compare_dicts(bootloader_setting["kernel"], fact)
         if diff and same:
             err = (
                 "A kernel with provided %s already exists and it's other fields are different %s"
                 % (same, diff)
             )
-            return err, create_kernel, kernel
-        elif not same and diff:
-            if len(bootloader_setting["kernel"]) != 3 and sorted(
-                bootloader_setting["kernel"].keys()
-            ) != sorted(kernel_create_keys):
-                err = (
-                    "To create a kernel, you must provide 3 kernel keys - '%s'"
-                    % ", ".join(kernel_create_keys)
-                )
-                return err, create_kernel, kernel
-            create_kernel = True
-            break
+            return err, kernel_action, kernel
         elif not diff and same:
-            create_kernel = False
+            kernel_action = "modify" if state == "present" else "remove"
             break
-    if not create_kernel:
+    """Process kernel_action when none of the facts had same keys with bootloader_setting["kernel"]"""
+    if not kernel_action:
+        if len(bootloader_setting["kernel"]) != 3 and (
+            sorted(bootloader_setting["kernel"].keys()) != sorted(kernel_create_keys)
+        ):
+            err = (
+                "To create a kernel, you must provide 3 kernel keys - '%s'"
+                % ", ".join(kernel_create_keys)
+            )
+            return err, kernel_action, kernel
+        kernel_action = "create" if state == "present" else "remove"
+
+    if not kernel_action:
         err = validate_kernel_initrd(bootloader_setting["kernel"], kernel_mod_keys)
         if err:
-            return err, create_kernel, kernel
+            return err, kernel_action, kernel
         kernel_to_mod = get_kernel_to_mod(bootloader_setting["kernel"], kernel_mod_keys)
         kernel = get_single_kernel(kernel_to_mod)
     else:
         kernel = get_create_kernel(bootloader_setting["kernel"])
-    return err, create_kernel, kernel
+    return err, kernel_action, kernel
 
 
 def escapeval(val):
@@ -259,7 +276,10 @@ def get_rm_boot_args_cmd(kernel_info, kernel):
 
 def get_setting_name(kernel_setting):
     """Get setting name based on whether it is with or without a value"""
-    if kernel_setting == {"previous": "replaced"}:
+    if (
+        kernel_setting == {"previous": "replaced"}
+        or "copy_default" in kernel_setting.keys()
+    ):
         return ""
     if "value" in kernel_setting:
         return kernel_setting["name"] + "=" + str(kernel_setting["value"])
@@ -275,7 +295,8 @@ def get_add_kernel_cmd(bootloader_setting_options, kernel):
         boot_args += setting_name + " "
     if len(boot_args) > 0:
         args = "--args=" + escapeval(boot_args.strip())
-    # Need to add ability to set --copy-default
+    if {"copy_default": True} in bootloader_setting_options:
+        args += " --copy-default"
     return "grubby %s %s" % (kernel, args)
 
 
@@ -299,6 +320,11 @@ def get_mod_boot_args_cmd(bootloader_setting_options, kernel, kernel_info):
         boot_mod_args += " --args=" + escapeval(boot_present_args.strip())
     if boot_mod_args:
         return "grubby --update-kernel=" + kernel + boot_mod_args
+
+
+def get_rm_kernel_cmd(kernel):
+    """Build cmd to remove a kernel"""
+    return "grubby --remove-kernel=%s" % kernel
 
 
 def run_module():
@@ -327,16 +353,17 @@ def run_module():
         rc, default_kernel, stderr = module.run_command("grubby --default-index")
         bootloader_facts = get_facts(kernels_info, default_kernel)
 
-        err, create_kernel, kernel = validate_kernels(
+        err, kernel_action, kernel = validate_kernels(
             bootloader_setting, bootloader_facts
         )
         if err:
             module.fail_json(msg=err, **result)
 
         # Remove all existing boot settings
-        if ({"previous": "replaced"} in bootloader_setting["options"]) and (
-            not create_kernel
-        ):
+        if (
+            "options" in bootloader_setting
+            and {"previous": "replaced"} in bootloader_setting["options"]
+        ) and (kernel_action != "remove"):
             rc, kernel_info, stderr = module.run_command("grubby --info=" + kernel)
             rm_boot_args_cmd = get_rm_boot_args_cmd(kernel_info, kernel)
             if rm_boot_args_cmd:
@@ -345,14 +372,14 @@ def run_module():
                 result["actions"].append(rm_boot_args_cmd)
 
         # Create a kernel with provided options
-        if create_kernel:
+        if kernel_action == "create":
             add_kernel_cmd = get_add_kernel_cmd(bootloader_setting["options"], kernel)
             rc, stdout, stderr = module.run_command(add_kernel_cmd)
             result["changed"] = True
             result["actions"].append(add_kernel_cmd)
 
         # Modify boot settings
-        else:
+        if kernel_action == "modify":
             rc, kernel_info, stderr = module.run_command("grubby --info=" + kernel)
             mod_boot_args_cmd = get_mod_boot_args_cmd(
                 bootloader_setting["options"], kernel, kernel_info
@@ -363,6 +390,13 @@ def run_module():
                 result["actions"].append(mod_boot_args_cmd)
             else:
                 result["changed"] = False
+
+        # Remove a kernel
+        if kernel_action == "remove":
+            rm_kernel_cmd = get_rm_kernel_cmd(kernel)
+            rc, stdout, stderr = module.run_command(rm_kernel_cmd)
+            result["changed"] = True
+            result["actions"].append(rm_kernel_cmd)
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results

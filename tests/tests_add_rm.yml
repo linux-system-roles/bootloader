@@ -1,0 +1,145 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Test creating, modifying, and removing kernels
+  hosts: all
+  gather_facts: false
+  tags:
+    - tests::reboot
+  vars:
+    bootloader_reboot_ok: true
+  tasks:
+    - name: Get bootloader_facts
+      vars:
+        bootloader_gather_facts: true
+      include_role:
+        name: linux-system-roles.bootloader
+
+    - name: Clone the oldest kernel and initrd for test purposes
+      copy:
+        src: "{{ item.src }}"
+        remote_src: true
+        dest: "{{ item.dest }}"
+        mode: preserve
+      loop:
+        - src: "{{ (bootloader_facts | last).kernel }}"
+          dest: "{{ (bootloader_facts | last).kernel }}_clone1"
+        - src: "{{ (bootloader_facts | last).initrd | regex_replace(' .*$', '') }}"
+          dest: "{{ (bootloader_facts | last).initrd | regex_replace(' .*$', '') }}_clone1"
+        - src: "{{ (bootloader_facts | last).kernel }}"
+          dest: "{{ (bootloader_facts | last).kernel }}_clone2"
+        - src: "{{ (bootloader_facts | last).initrd | regex_replace(' .*$', '') }}"
+          dest: "{{ (bootloader_facts | last).initrd | regex_replace(' .*$', '') }}_clone2"
+
+    - name: Create Clone1 kernel with copy_defaults=true
+      vars:
+        bootloader_settings:
+          - kernel:
+              path: "{{ (bootloader_facts | last).kernel }}_clone1"
+              initrd: "{{ (bootloader_facts | last).initrd |
+                regex_replace(' .*$', '') }}_clone1"
+              title: Clone1
+            options:
+              - name: console
+                value: tty0
+                state: present
+              - copy_default: true
+      include_role:
+        name: linux-system-roles.bootloader
+
+    - name: Flush handlers
+      meta: flush_handlers
+
+    - name: Ensure bootloader_reboot_required is not set to true
+      assert:
+        that: not bootloader_reboot_required
+
+    - name: Get bootloader_facts
+      vars:
+        bootloader_gather_facts: true
+      include_role:
+        name: linux-system-roles.bootloader
+
+    - name: Verify settings
+      vars:
+        __default_args: "{{
+          (bootloader_facts | selectattr('default', 'equalto', True) |
+          first).args }}"
+      assert:
+        that: >-
+          (bootloader_facts | selectattr('title', 'search', 'Clone1') |
+          first).args == __default_args ~ ' console=tty0'
+
+    - name: Remove Clone1 kernel with 3 kernel keys
+      vars:
+        bootloader_gather_facts: true
+        bootloader_settings:
+          - kernel:
+              path: "{{ (bootloader_facts | last).kernel }}_clone1"
+              initrd: "{{ (bootloader_facts | last).initrd |
+                regex_replace(' .*$', '') }}_clone1"
+              title: Clone1
+            options:
+              - name: console
+                value: tty0
+                state: present
+              - copy_default: true
+            state: absent
+      include_role:
+        name: linux-system-roles.bootloader
+
+    - name: Verify that Clone1 kernel is removed
+      assert:
+        that: bootloader_facts | selectattr('title', 'search', 'Clone1') |
+          list | length == 0
+
+    - name: Create clone2 kernel without copy_defaults=true
+      vars:
+        bootloader_settings:
+          - kernel:
+              path: "{{ (bootloader_facts | last).kernel }}_clone2"
+              initrd: "{{ (bootloader_facts | last).initrd |
+                regex_replace(' .*$', '') }}_clone2"
+              title: Clone2
+            options:
+              - name: console
+                value: tty0
+                state: present
+      include_role:
+        name: linux-system-roles.bootloader
+
+    - name: Flush handlers
+      meta: flush_handlers
+
+    - name: Ensure bootloader_reboot_required is not set to true
+      assert:
+        that: not bootloader_reboot_required
+
+    - name: Get bootloader_facts
+      vars:
+        bootloader_gather_facts: true
+      include_role:
+        name: linux-system-roles.bootloader
+
+    - name: Verify settings
+      assert:
+        that: >-
+          (bootloader_facts | selectattr('title', 'search', 'Clone2') |
+          first).args == 'console=tty0'
+
+    - name: Remove Clone2 kernel with kernel path
+      vars:
+        bootloader_gather_facts: true
+        bootloader_settings:
+          - kernel:
+              path: "{{ (bootloader_facts | last).kernel }}_clone2"
+              initrd: "{{ (bootloader_facts | last).initrd |
+                regex_replace(' .*$', '') }}_clone2"
+              title: Clone2
+            state: absent
+      include_role:
+        name: linux-system-roles.bootloader
+
+    - name: Verify that Clone2 kernel is removed
+      assert:
+        that: bootloader_facts | selectattr('title', 'search', 'Clone2') |
+          list | length == 0
