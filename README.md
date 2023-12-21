@@ -25,13 +25,29 @@ With this variable, list kernels and their command line parameters that you want
 Required keys:
 
 1. `kernel` - with this, specify the kernel to update settings for.
-You can specify one or more kernels using the following criteria, you can use only single criteria at a time:
+Each list should specify the same kernel using one or multiple keys.
 
-    * `kernel_path` - a specific kernel path, can be a list of paths
-    * `kernel_index` - a specific kernel index, can be a list of indexes
-    * `kernel_title` - a specific kernel title, can be a list of titles
+    If you want to you add a kernel, you must specify three keys - `path`, `title`, `initrd`.
+
+    If you want to modify or remove a kerne, you can specify one or more key.
+
+    You can also specify `DEFAULT` or `ALL` to update the default or all kernels.
+
+    Available keys:
+    * `path` - kernel path
+    * `index` - kernel index
+    * `title` - kernel title
+    * `initrd` - kernel initrd image
+
+    Available strings:
     * `DEFAULT` - to update the default entry
     * `ALL` - to update all of the entries
+
+2. `state` - state of the kernel.
+
+    Available values: `present`, `absent`
+
+    Default: `present`
 
 2. `options` - with this, specify settings to update
 
@@ -39,46 +55,9 @@ You can specify one or more kernels using the following criteria, you can use on
     * `value` - The value for the setting. You must omit `value` if the setting has no value, e.g. `quiet`.
     * `state` - `present` (default) or `absent`. The value `absent` means to remove a setting with `name` name - name must be provided.
     * `previous` - Optional - the only value is `replaced` - this is used to specify that the previous settings should be replaced with the given settings.
+    * `copy_default` - Optional - when you create a kernel, you can specify `copy_default: true` to copy the default arguments to the created kernel
 
-Example:
-
-```yaml
-bootloader_settings:
-  - kernel:
-      kernel_path: /boot/vmlinuz-0-rescue-1
-    options:
-      - name: console
-        value: tty0
-        state: present
-      - previous: replaced
-  - kernel:
-      kernel_index: [1, 2, 3]
-    options:
-      - name: print-fatal-signals
-        value: 1
-  - kernel:
-      kernel_title: Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8
-    options:
-      - name: no_timer_check
-  - kernel:
-      kernel_path: /boot/vmlinuz-0-rescue-1
-    options:
-      - name: console
-        value: tty0
-      - name: print-fatal-signals
-        value: 1
-      - name: no_timer_check
-        state: present
-      - previous: replaced
-  - kernel: ALL
-    options:
-      - name: debug
-        state: present
-  - kernel: DEFAULT
-    options:
-      - name: quiet
-        state: present
-```
+For an example, see [Example Playbook](#example-playbook).
 
 Default: `{}`
 
@@ -195,24 +174,31 @@ For example:
 - hosts: all
   vars:
     bootloader_settings:
+      # Update an existing kernel using path and replacing previous settings
       - kernel:
-          kernel_path: /boot/vmlinuz-0-rescue-1
+          path: /boot/vmlinuz-6.5.7-100.fc37.x86_64
         options:
           - name: console
             value: tty0
             state: present
           - previous: replaced
+      # Update an existing kernel using index
       - kernel:
-          kernel_index: [1, 2, 3]
+          index: 1
         options:
           - name: print-fatal-signals
             value: 1
+      # Update an existing kernel using title
       - kernel:
-          kernel_title: Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8
+          title: Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8
         options:
           - name: no_timer_check
+        state: present
+      # Add a kernel with arguments
       - kernel:
-          kernel_path: /boot/vmlinuz-0-rescue-1
+          path: /boot/vmlinuz-6.5.7-100.fc37.x86_64
+          initrd: /boot/initramfs-6.5.7-100.fc37.x86_64.img
+          title: My kernel
         options:
           - name: console
             value: tty0
@@ -220,11 +206,27 @@ For example:
             value: 1
           - name: no_timer_check
             state: present
-          - previous: replaced
+        state: present
+      # Add a kernel with arguments and copying default arguments
+      - kernel:
+          path: /boot/vmlinuz-6.5.7-100.fc37.x86_64
+          initrd: /boot/initramfs-6.5.7-100.fc37.x86_64.img
+          title: My kernel
+        options:
+          - name: console
+            value: tty0
+          - copy_default: true
+        state: present
+      # Remove a kernel
+      - kernel:
+          title: My kernel
+        state: absent
+      # Update all kernels
       - kernel: ALL
         options:
           - name: debug
             state: present
+      # Update the default kernel
       - kernel: DEFAULT
         options:
           - name: quiet
