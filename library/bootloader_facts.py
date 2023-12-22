@@ -103,9 +103,11 @@ from ansible.module_utils.basic import AnsibleModule
 
 
 def get_facts(kernels_info, default_kernel):
+    """Get kernel facts"""
     kernels_info_lines = kernels_info.strip().split("\n")
     kernels = []
     index_count = 0
+
     for line in kernels_info_lines:
         index = re.search(r"index=(\d+)", line)
         if index:

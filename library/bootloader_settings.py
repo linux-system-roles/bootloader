@@ -28,7 +28,7 @@ options:
             kernel:
                 description: Kernels to operate on. Can be a string DEFAULT or ALL, or dict.clear
                 required: true
-                type: str or dict
+                type: dict
             state:
                 description: State of the kernel.
                 required: false
@@ -73,6 +73,7 @@ def get_facts(kernels_info, default_kernel):
     kernels_info_lines = kernels_info.strip().split("\n")
     kernels = []
     index_count = 0
+
     for line in kernels_info_lines:
         index = re.search(r"index=(\d+)", line)
         if index:
@@ -92,11 +93,7 @@ def get_facts(kernels_info, default_kernel):
 
 def get_dict_same_keys(dict1, dict2):
     """Shorten dict2 to the same keys as in dict1"""
-    result = {}
-    for key1 in dict1:
-        if key1 in dict2:
-            result.update({key1: dict2[key1]})
-    return result
+    return {key1: dict2[key1] for key1 in dict1 if key1 in dict2}
 
 
 def compare_dicts(dict1, dict2):
@@ -116,7 +113,7 @@ def validate_kernel_initrd(bootloader_setting_kernel, kernel_mod_keys):
         and "initrd" in bootloader_setting_kernel.keys()
     ):
         err = (
-            "You can use 'initrd' as a kernel key only when you must create a kernel. To modify an existing kernel, use one of %s"
+            "You can use 'initrd' as a kernel key only when you must create a kernel. To modify or remove an existing kernel, use one of %s"
             % ", ".join(kernel_mod_keys)
         )
         return err
@@ -126,9 +123,11 @@ def validate_kernel_initrd(bootloader_setting_kernel, kernel_mod_keys):
 
 def get_kernel_to_mod(bootloader_setting_kernel, kernel_mod_keys):
     """From a list of kernels, select not initrd kernel dict to use it for modifying options"""
-    for key, value in bootloader_setting_kernel.items():
-        if key in kernel_mod_keys:
-            return {key: value}
+    return {
+        key: value
+        for key, value in bootloader_setting_kernel.items()
+        if key in kernel_mod_keys
+    }
 
 
 def get_single_kernel(bootloader_setting_kernel):
@@ -165,9 +164,11 @@ def validate_kernels(bootloader_setting, bootloader_facts):
     kernel_mod_keys = ["path", "title", "index"]
     states = ["present", "absent"]
     state = bootloader_setting["state"] if "state" in bootloader_setting else "present"
+
     if "state" in bootloader_setting and bootloader_setting["state"] not in states:
         err = "State must be one of '%s'" % ", ".join(states)
         return err, kernel_action, kernel
+
     if (not isinstance(bootloader_setting["kernel"], dict)) and (
         not isinstance(bootloader_setting["kernel"], str)
     ):
@@ -176,6 +177,7 @@ def validate_kernels(bootloader_setting, bootloader_facts):
             % bootloader_setting["kernel"]
         )
         return err, kernel_action, kernel
+
     if (isinstance(bootloader_setting["kernel"], str)) and (
         bootloader_setting["kernel"] not in kernel_str_values
     ):
@@ -184,13 +186,14 @@ def validate_kernels(bootloader_setting, bootloader_facts):
             ", ".join(kernel_str_values),
         )
         return err, kernel_action, kernel
+
     if isinstance(bootloader_setting["kernel"], str):
         kernel_action = "modify" if state == "present" else "remove"
         kernel = escapeval(bootloader_setting["kernel"])
         return err, kernel_action, kernel
 
-    """Process bootloader_setting["kernel"] being dict"""
-    """Validate kernel key and value"""
+    # Process bootloader_setting["kernel"] being dict
+    # Validate kernel key and value
     for key, value in bootloader_setting["kernel"].items():
         if key not in kernel_keys:
             err = "kernel key in '%s: %s' must be one of '%s'" % (
@@ -202,14 +205,16 @@ def validate_kernels(bootloader_setting, bootloader_facts):
         if (not isinstance(value, str)) and (not isinstance(value, int)):
             err = "kernel value in '%s: %s' must be of type str or int" % (key, value)
             return err, kernel_action, kernel
+
+    # Validate with len(bootloader_setting["kernel"]) == 1
     if len(bootloader_setting["kernel"]) == 1:
         err = validate_kernel_initrd(bootloader_setting["kernel"], kernel_mod_keys)
         if not err:
-            kernel_action = "modify" if state == "present" else "remove"
             kernel = get_single_kernel(bootloader_setting["kernel"])
+            kernel_action = "modify" if state == "present" else "remove"
         return err, kernel_action, kernel
 
-    """Validate with len(bootloader_setting["kernel"]) > 1"""
+    # Validate with len(bootloader_setting["kernel"]) > 1
     for fact in bootloader_facts:
         # Rename kernel to path in fact dict
         if "kernel" in fact:
@@ -226,7 +231,8 @@ def validate_kernels(bootloader_setting, bootloader_facts):
         elif not diff and same:
             kernel_action = "modify" if state == "present" else "remove"
             break
-    """Process kernel_action when none of the facts had same keys with bootloader_setting["kernel"]"""
+
+    # Process kernel_action when none of the facts had same keys with bootloader_setting["kernel"]
     if not kernel_action:
         if len(bootloader_setting["kernel"]) != 3 and (
             sorted(bootloader_setting["kernel"].keys()) != sorted(kernel_create_keys)
@@ -238,14 +244,19 @@ def validate_kernels(bootloader_setting, bootloader_facts):
             return err, kernel_action, kernel
         kernel_action = "create" if state == "present" else "remove"
 
-    if not kernel_action:
-        err = validate_kernel_initrd(bootloader_setting["kernel"], kernel_mod_keys)
-        if err:
-            return err, kernel_action, kernel
+    if kernel_action == "create":
+        kernel = get_create_kernel(bootloader_setting["kernel"])
+
+    err = validate_kernel_initrd(bootloader_setting["kernel"], kernel_mod_keys)
+    if err:
+        return err, kernel_action, kernel
+
+    if kernel_action == "remove":
         kernel_to_mod = get_kernel_to_mod(bootloader_setting["kernel"], kernel_mod_keys)
         kernel = get_single_kernel(kernel_to_mod)
-    else:
-        kernel = get_create_kernel(bootloader_setting["kernel"])
+    elif kernel_action == "modify":
+        kernel_to_mod = get_kernel_to_mod(bootloader_setting["kernel"], kernel_mod_keys)
+        kernel = get_single_kernel(kernel_to_mod)
     return err, kernel_action, kernel
 
 
@@ -257,7 +268,7 @@ def escapeval(val):
 def get_boot_args(kernel_info):
     """Get arguments from kernel info"""
     args = re.search(r'args="(.*)"', kernel_info)
-    if args is None:
+    if not args:
         return ""
     return args.group(1).strip()
 
@@ -290,6 +301,7 @@ def get_setting_name(kernel_setting):
 def get_add_kernel_cmd(bootloader_setting_options, kernel):
     """Build cmd to add a kernel with specified args"""
     boot_args = ""
+    args = ""
     for kernel_setting in bootloader_setting_options:
         setting_name = get_setting_name(kernel_setting)
         boot_args += setting_name + " "
@@ -297,7 +309,7 @@ def get_add_kernel_cmd(bootloader_setting_options, kernel):
         args = "--args=" + escapeval(boot_args.strip())
     if {"copy_default": True} in bootloader_setting_options:
         args += " --copy-default"
-    return "grubby %s %s" % (kernel, args)
+    return "grubby %s %s" % (kernel, args.strip())
 
 
 def get_mod_boot_args_cmd(bootloader_setting_options, kernel, kernel_info):
@@ -306,6 +318,7 @@ def get_mod_boot_args_cmd(bootloader_setting_options, kernel, kernel_info):
     boot_present_args = ""
     boot_mod_args = ""
     bootloader_args = get_boot_args(kernel_info)
+
     for kernel_setting in bootloader_setting_options:
         setting_name = get_setting_name(kernel_setting)
         if "state" in kernel_setting and kernel_setting["state"] == "absent":
@@ -320,6 +333,8 @@ def get_mod_boot_args_cmd(bootloader_setting_options, kernel, kernel_info):
         boot_mod_args += " --args=" + escapeval(boot_present_args.strip())
     if boot_mod_args:
         return "grubby --update-kernel=" + kernel + boot_mod_args
+    else:
+        return None
 
 
 def get_rm_kernel_cmd(kernel):

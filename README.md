@@ -49,7 +49,7 @@ Each list should specify the same kernel using one or multiple keys.
 
     Default: `present`
 
-2. `options` - with this, specify settings to update
+3. `options` - with this, specify settings to update
 
     * `name` - The name of the setting. `name` is omitted when using `replaced`.
     * `value` - The value for the setting. You must omit `value` if the setting has no value, e.g. `quiet`.

@@ -213,7 +213,8 @@ class InputValidator(unittest.TestCase):
         )
         self.assertEqual(
             err,
-            "A kernel with provided {'path'} already exists and it's other fields are different {'title': ('Fedora Linux', 'Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)')}",
+            "A kernel with provided {'path'} already exists and it's other fields are different "
+            + "{'title': ('Fedora Linux', 'Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)')}",
         )
         self.assertEqual(kernel_action, "")
         self.assertEqual(kernel, "")
@@ -240,7 +241,7 @@ class InputValidator(unittest.TestCase):
         )
         self.assertEqual(
             err,
-            "You can use 'initrd' as a kernel key only when you must create a kernel. To modify an existing kernel, use one of path, title, index",
+            "You can use 'initrd' as a kernel key only when you must create a kernel. To modify or remove an existing kernel, use one of path, title, index",
         )
         self.assertEqual(kernel_action, "")
         self.assertEqual(kernel, "")
@@ -272,7 +273,9 @@ class InputValidator(unittest.TestCase):
         )
         self.assertEqual(
             add_kernel_cmd,
-            "grubby --title='Fedora Linux' --add-kernel=/boot/vmlinuz-6 --initrd=/boot/initramfs-6.6.img --args='arg_with_str_value=test_value arg_with_int_value=1 arg_without_val arg_with_str_value_absent=test_value arg_with_int_value_absent=1 arg_without_val_absent' --copy-default",
+            "grubby --title='Fedora Linux' --add-kernel=/boot/vmlinuz-6 --initrd=/boot/initramfs-6.6.img "
+            + "--args='arg_with_str_value=test_value arg_with_int_value=1 arg_without_val arg_with_str_value_absent=test_value "
+            + "arg_with_int_value_absent=1 arg_without_val_absent' --copy-default",
         )
 
     def test_get_rm_kernel_cmd(self):

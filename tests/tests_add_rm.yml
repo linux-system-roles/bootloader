@@ -23,12 +23,16 @@
       loop:
         - src: "{{ (bootloader_facts | last).kernel }}"
           dest: "{{ (bootloader_facts | last).kernel }}_clone1"
-        - src: "{{ (bootloader_facts | last).initrd | regex_replace(' .*$', '') }}"
-          dest: "{{ (bootloader_facts | last).initrd | regex_replace(' .*$', '') }}_clone1"
+        - src: "{{ (bootloader_facts | last).initrd |
+            regex_replace(' .*$', '') }}"
+          dest: "{{ (bootloader_facts | last).initrd |
+          regex_replace(' .*$', '') }}_clone1"
         - src: "{{ (bootloader_facts | last).kernel }}"
           dest: "{{ (bootloader_facts | last).kernel }}_clone2"
-        - src: "{{ (bootloader_facts | last).initrd | regex_replace(' .*$', '') }}"
-          dest: "{{ (bootloader_facts | last).initrd | regex_replace(' .*$', '') }}_clone2"
+        - src: "{{ (bootloader_facts | last).initrd |
+            regex_replace(' .*$', '') }}"
+          dest: "{{ (bootloader_facts | last).initrd |
+            regex_replace(' .*$', '') }}_clone2"
 
     - name: Create Clone1 kernel with copy_defaults=true
       vars:
