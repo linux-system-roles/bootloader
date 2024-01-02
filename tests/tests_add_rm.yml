@@ -14,37 +14,44 @@
       include_role:
         name: linux-system-roles.bootloader
 
-    - name: Clone the oldest kernel and initrd for test purposes
+    # Images in CI might have a grub timeout set to a different other than the
+    # default 5 value.
+    # In this case, the above invocation require handlers to be flushed.
+    - name: Flush handlers
+      meta: flush_handlers
+
+    - name: Set fact with the default kernel to use for clones
+      set_fact:
+        test_kernel: "{{ bootloader_facts | rejectattr('initrd', 'undefined')
+          | selectattr('default', 'equalto', True) | first }}"
+
+    - name: Clone test_kernel kernel and initrd for test purposes
       copy:
         src: "{{ item.src }}"
         remote_src: true
         dest: "{{ item.dest }}"
         mode: preserve
       loop:
-        - src: "{{ (bootloader_facts | last).kernel }}"
-          dest: "{{ (bootloader_facts | last).kernel }}_clone1"
-        - src: "{{ (bootloader_facts | last).initrd |
-            regex_replace(' .*$', '') }}"
-          dest: "{{ (bootloader_facts | last).initrd |
-          regex_replace(' .*$', '') }}_clone1"
-        - src: "{{ (bootloader_facts | last).kernel }}"
-          dest: "{{ (bootloader_facts | last).kernel }}_clone2"
-        - src: "{{ (bootloader_facts | last).initrd |
-            regex_replace(' .*$', '') }}"
-          dest: "{{ (bootloader_facts | last).initrd |
-            regex_replace(' .*$', '') }}_clone2"
+        - src: "{{ test_kernel.kernel }}"
+          dest: "{{ test_kernel.kernel }}_clone1"
+        - src: "{{ test_kernel.initrd | regex_replace(' .*$', '') }}"
+          dest: "{{ test_kernel.initrd | regex_replace(' .*$', '') }}_clone1"
+        - src: "{{ test_kernel.kernel }}"
+          dest: "{{ test_kernel.kernel }}_clone2"
+        - src: "{{ test_kernel.initrd | regex_replace(' .*$', '') }}"
+          dest: "{{ test_kernel.initrd | regex_replace(' .*$', '') }}_clone2"
 
     - name: Create Clone1 kernel with copy_defaults=true
       vars:
         bootloader_settings:
           - kernel:
-              path: "{{ (bootloader_facts | last).kernel }}_clone1"
-              initrd: "{{ (bootloader_facts | last).initrd |
+              path: "{{ test_kernel.kernel }}_clone1"
+              initrd: "{{ test_kernel.initrd |
                 regex_replace(' .*$', '') }}_clone1"
               title: Clone1
             options:
-              - name: console
-                value: tty0
+              - name: test
+                value: setting
                 state: present
               - copy_default: true
       include_role:
@@ -66,20 +73,22 @@
     - name: Verify settings
       vars:
         __default_args: "{{
-          (bootloader_facts | selectattr('default', 'equalto', True) |
+          (bootloader_facts | selectattr('title', 'defined') |
+          selectattr('default', 'equalto', True) |
           first).args }}"
       assert:
         that: >-
-          (bootloader_facts | selectattr('title', 'search', 'Clone1') |
-          first).args == __default_args ~ ' console=tty0'
+          (bootloader_facts | selectattr('title', 'defined') |
+          selectattr('title', 'search', 'Clone1') |
+          first).args == __default_args ~ ' test=setting'
 
     - name: Remove Clone1 kernel with 3 kernel keys
       vars:
         bootloader_gather_facts: true
         bootloader_settings:
           - kernel:
-              path: "{{ (bootloader_facts | last).kernel }}_clone1"
-              initrd: "{{ (bootloader_facts | last).initrd |
+              path: "{{ test_kernel.kernel }}_clone1"
+              initrd: "{{ test_kernel.initrd |
                 regex_replace(' .*$', '') }}_clone1"
               title: Clone1
             options:
@@ -93,15 +102,16 @@
 
     - name: Verify that Clone1 kernel is removed
       assert:
-        that: bootloader_facts | selectattr('title', 'search', 'Clone1') |
+        that: bootloader_facts | selectattr('title', 'defined') |
+          selectattr('title', 'search', 'Clone1') |
           list | length == 0
 
     - name: Create clone2 kernel without copy_defaults=true
       vars:
         bootloader_settings:
           - kernel:
-              path: "{{ (bootloader_facts | last).kernel }}_clone2"
-              initrd: "{{ (bootloader_facts | last).initrd |
+              path: "{{ test_kernel.kernel }}_clone2"
+              initrd: "{{ test_kernel.initrd |
                 regex_replace(' .*$', '') }}_clone2"
               title: Clone2
             options:
@@ -127,7 +137,8 @@
     - name: Verify settings
       assert:
         that: >-
-          (bootloader_facts | selectattr('title', 'search', 'Clone2') |
+          (bootloader_facts | selectattr('title', 'defined') |
+          selectattr('title', 'search', 'Clone2') |
           first).args == 'console=tty0'
 
     - name: Remove Clone2 kernel with kernel path
@@ -135,8 +146,8 @@
         bootloader_gather_facts: true
         bootloader_settings:
           - kernel:
-              path: "{{ (bootloader_facts | last).kernel }}_clone2"
-              initrd: "{{ (bootloader_facts | last).initrd |
+              path: "{{ test_kernel.kernel }}_clone2"
+              initrd: "{{ test_kernel.initrd |
                 regex_replace(' .*$', '') }}_clone2"
               title: Clone2
             state: absent
@@ -145,5 +156,6 @@
 
     - name: Verify that Clone2 kernel is removed
       assert:
-        that: bootloader_facts | selectattr('title', 'search', 'Clone2') |
+        that: bootloader_facts | selectattr('title', 'defined') |
+          selectattr('title', 'search', 'Clone2') |
           list | length == 0

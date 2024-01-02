@@ -14,6 +14,9 @@
       include_role:
         name: linux-system-roles.bootloader
 
+    # Images in CI might have a grub timeout set to a different other than the
+    # default 5 value.
+    # In this case, the above invocation require handlers to be flushed.
     - name: Flush handlers
       meta: flush_handlers
 
