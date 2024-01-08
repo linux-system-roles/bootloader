@@ -23,7 +23,7 @@
     - name: Verify that default bootloader is correct in bootloader_gather_facts
       vars:
         default_bootloader: "{{
-          (bootloader_facts | selectattr('default', 'equalto', True) |
+          (bootloader_facts | selectattr('default') |
           first).kernel }}"
       command: grubby --default-kernel
       changed_when: false

@@ -23,7 +23,7 @@
     - name: Set fact with the default kernel to use for clones
       set_fact:
         test_kernel: "{{ bootloader_facts | rejectattr('initrd', 'undefined')
-          | selectattr('default', 'equalto', True) | first }}"
+          | selectattr('default') | first }}"
 
     - name: Clone test_kernel kernel and initrd for test purposes
       copy:
@@ -74,7 +74,7 @@
       vars:
         __default_args: "{{
           (bootloader_facts | selectattr('title', 'defined') |
-          selectattr('default', 'equalto', True) |
+          selectattr('default') |
           first).args }}"
       assert:
         that: >-
