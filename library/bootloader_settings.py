@@ -361,11 +361,11 @@ def run_module():
     # supports check mode
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
     for bootloader_setting in module.params["bootloader_settings"]:
-        rc, kernels_info, stderr = module.run_command("grubby --info=ALL")
+        _unused, kernels_info, stderr = module.run_command("grubby --info=ALL")
         if "Permission denied" in stderr:
             module.fail_json(msg="You must run this as sudo", **result)
 
-        rc, default_kernel, stderr = module.run_command("grubby --default-index")
+        _unused, default_kernel, _unused = module.run_command("grubby --default-index")
         bootloader_facts = get_facts(kernels_info, default_kernel)
 
         err, kernel_action, kernel = validate_kernels(
@@ -382,25 +382,27 @@ def run_module():
             rc, kernel_info, stderr = module.run_command("grubby --info=" + kernel)
             rm_boot_args_cmd = get_rm_boot_args_cmd(kernel_info, kernel)
             if rm_boot_args_cmd:
-                rc, stdout, stderr = module.run_command(rm_boot_args_cmd)
+                _unused, stdout, _unused = module.run_command(rm_boot_args_cmd)
                 result["changed"] = True
                 result["actions"].append(rm_boot_args_cmd)
 
         # Create a kernel with provided options
         if kernel_action == "create":
             add_kernel_cmd = get_add_kernel_cmd(bootloader_setting["options"], kernel)
-            rc, stdout, stderr = module.run_command(add_kernel_cmd)
+            _unused, stdout, _unused = module.run_command(add_kernel_cmd)
             result["changed"] = True
             result["actions"].append(add_kernel_cmd)
 
         # Modify boot settings
         if kernel_action == "modify":
-            rc, kernel_info, stderr = module.run_command("grubby --info=" + kernel)
+            _unused, kernel_info, _unused = module.run_command(
+                "grubby --info=" + kernel
+            )
             mod_boot_args_cmd = get_mod_boot_args_cmd(
                 bootloader_setting["options"], kernel, kernel_info
             )
             if mod_boot_args_cmd:
-                rc, stdout, stderr = module.run_command(mod_boot_args_cmd)
+                _unused, stdout, _unused = module.run_command(mod_boot_args_cmd)
                 result["changed"] = True
                 result["actions"].append(mod_boot_args_cmd)
             else:
@@ -409,7 +411,7 @@ def run_module():
         # Remove a kernel
         if kernel_action == "remove":
             rm_kernel_cmd = get_rm_kernel_cmd(kernel)
-            rc, stdout, stderr = module.run_command(rm_kernel_cmd)
+            _unused, stdout, _unused = module.run_command(rm_kernel_cmd)
             result["changed"] = True
             result["actions"].append(rm_kernel_cmd)
 
