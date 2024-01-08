@@ -33,10 +33,10 @@
   set_fact:
     __bootloader_grub_conf: >-
       {{ efi_path | ternary(__bootloader_uefi_conf_dir ~ 'grub.cfg',
-      /boot/grub2/ ~ 'grub.cfg') }}
+      '/boot/grub2/grub.cfg') }}
     __bootloader_user_conf: >-
       {{ efi_path | ternary(__bootloader_uefi_conf_dir ~ 'user.cfg',
-      /boot/grub2/ ~ 'user.cfg') }}
+      '/boot/grub2/user.cfg') }}
 
 - name: Update boot loader password
   when: bootloader_password is not none
