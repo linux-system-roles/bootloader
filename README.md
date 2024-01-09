@@ -6,7 +6,18 @@ An Ansible role for bootloader and kernel command line management.
 
 ## Requirements
 
-None
+See below
+
+### Collection requirements
+
+If you don't want to manage `ostree` systems, the role has no requirements.
+
+If you want to manage `ostree` systems, the role requires additional modules
+from external collections.  Please use the following command to install them:
+
+```bash
+ansible-galaxy collection install -vv -r meta/collection-requirements.yml
+```
 
 ## Role Variables
 
@@ -238,6 +249,10 @@ For example:
   roles:
     - linux-system-roles.bootloader
 ```
+
+## rpm-ostree
+
+See README-ostree.md
 
 ## License
 
