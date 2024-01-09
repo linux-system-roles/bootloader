@@ -7,6 +7,8 @@
   package:
     name: "{{ __bootloader_packages }}"
     state: present
+    use: "{{ (__bootloader_is_ostree | d(false)) |
+      ternary('ansible.posix.rhel_rpm_ostree', omit) }}"
 
 - name: Ensure boot loader settings
   bootloader_settings:
@@ -15,11 +17,31 @@
     - Fix default kernel boot parameters
     - Reboot system
 
+- name: Get grub directory stat
+  stat:
+    path: "{{ __bootloader_default_grub | dirname }}"
+  register: __bootloader_grub_dir_stat
+
+- name: Ensure grub directory exists
+  file:
+    path: "{{ __bootloader_default_grub | dirname }}"
+    state: directory
+    mode: "{{ __bootloader_grub_dir_stat.stat.exists |
+      ternary(__bootloader_grub_dir_stat.stat.mode, '0755') }}"
+
+- name: Get grub config stat
+  stat:
+    path: "{{ __bootloader_default_grub }}"
+  register: __bootloader_grub_stat
+
 - name: Update boot loader timeout configuration
   lineinfile:
     path: "{{ __bootloader_default_grub }}"
     regexp: '^GRUB_TIMEOUT=.*'
     line: 'GRUB_TIMEOUT={{ bootloader_timeout }}'
+    create: true
+    mode: "{{ __bootloader_grub_stat.stat.exists |
+      ternary(__bootloader_grub_stat.stat.mode, '0644') }}"
   notify: Rebuild grub config
 
 - name: Determine platform type
