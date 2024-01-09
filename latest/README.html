@@ -135,7 +135,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <nav id="TOC">
 <h1 class="toc-title">Contents</h1>
 <ul>
-<li><a href="#requirements" id="toc-requirements">Requirements</a></li>
+<li><a href="#requirements" id="toc-requirements">Requirements</a>
+<ul>
+<li><a href="#collection-requirements"
+id="toc-collection-requirements">Collection requirements</a></li>
+</ul></li>
 <li><a href="#role-variables" id="toc-role-variables">Role Variables</a>
 <ul>
 <li><a href="#bootloader_gather_facts"
@@ -162,6 +166,7 @@ id="toc-bootloader_facts">bootloader_facts</a></li>
 </ul></li>
 <li><a href="#example-playbook" id="toc-example-playbook">Example
 Playbook</a></li>
+<li><a href="#rpm-ostree" id="toc-rpm-ostree">rpm-ostree</a></li>
 <li><a href="#license" id="toc-license">License</a></li>
 </ul>
 </nav>
@@ -169,7 +174,15 @@ Playbook</a></li>
 <p>An Ansible role for bootloader and kernel command line
 management.</p>
 <h1 id="requirements">Requirements</h1>
-<p>None</p>
+<p>See below</p>
+<h2 id="collection-requirements">Collection requirements</h2>
+<p>If you don't want to manage <code>ostree</code> systems, the role has
+no requirements.</p>
+<p>If you want to manage <code>ostree</code> systems, the role requires
+additional modules from external collections. Please use the following
+command to install them:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ansible-galaxy</span> collection install <span class="at">-vv</span> <span class="at">-r</span> meta/collection-requirements.yml</span></code></pre></div>
 <h1 id="role-variables">Role Variables</h1>
 <h2 id="bootloader_gather_facts">bootloader_gather_facts</h2>
 <p>Whether to gather <code>bootloader_facts</code> that contain bot
@@ -270,117 +283,119 @@ reboot is needed to apply the changes made by the role</p>
 <p>The role returns this variable when you set
 <code>bootloader_gather_facts: true</code>.</p>
 <p>For example:</p>
-<div class="sourceCode" id="cb1"><pre
-class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&quot;bootloader_facts&quot;</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">{</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;args&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet&quot;</span><span class="kw">,</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;id&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet&quot;</span><span class="kw">,</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;index&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;3&quot;</span><span class="kw">,</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;initrd&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/initramfs-0-rescue-c44543d15b2c4e898912c2497f734e67.img&quot;</span><span class="kw">,</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;kernel&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/vmlinuz-0-rescue-c44543d15b2c4e898912c2497f734e67&quot;</span><span class="kw">,</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;root&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;UUID=65c70529-e9ad-4778-9001-18fe8c525285&quot;</span><span class="kw">,</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;title&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Fedora Linux (0-rescue-c44543d15b2c4e898912c2497f734e67) 36 (Workstation Edition)&quot;</span><span class="kw">,</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;default&quot;</span><span class="kw">:</span><span class="at"> </span><span class="ch">True</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">},</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">{</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;args&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;id&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;index&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;2&quot;</span><span class="kw">,</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;initrd&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/initramfs-6.3.12-100.fc37.x86_64.img $tuned_initrd&quot;</span><span class="kw">,</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;kernel&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/vmlinuz-6.3.12-100.fc37.x86_64&quot;</span><span class="kw">,</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;root&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;UUID=65c70529-e9ad-4778-9001-18fe8c525285&quot;</span><span class="kw">,</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;title&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Fedora Linux (6.3.12-100.fc37.x86_64) 37 (Workstation Edition)&quot;</span><span class="kw">,</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;default&quot;</span><span class="kw">:</span><span class="at"> </span><span class="ch">False</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">},</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">{</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;args&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;id&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;index&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;1&quot;</span><span class="kw">,</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;initrd&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/initramfs-6.4.15-100.fc37.x86_64.img $tuned_initrd&quot;</span><span class="kw">,</span></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;kernel&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/vmlinuz-6.4.15-100.fc37.x86_64&quot;</span><span class="kw">,</span></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;root&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;UUID=65c70529-e9ad-4778-9001-18fe8c525285&quot;</span><span class="kw">,</span></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;title&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Fedora Linux (6.4.15-100.fc37.x86_64) 37 (Workstation Edition)&quot;</span><span class="kw">,</span></span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;default&quot;</span><span class="kw">:</span><span class="at"> </span><span class="ch">False</span></span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">},</span></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">{</span></span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;args&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;id&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;index&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;0&quot;</span><span class="kw">,</span></span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;initrd&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/initramfs-6.5.7-100.fc37.x86_64.img $tuned_initrd&quot;</span><span class="kw">,</span></span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;kernel&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/vmlinuz-6.5.7-100.fc37.x86_64&quot;</span><span class="kw">,</span></span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;root&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;UUID=65c70529-e9ad-4778-9001-18fe8c525285&quot;</span><span class="kw">,</span></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;title&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Fedora Linux (6.5.7-100.fc37.x86_64) 37 (Workstation Edition)&quot;</span><span class="kw">,</span></span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;default&quot;</span><span class="kw">:</span><span class="at"> </span><span class="ch">False</span></span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">}</span></span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="kw">]</span></span></code></pre></div>
-<h1 id="example-playbook">Example Playbook</h1>
 <div class="sourceCode" id="cb2"><pre
-class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">hosts</span><span class="kw">:</span><span class="at"> all</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">vars</span><span class="kw">:</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_settings</span><span class="kw">:</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update an existing kernel using path and replacing previous settings</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-6.5.7-100.fc37.x86_64</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">previous</span><span class="kw">:</span><span class="at"> replaced</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update an existing kernel using index</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">index</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> print-fatal-signals</span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update an existing kernel using title</span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8</span></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> no_timer_check</span></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="co">      # Add a kernel with arguments</span></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-6.5.7-100.fc37.x86_64</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">initrd</span><span class="kw">:</span><span class="at"> /boot/initramfs-6.5.7-100.fc37.x86_64.img</span></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My kernel</span></span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> print-fatal-signals</span></span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> no_timer_check</span></span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="co">      # Add a kernel with arguments and copying default arguments</span></span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-6.5.7-100.fc37.x86_64</span></span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">initrd</span><span class="kw">:</span><span class="at"> /boot/initramfs-6.5.7-100.fc37.x86_64.img</span></span>
-<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My kernel</span></span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
-<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
-<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">copy_default</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a><span class="co">      # Remove a kernel</span></span>
-<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
-<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My kernel</span></span>
-<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> absent</span></span>
-<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update all kernels</span></span>
-<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span><span class="at"> ALL</span></span>
-<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> debug</span></span>
-<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update the default kernel</span></span>
-<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span><span class="at"> DEFAULT</span></span>
-<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> quiet</span></span>
-<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_timeout</span><span class="kw">:</span><span class="at"> </span><span class="dv">5</span></span>
-<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_password</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span></span>
-<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_remove_password</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
-<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_reboot_ok</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">roles</span><span class="kw">:</span></span>
-<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> linux-system-roles.bootloader</span></span></code></pre></div>
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&quot;bootloader_facts&quot;</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;args&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet&quot;</span><span class="kw">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;id&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet&quot;</span><span class="kw">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;index&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;3&quot;</span><span class="kw">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;initrd&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/initramfs-0-rescue-c44543d15b2c4e898912c2497f734e67.img&quot;</span><span class="kw">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;kernel&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/vmlinuz-0-rescue-c44543d15b2c4e898912c2497f734e67&quot;</span><span class="kw">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;root&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;UUID=65c70529-e9ad-4778-9001-18fe8c525285&quot;</span><span class="kw">,</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;title&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Fedora Linux (0-rescue-c44543d15b2c4e898912c2497f734e67) 36 (Workstation Edition)&quot;</span><span class="kw">,</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;default&quot;</span><span class="kw">:</span><span class="at"> </span><span class="ch">True</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">},</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">{</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;args&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;id&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;index&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;2&quot;</span><span class="kw">,</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;initrd&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/initramfs-6.3.12-100.fc37.x86_64.img $tuned_initrd&quot;</span><span class="kw">,</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;kernel&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/vmlinuz-6.3.12-100.fc37.x86_64&quot;</span><span class="kw">,</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;root&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;UUID=65c70529-e9ad-4778-9001-18fe8c525285&quot;</span><span class="kw">,</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;title&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Fedora Linux (6.3.12-100.fc37.x86_64) 37 (Workstation Edition)&quot;</span><span class="kw">,</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;default&quot;</span><span class="kw">:</span><span class="at"> </span><span class="ch">False</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">},</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">{</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;args&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;id&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;index&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;1&quot;</span><span class="kw">,</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;initrd&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/initramfs-6.4.15-100.fc37.x86_64.img $tuned_initrd&quot;</span><span class="kw">,</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;kernel&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/vmlinuz-6.4.15-100.fc37.x86_64&quot;</span><span class="kw">,</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;root&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;UUID=65c70529-e9ad-4778-9001-18fe8c525285&quot;</span><span class="kw">,</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;title&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Fedora Linux (6.4.15-100.fc37.x86_64) 37 (Workstation Edition)&quot;</span><span class="kw">,</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;default&quot;</span><span class="kw">:</span><span class="at"> </span><span class="ch">False</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">},</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">{</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;args&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;id&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params&quot;</span><span class="kw">,</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;index&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;0&quot;</span><span class="kw">,</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;initrd&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/initramfs-6.5.7-100.fc37.x86_64.img $tuned_initrd&quot;</span><span class="kw">,</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;kernel&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/boot/vmlinuz-6.5.7-100.fc37.x86_64&quot;</span><span class="kw">,</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;root&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;UUID=65c70529-e9ad-4778-9001-18fe8c525285&quot;</span><span class="kw">,</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;title&quot;</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Fedora Linux (6.5.7-100.fc37.x86_64) 37 (Workstation Edition)&quot;</span><span class="kw">,</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">&quot;default&quot;</span><span class="kw">:</span><span class="at"> </span><span class="ch">False</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">}</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="kw">]</span></span></code></pre></div>
+<h1 id="example-playbook">Example Playbook</h1>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">hosts</span><span class="kw">:</span><span class="at"> all</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">vars</span><span class="kw">:</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_settings</span><span class="kw">:</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update an existing kernel using path and replacing previous settings</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-6.5.7-100.fc37.x86_64</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">previous</span><span class="kw">:</span><span class="at"> replaced</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update an existing kernel using index</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">index</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> print-fatal-signals</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update an existing kernel using title</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> no_timer_check</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co">      # Add a kernel with arguments</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-6.5.7-100.fc37.x86_64</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">initrd</span><span class="kw">:</span><span class="at"> /boot/initramfs-6.5.7-100.fc37.x86_64.img</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My kernel</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> print-fatal-signals</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> no_timer_check</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="co">      # Add a kernel with arguments and copying default arguments</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-6.5.7-100.fc37.x86_64</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">initrd</span><span class="kw">:</span><span class="at"> /boot/initramfs-6.5.7-100.fc37.x86_64.img</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My kernel</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">copy_default</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="co">      # Remove a kernel</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My kernel</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> absent</span></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update all kernels</span></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span><span class="at"> ALL</span></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> debug</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update the default kernel</span></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span><span class="at"> DEFAULT</span></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> quiet</span></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_timeout</span><span class="kw">:</span><span class="at"> </span><span class="dv">5</span></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_password</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span></span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_remove_password</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_reboot_ok</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">roles</span><span class="kw">:</span></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> linux-system-roles.bootloader</span></span></code></pre></div>
+<h1 id="rpm-ostree">rpm-ostree</h1>
+<p>See README-ostree.md</p>
 <h1 id="license">License</h1>
 <p>MIT</p>
 </article>
