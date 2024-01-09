@@ -103,17 +103,17 @@ from ansible.module_utils.basic import AnsibleModule
 
 
 def get_facts(kernels_info, default_kernel):
+    """Get kernel facts"""
     kernels_info_lines = kernels_info.strip().split("\n")
     kernels = []
     index_count = 0
+
     for line in kernels_info_lines:
         index = re.search(r"index=(\d+)", line)
         if index:
-            is_default = False
+            is_default = index.group(1) == default_kernel.strip()
             index_count += 1
             kernels.append({})
-            if index.group(1) == default_kernel.strip():
-                is_default = True
         search = re.search(r"(.*?)=(.*)", line)
         if search:
             key = search.group(1).strip('"')

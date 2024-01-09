@@ -11,10 +11,6 @@
       {{ __bootloader_default_grub }}
     cat {{ __bootloader_default_grub }}
   changed_when: true
-  when: >-
-    (ansible_distribution in ['CentOS', 'RedHat'] and
-    ansible_facts.distribution_major_version is version('7', '=')) or
-    ansible_distribution == 'Fedora'
 
 - name: Rebuild grub config
   command: grub2-mkconfig -o {{ __bootloader_grub_conf }}

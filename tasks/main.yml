@@ -29,16 +29,13 @@
 
 - name: Set boot loader configuration files
   vars:
-    efi_path: "{{
-      ansible_distribution in ['CentOS', 'RedHat'] and
-      ansible_facts.distribution_major_version | int < 9 and
-      __bootloader_efi_dir.stat.exists }}"
+    efi_path: "{{ __bootloader_efi_dir.stat.exists }}"
   set_fact:
     __bootloader_grub_conf: >-
-      {{ efi_path | ternary('/boot/efi/EFI/redhat/grub.cfg',
+      {{ efi_path | ternary(__bootloader_uefi_conf_dir ~ 'grub.cfg',
       '/boot/grub2/grub.cfg') }}
     __bootloader_user_conf: >-
-      {{ efi_path | ternary('/boot/efi/EFI/redhat/user.cfg',
+      {{ efi_path | ternary(__bootloader_uefi_conf_dir ~ 'user.cfg',
       '/boot/grub2/user.cfg') }}
 
 - name: Update boot loader password

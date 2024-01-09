@@ -12,6 +12,7 @@ __metaclass__ = type
 import unittest
 
 import bootloader_facts
+import bootloader_settings
 
 # non linux entry: RHEL 7 might print such a message
 INFO = """
@@ -97,6 +98,11 @@ class InputValidator(unittest.TestCase):
 
     def test_get_facts(self):
         kernels = bootloader_facts.get_facts(INFO, "2")
+        self.assertEqual(
+            FACTS,
+            kernels,
+        )
+        kernels = bootloader_settings.get_facts(INFO, "2")
         self.assertEqual(
             FACTS,
             kernels,
