@@ -40,11 +40,10 @@
 
 - name: >-
     Update boot loader timeout configuration in {{ __bootloader_default_grub }}
-  lineinfile:
+  replace:
     path: "{{ __bootloader_default_grub }}"
     regexp: '^GRUB_TIMEOUT=.*'
-    line: 'GRUB_TIMEOUT={{ bootloader_timeout }}'
-    create: true
+    replace: 'GRUB_TIMEOUT={{ bootloader_timeout }}'
     mode: "{{ __bootloader_grub_stat.stat.exists |
       ternary(__bootloader_grub_stat.stat.mode, '0644') }}"
 
@@ -54,10 +53,10 @@
   register: __bootloader_grub_conf_stat
 
 - name: Update boot loader timeout configuration in {{ __bootloader_grub_conf }}
-  lineinfile:
+  replace:
     path: "{{ __bootloader_grub_conf }}"
     regexp: 'set timeout=.*'
-    line: 'set timeout={{ bootloader_timeout }}'
+    replace: 'set timeout={{ bootloader_timeout }}'
     mode: "{{ __bootloader_grub_conf_stat.stat.exists |
       ternary(__bootloader_grub_conf_stat.stat.mode, '0644') }}"
 
