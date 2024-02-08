@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Set fact with the default kernel to use for clones
+  set_fact:
+    test_kernel: "{{ bootloader_facts | rejectattr('initrd', 'undefined')
+      | selectattr('default') | first }}"
+
+- name: Clone test_kernel kernel and initrd for test purposes
+  copy:
+    src: "{{ item.src }}"
+    remote_src: true
+    dest: "{{ item.dest }}"
+    mode: preserve
+  loop:
+    - src: "{{ test_kernel.kernel }}"
+      dest: "{{ test_kernel.kernel }}_clone{{ __bootloader_clone_num }}"
+    - src: "{{ test_kernel.initrd | regex_replace(' .*$', '') }}"
+      dest: >-
+        {{ test_kernel.initrd |
+        regex_replace(' .*$', '') }}_clone{{ __bootloader_clone_num }}
+
+- name: Create kernel Clone{{ __bootloader_clone_num }} 
+  vars:
+    bootloader_settings:
+      - kernel:
+          path: "{{ test_kernel.kernel }}_clone{{ __bootloader_clone_num }}"
+          initrd: "{{ test_kernel.initrd |
+            regex_replace(' .*$', '') }}_clone{{ __bootloader_clone_num }}"
+          title: Clone{{ __bootloader_clone_num }}
+        options:
+          - name: test
+            value: kernel
+            state: present
+          - copy_default: "{{ __bootloader_copy_default }}"
+  include_role:
+    name: linux-system-roles.bootloader
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Ensure bootloader_reboot_required is not set to true
+  assert:
+    that: not bootloader_reboot_required
+
+- name: Get bootloader_facts
+  vars:
+    bootloader_gather_facts: true
+  include_role:
+    name: linux-system-roles.bootloader
