@@ -8,148 +8,171 @@
   vars:
     bootloader_reboot_ok: true
   tasks:
-    - name: Get bootloader_facts
-      vars:
-        bootloader_gather_facts: true
-      include_role:
-        name: linux-system-roles.bootloader
+    - name: Run in a block to clean up afterwards
+      block:
+        - name: Get bootloader_facts
+          vars:
+            bootloader_gather_facts: true
+          include_role:
+            name: linux-system-roles.bootloader
 
-    - name: Skip test on ostree systems
-      meta: end_host
-      when: __bootloader_is_ostree
+        - name: Skip test on ostree systems
+          meta: end_host
+          when: __bootloader_is_ostree
 
-    # Images in CI might have a grub timeout set to a different other than the
-    # default 5 value.
-    # In this case, the above invocation require handlers to be flushed.
-    - name: Flush handlers
-      meta: flush_handlers
+        # Images in CI might have a grub timeout set to a different other than
+        # the default 5 value.
+        # In this case, the above invocation require handlers to be flushed.
+        - name: Flush handlers
+          meta: flush_handlers
 
-    - name: Verify that default bootloader is correct in bootloader_gather_facts
-      vars:
-        default_bootloader: "{{
-          (bootloader_facts | selectattr('default') |
-          first).kernel }}"
-      command: grubby --default-kernel
-      changed_when: false
-      register: __default_kernel_cmd
-      failed_when: default_bootloader != __default_kernel_cmd.stdout
+        - name: Clone kernel to Clone1
+          vars:
+            __bootloader_clone_num: 1
+            __bootloader_copy_default: true
+          include_tasks: tasks/clone_kernel.yml
 
-    - name: Replace configuration with settings using kernel index
-      vars:
-        bootloader_gather_facts: true
-        bootloader_settings:
-          - kernel:
-              index: "{{
-                (bootloader_facts | selectattr('index', 'search', '0') |
-                first).index }}"
-            options:
-              - name: console
-                value: tty0
-              - name: print-fatal-signals
-                value: 1
-              - name: no_timer_check
-                state: present
-              - name: quiet
-              - previous: replaced
-          - kernel: ALL
-            options:
-              - name: debug
-                state: present
-        bootloader_timeout: 6
-      include_role:
-        name: linux-system-roles.bootloader
+        - name: >-
+            Verify that default bootloader is correct in bootloader_gather_facts
+          vars:
+            default_bootloader: "{{
+              (bootloader_facts | selectattr('default') |
+              first).kernel }}"
+          command: grubby --default-kernel
+          changed_when: false
+          register: __default_kernel_cmd
+          failed_when: default_bootloader != __default_kernel_cmd.stdout
 
-    - name: Flush handlers
-      meta: flush_handlers
+        - name: Set fact with the test clone
+          set_fact:
+            cloned_kernel: "{{
+              bootloader_facts | selectattr('title', 'defined') |
+              selectattr('title', 'search', 'Clone1') |
+              first }}"
 
-    - name: Ensure bootloader_reboot_required is set to false
-      assert:
-        that: not (bootloader_reboot_required | d(false))
+        - name: Replace configuration with settings using kernel index
+          vars:
+            bootloader_gather_facts: true
+            bootloader_settings:
+              - kernel:
+                  index: "{{ cloned_kernel.index }}"
+                options:
+                  - name: console
+                    value: tty0
+                  - name: print-fatal-signals
+                    value: 1
+                  - name: no_timer_check
+                    state: present
+                  - name: quiet
+                  - previous: replaced
+              - kernel: ALL
+                options:
+                  - name: debug
+                    state: present
+            bootloader_timeout: 6
+          include_role:
+            name: linux-system-roles.bootloader
 
-    - name: Verify settings
-      assert:
-        that: >-
-          (bootloader_facts | selectattr('index', 'search', '0') | first).args |
-          regex_search('^.*console=tty0 print-fatal-signals=1 no_timer_check
-          quiet debug( |)$')
+        - name: Flush handlers
+          meta: flush_handlers
 
-    - name: Verify boot loader timeout configuration
-      command: cat {{ __bootloader_grub_conf }}
-      failed_when: >-
-        not __bootloader_default_grub_content.stdout is regex('set timeout=6')
-      register: __bootloader_default_grub_content
-      changed_when: false
+        - name: Ensure bootloader_reboot_required is set to false
+          assert:
+            that: not (bootloader_reboot_required | d(false))
 
-    - name: Change some settings using kernel title
-      vars:
-        bootloader_gather_facts: true
-        bootloader_settings:
-          - kernel:
-              title: "{{
-                (bootloader_facts | selectattr('index', 'search', '0') |
-                first).title }}"
-            options:
-              - name: quiet
-                state: absent
-              - name: debug
-                state: absent
-        bootloader_timeout: 4
-      include_role:
-        name: linux-system-roles.bootloader
+        - name: Verify settings
+          assert:
+            that: >-
+              (bootloader_facts |
+              selectattr('index', 'search', cloned_kernel.index) | first).args |
+              regex_search('^.*console=tty0 print-fatal-signals=1 no_timer_check
+              quiet debug( |)$')
 
-    - name: Flush handlers
-      meta: flush_handlers
+        - name: Verify boot loader timeout configuration
+          command: cat {{ __bootloader_grub_conf }}
+          failed_when: >-
+            not __bootloader_default_grub_content.stdout is
+            regex('set timeout=6')
+          register: __bootloader_default_grub_content
+          changed_when: false
 
-    - name: Ensure bootloader_reboot_required is set to false
-      assert:
-        that: not (bootloader_reboot_required | d(false))
+        - name: Change some settings using kernel title
+          vars:
+            bootloader_gather_facts: true
+            bootloader_settings:
+              - kernel:
+                  title: "{{ cloned_kernel.title }}"
+                options:
+                  - name: quiet
+                    state: absent
+                  - name: debug
+                    state: absent
+            bootloader_timeout: 4
+          include_role:
+            name: linux-system-roles.bootloader
 
-    - name: Verify settings
-      assert:
-        that: >-
-          (bootloader_facts | selectattr('index', 'search', '0') | first).args |
-          regex_search('^.*console=tty0 print-fatal-signals=1
-          no_timer_check( |)$')
+        - name: Flush handlers
+          meta: flush_handlers
 
-    - name: Verify boot loader timeout configuration
-      command: cat {{ __bootloader_grub_conf }}
-      failed_when: >-
-        not __bootloader_default_grub_content.stdout is regex('set timeout=4')
-      register: __bootloader_default_grub_content
-      changed_when: false
+        - name: Ensure bootloader_reboot_required is set to false
+          assert:
+            that: not (bootloader_reboot_required | d(false))
 
-    - name: Set existing variable using kernel path, should report not changed
-      vars:
-        bootloader_settings:
-          - kernel:
-              path: "{{
-                (bootloader_facts | selectattr('index', 'search', '0') |
-                first).kernel }}"
-            options:
-              - name: console
-                value: tty0
-                state: present
-        bootloader_timeout: 4
-      include_role:
-        name: linux-system-roles.bootloader
+        - name: Verify settings
+          assert:
+            that: >-
+              (bootloader_facts |
+              selectattr('index', 'search', cloned_kernel.index) | first).args |
+              regex_search('^.*console=tty0 print-fatal-signals=1
+              no_timer_check( |)$')
 
-    - name: Flush handlers
-      meta: flush_handlers
+        - name: Verify boot loader timeout configuration
+          command: cat {{ __bootloader_grub_conf }}
+          failed_when: >-
+            not __bootloader_default_grub_content.stdout is
+            regex('set timeout=4')
+          register: __bootloader_default_grub_content
+          changed_when: false
 
-    - name: Ensure bootloader_reboot_required is not set to true
-      assert:
-        that: not bootloader_reboot_required
+        - name: >-
+            Set existing variable using kernel path, should report not changed
+          vars:
+            bootloader_settings:
+              - kernel:
+                  path: "{{ cloned_kernel.kernel }}"
+                options:
+                  - name: console
+                    value: tty0
+                    state: present
+            bootloader_timeout: 4
+          include_role:
+            name: linux-system-roles.bootloader
 
-    - name: Verify settings
-      assert:
-        that: >-
-          (bootloader_facts | selectattr('index', 'search', '0') | first).args
-          | regex_search('^.*console=tty0 print-fatal-signals=1
-          no_timer_check( |)$')
+        - name: Flush handlers
+          meta: flush_handlers
 
-    - name: Verify boot loader timeout configuration
-      command: cat {{ __bootloader_grub_conf }}
-      failed_when: >-
-        not __bootloader_default_grub_content.stdout is regex('set timeout=4')
-      register: __bootloader_default_grub_content
-      changed_when: false
+        - name: Ensure bootloader_reboot_required is not set to true
+          assert:
+            that: not bootloader_reboot_required
+
+        - name: Verify settings
+          assert:
+            that: >-
+              (bootloader_facts |
+              selectattr('index', 'search', cloned_kernel.index) | first).args |
+              regex_search('^.*console=tty0 print-fatal-signals=1
+              no_timer_check( |)$')
+
+        - name: Verify boot loader timeout configuration
+          command: cat {{ __bootloader_grub_conf }}
+          failed_when: >-
+            not __bootloader_default_grub_content.stdout is
+            regex('set timeout=4')
+          register: __bootloader_default_grub_content
+          changed_when: false
+      always:
+        - name: Remove cloned kernels
+          command: >-
+            grubby --remove-kernel={{ test_kernel.kernel }}_clone1
+          changed_when: true
+          failed_when: false
