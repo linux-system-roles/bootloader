@@ -154,6 +154,7 @@ id="toc-bootloader_password">bootloader_password</a></li>
 id="toc-bootloader_remove_password">bootloader_remove_password</a></li>
 <li><a href="#bootloader_reboot_ok"
 id="toc-bootloader_reboot_ok">bootloader_reboot_ok</a></li>
+</ul></li>
 <li><a href="#variables-exported-by-the-role"
 id="toc-variables-exported-by-the-role">Variables Exported by the
 Role</a>
@@ -162,7 +163,6 @@ Role</a>
 id="toc-bootloader_reboot_needed">bootloader_reboot_needed</a></li>
 <li><a href="#bootloader_facts"
 id="toc-bootloader_facts">bootloader_facts</a></li>
-</ul></li>
 </ul></li>
 <li><a href="#example-playbook" id="toc-example-playbook">Example
 Playbook</a></li>
@@ -185,8 +185,8 @@ command to install them:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ansible-galaxy</span> collection install <span class="at">-vv</span> <span class="at">-r</span> meta/collection-requirements.yml</span></code></pre></div>
 <h1 id="role-variables">Role Variables</h1>
 <h2 id="bootloader_gather_facts">bootloader_gather_facts</h2>
-<p>Whether to gather <code>bootloader_facts</code> that contain bot
-information for all kernels.</p>
+<p>Whether to gather <a href="#bootloader_facts">bootloader_facts</a>
+that contain boot information for all kernels.</p>
 <p>Default: <code>false</code></p>
 <p>Type: <code>bool</code></p>
 <h2 id="bootloader_settings">bootloader_settings</h2>
@@ -272,13 +272,13 @@ the managed host.</p>
 a reboot to take effect.</p>
 <p>Default: <code>false</code></p>
 <p>Type: <code>bool</code></p>
-<h2 id="variables-exported-by-the-role">Variables Exported by the
-Role</h2>
+<h1 id="variables-exported-by-the-role">Variables Exported by the
+Role</h1>
 <p>The role exports the following variables:</p>
-<h3 id="bootloader_reboot_needed">bootloader_reboot_needed</h3>
+<h2 id="bootloader_reboot_needed">bootloader_reboot_needed</h2>
 <p>Default <code>false</code> - if <code>true</code>, this means a
 reboot is needed to apply the changes made by the role</p>
-<h3 id="bootloader_facts">bootloader_facts</h3>
+<h2 id="bootloader_facts">bootloader_facts</h2>
 <p>Contains boot information for all kernels.</p>
 <p>The role returns this variable when you set
 <code>bootloader_gather_facts: true</code>.</p>
