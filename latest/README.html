@@ -135,6 +135,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <nav id="TOC">
 <h1 class="toc-title">Contents</h1>
 <ul>
+<li><a href="#supported-architectures"
+id="toc-supported-architectures">Supported architectures</a></li>
 <li><a href="#requirements" id="toc-requirements">Requirements</a>
 <ul>
 <li><a href="#collection-requirements"
@@ -173,6 +175,14 @@ Playbook</a></li>
 <hr>
 <p>An Ansible role for bootloader and kernel command line
 management.</p>
+<h1 id="supported-architectures">Supported architectures</h1>
+<p>This role currently supports configuring <code>grub2</code> boot
+loader which runs on the following architectures:</p>
+<ul>
+<li>AMD and Intel 64-bit architectures (x86-64)</li>
+<li>The 64-bit ARM architecture (ARMv8.0)</li>
+<li>IBM Power Systems, Little Endian (POWER9)</li>
+</ul>
 <h1 id="requirements">Requirements</h1>
 <p>See below</p>
 <h2 id="collection-requirements">Collection requirements</h2>
