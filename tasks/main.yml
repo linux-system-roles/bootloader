@@ -10,13 +10,6 @@
     use: "{{ (__bootloader_is_ostree | d(false)) |
       ternary('ansible.posix.rhel_rpm_ostree', omit) }}"
 
-- name: Ensure boot loader settings
-  bootloader_settings:
-    bootloader_settings: "{{ bootloader_settings }}"
-  notify:
-    - Fix default kernel boot parameters
-    - Reboot system
-
 - name: Determine platform type
   stat:
     path: /sys/firmware/efi
@@ -36,7 +29,19 @@
 - name: Get stat of {{ __bootloader_default_grub }}
   stat:
     path: "{{ __bootloader_default_grub }}"
-  register: __bootloader_grub_stat
+  register: __bootloader_default_grub_stat
+
+- name: Get stat of {{ __bootloader_grub_conf }}
+  stat:
+    path: "{{ __bootloader_grub_conf }}"
+  register: __bootloader_grub_conf_stat
+
+- name: Use a general grub conf path if UEFI path is a stub
+  when:
+    - __bootloader_grub_conf_stat.stat.size < 500
+    - __bootloader_grub_conf == __bootloader_uefi_conf_dir ~ 'grub.cfg'
+  set_fact:
+    __bootloader_grub_conf: /boot/grub2/grub.cfg
 
 - name: >-
     Update boot loader timeout configuration in {{ __bootloader_default_grub }}
@@ -44,13 +49,8 @@
     path: "{{ __bootloader_default_grub }}"
     regexp: '^GRUB_TIMEOUT=.*'
     replace: 'GRUB_TIMEOUT={{ bootloader_timeout }}'
-    mode: "{{ __bootloader_grub_stat.stat.exists |
-      ternary(__bootloader_grub_stat.stat.mode, '0644') }}"
-
-- name: Get stat of {{ __bootloader_grub_conf }}
-  stat:
-    path: "{{ __bootloader_grub_conf }}"
-  register: __bootloader_grub_conf_stat
+    mode: "{{ __bootloader_default_grub_stat.stat.exists |
+      ternary(__bootloader_default_grub_stat.stat.mode, '0644') }}"
 
 - name: Update boot loader timeout configuration in {{ __bootloader_grub_conf }}
   replace:
@@ -59,6 +59,13 @@
     replace: 'set timeout={{ bootloader_timeout }}'
     mode: "{{ __bootloader_grub_conf_stat.stat.exists |
       ternary(__bootloader_grub_conf_stat.stat.mode, '0644') }}"
+
+- name: Ensure boot loader settings
+  bootloader_settings:
+    bootloader_settings: "{{ bootloader_settings }}"
+  notify:
+    - Fix default kernel boot parameters
+    - Reboot system
 
 - name: Update boot loader password
   when: bootloader_password is not none
