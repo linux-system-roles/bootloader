@@ -23,7 +23,7 @@ ansible-galaxy collection install -vv -r meta/collection-requirements.yml
 
 ### bootloader_gather_facts
 
-Whether to gather `bootloader_facts` that contain bot information for all kernels.
+Whether to gather [bootloader_facts](#bootloader_facts) that contain boot information for all kernels.
 
 Default: `false`
 
@@ -118,15 +118,15 @@ Default: `false`
 
 Type: `bool`
 
-### Variables Exported by the Role
+## Variables Exported by the Role
 
 The role exports the following variables:
 
-#### bootloader_reboot_needed
+### bootloader_reboot_needed
 
 Default `false` - if `true`, this means a reboot is needed to apply the changes made by the role
 
-#### bootloader_facts
+### bootloader_facts
 
 Contains boot information for all kernels.
 
