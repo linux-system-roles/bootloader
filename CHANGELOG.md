@@ -1,6 +1,13 @@
 Changelog
 =========
 
+[1.0.2] - 2024-02-26
+--------------------
+
+### Bug Fixes
+
+- fix: Fix bug with extra spaces in variables (#88)
+
 [1.0.1] - 2024-02-09
 --------------------
 
