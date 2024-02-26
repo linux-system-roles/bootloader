@@ -15,9 +15,9 @@ __bootloader_packages:
   - grubby
 __bootloader_default_grub: /etc/default/grub
 __bootloader_uefi_conf_dir: >-
-  {%- if ansible_distribution == 'RedHat' -%}
-  /boot/efi/EFI/redhat/
-  {%- elif ansible_distribution in ['SLES', 'SLES_SAP'] -%}
+  {%- if ansible_os_family == 'RedHat' -%}
+  /boot/efi/EFI/{{ ansible_distribution | lower }}/
+  {%- elif ansible_os_family == Suse -%}
   /boot/efi/EFI/BOOT/
   {%- endif -%}
 __bootloader_bios_conf_dir: /boot/grub2/

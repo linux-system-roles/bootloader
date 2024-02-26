@@ -4,6 +4,14 @@
 
 An Ansible role for bootloader and kernel command line management.
 
+## Supported architectures
+
+This role currently supports configuring `grub2` boot loader which runs on the following architectures:
+
+* AMD and Intel 64-bit architectures (x86-64)
+* The 64-bit ARM architecture (ARMv8.0)
+* IBM Power Systems, Little Endian (POWER9)
+
 ## Requirements
 
 See below
