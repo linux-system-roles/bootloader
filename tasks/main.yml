@@ -10,20 +10,13 @@
     use: "{{ (__bootloader_is_ostree | d(false)) |
       ternary('ansible.posix.rhel_rpm_ostree', omit) }}"
 
-- name: Determine platform type
-  stat:
-    path: /sys/firmware/efi
-  register: __bootloader_efi_dir
-
 - name: Get stat of {{ __bootloader_default_grub }}
   stat:
     path: "{{ __bootloader_default_grub }}"
   register: __bootloader_default_grub_stat
 
 - name: On OSTree systems, if missing, add {{ __bootloader_default_grub }}
-  when:
-    - __bootloader_is_ostree
-    - not __bootloader_default_grub_stat.stat.exists
+  when: not __bootloader_default_grub_stat.stat.exists
   block:
     - name: Get bootloader args of the default kernel
       shell: >-
@@ -33,20 +26,17 @@
       changed_when: false
 
     - name: Generate {{ __bootloader_default_grub }}
-      copy:
-        content: |-
-          GRUB_TIMEOUT=5
-          GRUB_DISTRIBUTOR="$(sed 's, release .*$,,g' /etc/system-release)"
-          GRUB_DEFAULT=saved
-          GRUB_DISABLE_SUBMENU=true
-          GRUB_TERMINAL_OUTPUT="console"
-          GRUB_CMDLINE_LINUX={{ __bootloader_default_args.stdout }}
-          GRUB_DISABLE_RECOVERY="true"
-          GRUB_ENABLE_BLSCFG=true
+      template:
+        src: etc_default_grub.j2
         dest: "{{ __bootloader_default_grub }}"
-        user: root
+        owner: root
         group: root
         mode: 0644
+
+- name: Determine platform type
+  stat:
+    path: /sys/firmware/efi
+  register: __bootloader_efi_dir
 
 - name: Set boot loader configuration files
   vars:
