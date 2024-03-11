@@ -15,7 +15,7 @@
     path: "{{ __bootloader_default_grub }}"
   register: __bootloader_default_grub_stat
 
-- name: On OSTree systems, if missing, add {{ __bootloader_default_grub }}
+- name: If missing, add {{ __bootloader_default_grub }}
   when: not __bootloader_default_grub_stat.stat.exists
   block:
     - name: Get bootloader args of the default kernel
@@ -26,6 +26,8 @@
       changed_when: false
 
     - name: Generate {{ __bootloader_default_grub }}
+      vars:
+        grub_cmdline_linux: "{{ __bootloader_default_args.stdout }}"
       template:
         src: etc_default_grub.j2
         dest: "{{ __bootloader_default_grub }}"
