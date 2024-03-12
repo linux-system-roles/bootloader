@@ -10,6 +10,31 @@
     use: "{{ (__bootloader_is_ostree | d(false)) |
       ternary('ansible.posix.rhel_rpm_ostree', omit) }}"
 
+- name: Get stat of {{ __bootloader_default_grub }}
+  stat:
+    path: "{{ __bootloader_default_grub }}"
+  register: __bootloader_default_grub_stat
+
+- name: If missing, add {{ __bootloader_default_grub }}
+  when: not __bootloader_default_grub_stat.stat.exists
+  block:
+    - name: Get bootloader args of the default kernel
+      shell: >-
+        set -euo pipefail;
+        grubby --info=DEFAULT | grep -oP 'args=\K(.*)'
+      register: __bootloader_default_args
+      changed_when: false
+
+    - name: Generate {{ __bootloader_default_grub }}
+      vars:
+        grub_cmdline_linux: "{{ __bootloader_default_args.stdout }}"
+      template:
+        src: etc_default_grub.j2
+        dest: "{{ __bootloader_default_grub }}"
+        owner: root
+        group: root
+        mode: 0644
+
 - name: Determine platform type
   stat:
     path: /sys/firmware/efi

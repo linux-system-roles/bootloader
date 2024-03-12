@@ -1,0 +1,13 @@
+{{ ansible_managed | comment }}
+{{ "system_role:bootloader" | comment(prefix="", postfix="") }}
+GRUB_TIMEOUT={{ bootloader_timeout }}
+GRUB_DISTRIBUTOR="$(sed 's, release .*$,,g' /etc/system-release)"
+GRUB_DEFAULT=saved
+GRUB_DISABLE_SUBMENU=true
+GRUB_TERMINAL_OUTPUT="console"
+GRUB_CMDLINE_LINUX={{ grub_cmdline_linux }}
+GRUB_DISABLE_RECOVERY="true"
+{% if not (ansible_facts['os_family'] == 'RedHat' and
+ansible_facts['distribution_version'] is version('7', '>=')) %}
+GRUB_ENABLE_BLSCFG=true
+{% endif %}
