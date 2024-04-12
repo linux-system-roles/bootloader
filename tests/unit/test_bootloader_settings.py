@@ -11,6 +11,11 @@ __metaclass__ = type
 
 import unittest
 
+try:
+    from unittest.mock import MagicMock
+except ImportError:
+    from mock import MagicMock
+
 import bootloader_settings
 
 OPTIONS = [
@@ -133,25 +138,46 @@ KERNELS = [
     {"kernel": "ALL"},
 ]
 
-INFO = """
+changed_args = "arg_with_str_value_absent=test_value arg_with_int_value_absent=1 arg_without_val_absent"
+INFO = (
+    """
 index=0
 kernel="/boot/vmlinuz-6.5.12-100.fc37.x86_64"
-args="arg_with_str_value_absent=test_value arg_with_int_value_absent=1 arg_without_val_absent"
+args="%s"
 root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
 initrd="/boot/initramfs-6.5.12-100.fc37.x86_64.img $tuned_initrd"
 title="Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)"
 id="c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64"
 """
+    % changed_args
+)
 
-INFO_RHEL7 = """
+same_args = "arg_with_str_value=test_value arg_with_int_value=1 arg_without_val"
+INFO_SAME_ARGS = (
+    """
+index=0
+kernel="/boot/vmlinuz-6.5.12-100.fc37.x86_64"
+args="%s"
+root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
+initrd="/boot/initramfs-6.5.12-100.fc37.x86_64.img $tuned_initrd"
+title="Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)"
+id="c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64"
+"""
+    % same_args
+)
+
+INFO_RHEL7 = (
+    """
 index=0
 kernel=/boot/vmlinuz-6.5.12-100.fc37.x86_64
-args="arg_with_str_value_absent=test_value arg_with_int_value_absent=1 arg_without_val_absent"
+args="%s"
 root=UUID=65c70529-e9ad-4778-9001-18fe8c525285
 initrd=/boot/initramfs-6.5.12-100.fc37.x86_64.img $tuned_initrd
 title=Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)
 id=c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64
 """
+    % changed_args
+)
 
 kernels_keys = ["kernel_index", "kernel_path", "kernel_title", "DEFAULT", "ALL"]
 
@@ -159,136 +185,171 @@ kernels_keys = ["kernel_index", "kernel_path", "kernel_title", "DEFAULT", "ALL"]
 class InputValidator(unittest.TestCase):
     """test functions that process bootloader_settings argument"""
 
+    mock_module = MagicMock(
+        run_command=MagicMock(return_value=("test_rc", "test_stdout", "test_err")),
+        fail_json=MagicMock(side_effect=SystemExit),
+    )
+    result = dict(changed=False, actions=list())
+    kernel = None
+    kernel_action = None
+
+    def reset_vars(self):
+        self.mock_module.run_command.reset_mock()
+        self.mock_module.fail_json.reset_mock()
+        self.result = dict(changed=False, actions=list())
+        try:
+            del self.kernel
+        except AttributeError:
+            pass
+        try:
+            del self.kernel_action
+        except AttributeError:
+            pass
+
+    def assert_error_msg(self, err, *cmd_args):
+        try:
+            self.kernel_action, self.kernel = bootloader_settings.validate_kernels(
+                self.mock_module, *cmd_args
+            )
+        except SystemExit:
+            self.mock_module.fail_json.assert_called_once_with(err)
+
     def test_validate_kernels(self):
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[0], FACTS
+        self.reset_vars()
+        self.kernel_action, self.kernel = bootloader_settings.validate_kernels(
+            self.mock_module, SETTINGS[0], FACTS
         )
-        self.assertEqual(
-            err,
-            "",
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(self.kernel_action, "modify")
+        self.assertEqual(self.kernel, "DEFAULT")
+        self.reset_vars()
+
+        self.kernel_action, self.kernel = bootloader_settings.validate_kernels(
+            self.mock_module, SETTINGS[1], FACTS
         )
-        self.assertEqual(kernel_action, "modify")
-        self.assertEqual(kernel, "DEFAULT")
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[1], FACTS
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(self.kernel_action, "modify")
+        self.assertEqual(self.kernel, "ALL")
+        self.reset_vars()
+
+        err = "kernel INCORRECT_STRING is of type str, it must be one of 'DEFAULT, ALL'"
+        cmd_args = SETTINGS[2], FACTS
+        self.assert_error_msg(err, *cmd_args)
+        self.assertIsNone(self.kernel_action)
+        self.assertIsNone(self.kernel)
+        self.reset_vars()
+
+        self.kernel_action, self.kernel = bootloader_settings.validate_kernels(
+            self.mock_module, SETTINGS[3], FACTS
         )
-        self.assertEqual(err, "")
-        self.assertEqual(kernel_action, "modify")
-        self.assertEqual(kernel, "ALL")
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[2], FACTS
-        )
-        self.assertEqual(
-            err,
-            "kernel INCORRECT_STRING is of type str, it must be one of 'DEFAULT, ALL'",
-        )
-        self.assertEqual(kernel_action, "")
-        self.assertEqual(kernel, "")
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[3], FACTS
-        )
-        self.assertEqual(err, "")
-        self.assertEqual(kernel_action, "modify")
-        self.assertEqual(kernel, "1")
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[4], FACTS
-        )
-        self.assertEqual(
-            err, "kernel value in 'index: [0, 1]' must be of type str or int"
-        )
-        self.assertEqual(kernel_action, "")
-        self.assertEqual(kernel, "")
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[5], FACTS
-        )
-        # initrd can be provided ONLY when creating a kernel
-        self.assertEqual(
-            err,
-            "kernel key in 'kernel_index: [0, 1]' must be one of 'path, index, title, initrd'",
-        )
-        self.assertEqual(kernel_action, "")
-        self.assertEqual(kernel, "")
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[6], FACTS
-        )
-        self.assertEqual(
-            err,
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(self.kernel_action, "modify")
+        self.assertEqual(self.kernel, "1")
+        self.reset_vars()
+
+        err = "kernel value in 'index: [0, 1]' must be of type str or int"
+        cmd_args = SETTINGS[4], FACTS
+        self.assert_error_msg(err, *cmd_args)
+        self.assertIsNone(self.kernel_action)
+        self.assertIsNone(self.kernel)
+        self.reset_vars()
+
+        # initrd can be provided ONLY when creating a self.kernel
+        err = "kernel key in 'kernel_index: [0, 1]' must be one of 'path, index, title, initrd'"
+        cmd_args = SETTINGS[5], FACTS
+        self.assert_error_msg(err, *cmd_args)
+        self.assertIsNone(self.kernel_action)
+        self.assertIsNone(self.kernel)
+        self.reset_vars()
+
+        err = (
             "A kernel with provided {'path'} already exists and it's other fields are different "
-            + "{'title': ('Fedora Linux', 'Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)')}",
+            + "{'title': ('Fedora Linux', 'Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)')}"
         )
-        self.assertEqual(kernel_action, "")
-        self.assertEqual(kernel, "")
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[7], FACTS
+        cmd_args = SETTINGS[6], FACTS
+        self.assert_error_msg(err, *cmd_args)
+        self.assertIsNone(self.kernel_action)
+        self.assertIsNone(self.kernel)
+        self.reset_vars()
+
+        err = (
+            "To create a kernel, you must provide 3 kernel keys - 'path, title, initrd'"
         )
+        cmd_args = SETTINGS[7], FACTS
+        self.assert_error_msg(err, *cmd_args)
+        self.assertIsNone(self.kernel_action)
+        self.assertIsNone(self.kernel)
+        self.reset_vars()
+
+        self.kernel_action, self.kernel = bootloader_settings.validate_kernels(
+            self.mock_module, SETTINGS[8], FACTS
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(self.kernel_action, "create")
         self.assertEqual(
-            err,
-            "To create a kernel, you must provide 3 kernel keys - 'path, title, initrd'",
-        )
-        self.assertEqual(kernel_action, "")
-        self.assertEqual(kernel, "")
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[8], FACTS
-        )
-        self.assertEqual(err, "")
-        self.assertEqual(kernel_action, "create")
-        self.assertEqual(
-            kernel,
+            self.kernel,
             "--title='Fedora Linux' --add-kernel=/boot/vmlinuz-6 --initrd=/boot/initramfs-6.6.img",
         )
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[9], FACTS
-        )
-        self.assertEqual(
-            err,
-            "You can use 'initrd' as a kernel key only when you must create a kernel. To modify or remove an existing kernel, use one of path, title, index",
-        )
-        self.assertEqual(kernel_action, "")
-        self.assertEqual(kernel, "")
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[10], FACTS
-        )
-        self.assertEqual(err, "State must be one of 'present, absent'")
-        self.assertEqual(kernel_action, "")
-        self.assertEqual(kernel, "")
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[11], FACTS
-        )
-        self.assertEqual(
-            err,
-            "kernel value in [{'initrd': '/boot/initramfs-6.6.img'}] must be of type str or dict",
-        )
-        self.assertEqual(kernel_action, "")
-        self.assertEqual(kernel, "")
-        err, kernel_action, kernel = bootloader_settings.validate_kernels(
-            SETTINGS[12], FACTS
-        )
-        self.assertEqual(err, "")
-        self.assertEqual(kernel_action, "modify")
+        self.reset_vars()
 
-    def test_get_add_kernel_cmd(self):
-        kernel = bootloader_settings.get_create_kernel(SETTINGS[8]["kernel"])
-        add_kernel_cmd = bootloader_settings.get_add_kernel_cmd(
-            SETTINGS[8]["options"], kernel
+        err = "You can use 'initrd' as a kernel key only when you must create a kernel. To modify or remove an existing kernel, use one of path, title, index"
+        cmd_args = SETTINGS[9], FACTS
+        self.assert_error_msg(err, *cmd_args)
+        self.assertIsNone(self.kernel_action)
+        self.assertIsNone(self.kernel)
+        self.reset_vars()
+
+        err = "State must be one of 'present, absent'"
+        cmd_args = SETTINGS[10], FACTS
+        self.assert_error_msg(err, *cmd_args)
+        self.assertIsNone(self.kernel_action)
+        self.assertIsNone(self.kernel)
+        self.reset_vars()
+
+        err = "kernel value in [{'initrd': '/boot/initramfs-6.6.img'}] must be of type str or dict"
+        cmd_args = SETTINGS[11], FACTS
+        self.assert_error_msg(err, *cmd_args)
+        self.assertIsNone(self.kernel_action)
+        self.assertIsNone(self.kernel)
+        self.reset_vars()
+
+        self.kernel_action, self.kernel = bootloader_settings.validate_kernels(
+            self.mock_module, SETTINGS[12], FACTS
         )
-        self.assertEqual(
-            add_kernel_cmd,
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(self.kernel_action, "modify")
+        self.reset_vars()
+
+    def test_add_kernel(self):
+        self.reset_vars()
+        self.kernel = bootloader_settings.get_create_kernel(SETTINGS[8]["kernel"])
+        bootloader_settings.add_kernel(
+            self.mock_module, self.result, SETTINGS[8]["options"], self.kernel
+        )
+        expected_cmd = (
             "grubby --title='Fedora Linux' --add-kernel=/boot/vmlinuz-6 --initrd=/boot/initramfs-6.6.img "
             + "--args='arg_with_str_value=test_value arg_with_int_value=1 arg_without_val arg_with_str_value_absent=test_value "
-            + "arg_with_int_value_absent=1 arg_without_val_absent' --copy-default",
+            + "arg_with_int_value_absent=1 arg_without_val_absent' --copy-default"
         )
+        self.mock_module.run_command.assert_called_once_with(expected_cmd)
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["actions"][0], expected_cmd)
+        self.reset_vars()
 
-    def test_get_rm_kernel_cmd(self):
-        kernel = bootloader_settings.get_single_kernel(SETTINGS[3]["kernel"])
+    def test_rm_kernel(self):
+        self.reset_vars()
+        self.kernel = bootloader_settings.get_single_kernel(SETTINGS[3]["kernel"])
         self.assertEqual(
-            kernel,
+            self.kernel,
             "1",
         )
-        rm_kernel_cmd = bootloader_settings.get_rm_kernel_cmd(kernel)
-        self.assertEqual(
-            rm_kernel_cmd,
-            "grubby --remove-kernel=1",
-        )
+
+        bootloader_settings.rm_kernel(self.mock_module, self.result, self.kernel)
+        expected_cmd = "grubby --remove-kernel=1"
+        self.mock_module.run_command.assert_called_once_with(expected_cmd)
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["actions"][0], expected_cmd)
+        self.reset_vars()
 
     def test_get_boot_args(self):
         bootloader_args = bootloader_settings.get_boot_args(INFO)
@@ -304,56 +365,103 @@ class InputValidator(unittest.TestCase):
         bootloader_args = bootloader_settings.get_boot_args("")
         self.assertEqual(bootloader_args, "")
 
-    def test_get_rm_boot_args_cmd(self):
-        rm_boot_args_cmd = bootloader_settings.get_rm_boot_args_cmd(INFO, "0")
-        self.assertEqual(
+    def test_rm_boot_args(self):
+        self.reset_vars()
+        bootloader_settings.rm_boot_args(self.mock_module, self.result, INFO, "0")
+        expected_cmd = (
             "grubby --update-kernel=0 --remove-args="
-            + "'arg_with_str_value_absent=test_value arg_with_int_value_absent=1 arg_without_val_absent'",
-            rm_boot_args_cmd,
+            + "'arg_with_str_value_absent=test_value arg_with_int_value_absent=1 arg_without_val_absent'"
         )
+        self.mock_module.run_command.assert_called_once_with(expected_cmd)
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["actions"][0], expected_cmd)
+        self.reset_vars()
 
-    def test_get_mod_boot_args_cmd(self):
+    def test_mod_boot_args(self):
+        self.reset_vars()
         args = (
             "--remove-args='arg_with_str_value_absent=test_value arg_with_int_value_absent=1 arg_without_val_absent' "
             + "--args='arg_with_str_value=test_value arg_with_int_value=1 arg_without_val'"
         )
-        mod_boot_args_cmd = bootloader_settings.get_mod_boot_args_cmd(
-            OPTIONS, str(KERNELS[1]["kernel"]["kernel_index"]), INFO
+
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            OPTIONS,
+            str(KERNELS[1]["kernel"]["kernel_index"]),
+            INFO,
         )
-        self.assertEqual(
-            "grubby --update-kernel=2 " + args,
-            mod_boot_args_cmd,
+        expected_cmd = "grubby --update-kernel=2 " + args
+        self.mock_module.run_command.assert_called_once_with(expected_cmd)
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["actions"][0], expected_cmd)
+        self.reset_vars()
+
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            OPTIONS,
+            KERNELS[3]["kernel"]["kernel_path"],
+            INFO,
         )
-        mod_boot_args_cmd = bootloader_settings.get_mod_boot_args_cmd(
-            OPTIONS, KERNELS[3]["kernel"]["kernel_path"], INFO
-        )
-        self.assertEqual(
-            "grubby --update-kernel=/path/3 " + args,
-            mod_boot_args_cmd,
-        )
-        mod_boot_args_cmd = bootloader_settings.get_mod_boot_args_cmd(
+        expected_cmd = "grubby --update-kernel=/path/3 " + args
+        self.mock_module.run_command.assert_called_once_with(expected_cmd)
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["actions"][0], expected_cmd)
+        self.reset_vars()
+
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
             OPTIONS,
             bootloader_settings.escapeval(
                 "TITLE=" + KERNELS[5]["kernel"]["kernel_title"]
             ),
             INFO,
         )
-        self.assertEqual(
+        expected_cmd = (
             "grubby --update-kernel='TITLE=Fedora Linux (1.1.11-300.fc37.x86_64) 37 (Workstation Edition)' "
-            + args,
-            mod_boot_args_cmd,
+            + args
         )
-        mod_boot_args_cmd = bootloader_settings.get_mod_boot_args_cmd(
-            OPTIONS, KERNELS[6]["kernel"], INFO
+        self.mock_module.run_command.assert_called_once_with(expected_cmd)
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["actions"][0], expected_cmd)
+        self.reset_vars()
+
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            OPTIONS,
+            KERNELS[6]["kernel"],
+            INFO,
         )
-        self.assertEqual(
-            "grubby --update-kernel=DEFAULT " + args,
-            mod_boot_args_cmd,
+        expected_cmd = "grubby --update-kernel=DEFAULT " + args
+        self.mock_module.run_command.assert_called_once_with(expected_cmd)
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["actions"][0], expected_cmd)
+        self.reset_vars()
+
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            OPTIONS,
+            KERNELS[7]["kernel"],
+            INFO,
         )
-        mod_boot_args_cmd = bootloader_settings.get_mod_boot_args_cmd(
-            OPTIONS, KERNELS[7]["kernel"], INFO
+        expected_cmd = "grubby --update-kernel=ALL " + args
+        self.mock_module.run_command.assert_called_once_with(expected_cmd)
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["actions"][0], expected_cmd)
+        self.reset_vars()
+
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            OPTIONS,
+            str(KERNELS[1]["kernel"]["kernel_index"]),
+            INFO_SAME_ARGS,
         )
-        self.assertEqual(
-            "grubby --update-kernel=ALL " + args,
-            mod_boot_args_cmd,
-        )
+        self.mock_module.run_command.assert_not_called()
+        self.assertEqual(self.result["changed"], False)
+        self.assertEqual(self.result["actions"], [])
+        self.reset_vars()
