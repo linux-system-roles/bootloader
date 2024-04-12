@@ -2,6 +2,7 @@
 ---
 # ansible_facts required by the role
 __bootloader_required_facts:
+  - architecture
   - distribution
   - distribution_major_version
   - distribution_version
