@@ -11,3 +11,10 @@
 
     - name: End execution on s390x host to avoid failures in clean up
       meta: end_host
+
+# When this task file is included in a rescue block, and the above task is
+# skipped, Ansible would report success considering that a failure was rescued
+- name: Fail if in a rescue block
+  when: ansible_failed_result is defined
+  fail:
+    msg: "{{ ansible_failed_result }}"
