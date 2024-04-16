@@ -96,6 +96,9 @@
             that: bootloader_facts | selectattr('title', 'defined') |
               selectattr('title', 'search', 'Clone2') |
               list | length == 0
+      rescue:
+        - name: Assert failure on s390x architecture
+          include_tasks: tasks/assert_fail_on_s390x.yml
       always:
         - name: Remove cloned kernels
           command: >-

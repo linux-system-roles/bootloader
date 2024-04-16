@@ -3,6 +3,13 @@
 - name: Set platform/version specific variables
   include_tasks: tasks/set_vars.yml
 
+- name: Fail on s390x architecture
+  fail:
+    msg: >-
+      This role does not support s390x architecture.
+      Let us know if you need the role to support it.
+  when: ansible_architecture == 's390x'
+
 - name: Ensure required packages are installed
   package:
     name: "{{ __bootloader_packages }}"

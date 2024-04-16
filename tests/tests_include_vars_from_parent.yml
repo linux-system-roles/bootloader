@@ -49,6 +49,9 @@
             name: caller
           vars:
             roletoinclude: linux-system-roles.bootloader
+      rescue:
+        - name: Assert failure on s390x architecture
+          include_tasks: tasks/assert_fail_on_s390x.yml
       always:
         - name: Cleanup
           file:
