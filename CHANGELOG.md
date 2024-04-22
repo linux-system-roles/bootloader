@@ -1,6 +1,17 @@
 Changelog
 =========
 
+[1.0.5] - 2024-04-22
+--------------------
+
+### Bug Fixes
+
+- fix: Fail on the s390x architecture with a not supported msg (#96)
+
+### Other Changes
+
+- refactor: Refactor bootloader_settings to run cmds from functions, use mock in unittests (#97)
+
 [1.0.4] - 2024-04-04
 --------------------
 
