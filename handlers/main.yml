@@ -11,6 +11,16 @@
       {{ __bootloader_default_grub }}
     cat {{ __bootloader_default_grub }}
   changed_when: true
+  when:
+    - ansible_distribution in ['CentOS', 'RedHat']
+    - ansible_distribution_version is version('8', '<')
 
 - name: Reboot system
   include_tasks: tasks/reboot.yml
+
+# This doesn't work on EL 7. EL 7 has it's workaround in tasks/main.yml
+- name: Regenerate grub config
+  command: grub2-mkconfig -o {{ __bootloader_grub_conf }}
+  when: >-
+    not (ansible_distribution in ['CentOS', 'RedHat'] and
+    ansible_distribution_version is version('8', '<'))

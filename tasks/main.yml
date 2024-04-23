@@ -75,22 +75,26 @@
   set_fact:
     __bootloader_grub_conf: /boot/grub2/grub.cfg
 
-- name: >-
-    Update boot loader timeout configuration in {{ __bootloader_default_grub }}
+- name: Update timeout configuration in {{ __bootloader_default_grub }}
   replace:
     path: "{{ __bootloader_default_grub }}"
     regexp: '^GRUB_TIMEOUT=.*'
     replace: 'GRUB_TIMEOUT={{ bootloader_timeout }}'
     mode: "{{ __bootloader_default_grub_stat.stat.exists |
       ternary(__bootloader_default_grub_stat.stat.mode, '0644') }}"
+  notify: Regenerate grub config
 
-- name: Update boot loader timeout configuration in {{ __bootloader_grub_conf }}
+# Regenerate grub config doesn't work on EL 7, need to edit config manually
+- name: On EL 7, update timeout configuration in {{ __bootloader_grub_conf }}
   replace:
     path: "{{ __bootloader_grub_conf }}"
     regexp: 'set timeout=.*'
     replace: 'set timeout={{ bootloader_timeout }}'
     mode: "{{ __bootloader_grub_conf_stat.stat.exists |
       ternary(__bootloader_grub_conf_stat.stat.mode, '0644') }}"
+  when:
+    - ansible_distribution in ['CentOS', 'RedHat']
+    - ansible_distribution_version is version('8', '<')
 
 - name: Ensure boot loader settings
   bootloader_settings:
