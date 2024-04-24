@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 ---
-# EL 7 workaround for https://bugzilla.redhat.com/show_bug.cgi?id=1152027
+# A workaround for https://bugzilla.redhat.com/show_bug.cgi?id=1152027
 - name: Fix default kernel boot parameters
   shell: |-
     set -o pipefail
@@ -11,9 +11,6 @@
       {{ __bootloader_default_grub }}
     cat {{ __bootloader_default_grub }}
   changed_when: true
-  when:
-    - ansible_distribution in ['CentOS', 'RedHat']
-    - ansible_distribution_version is version('8', '<')
 
 - name: Reboot system
   include_tasks: tasks/reboot.yml
@@ -24,3 +21,4 @@
   when: >-
     not (ansible_distribution in ['CentOS', 'RedHat'] and
     ansible_distribution_version is version('8', '<'))
+  changed_when: true
