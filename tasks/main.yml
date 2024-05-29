@@ -49,13 +49,13 @@
 
 - name: Set boot loader configuration files
   vars:
-    efi_path: "{{ __bootloader_efi_dir.stat.exists }}"
+    efi: "{{ __bootloader_efi_dir.stat.exists }}"
   set_fact:
     __bootloader_grub_conf: >-
-      {{ efi_path | ternary(__bootloader_uefi_conf_dir ~ 'grub.cfg',
+      {{ efi | ternary(__bootloader_uefi_conf_dir ~ 'grub.cfg',
       '/boot/grub2/grub.cfg') }}
     __bootloader_user_conf: >-
-      {{ efi_path | ternary(__bootloader_uefi_conf_dir ~ 'user.cfg',
+      {{ efi | ternary(__bootloader_uefi_conf_dir ~ 'user.cfg',
       '/boot/grub2/user.cfg') }}
 
 - name: Get stat of {{ __bootloader_default_grub }}
@@ -68,12 +68,22 @@
     path: "{{ __bootloader_grub_conf }}"
   register: __bootloader_grub_conf_stat
 
-- name: Use a general grub conf path if UEFI path is a stub
-  when:
-    - __bootloader_grub_conf_stat.stat.size < 500
-    - __bootloader_grub_conf == __bootloader_uefi_conf_dir ~ 'grub.cfg'
-  set_fact:
-    __bootloader_grub_conf: /boot/grub2/grub.cfg
+- name: Use a general grub conf path if UEFI path has a stub config
+  when: __bootloader_grub_conf_stat.stat.exists | bool
+  block:
+    - name: Verify if there is a stab config in {{ __bootloader_grub_conf }}
+      shell: grep "configfile" {{ __bootloader_grub_conf }} || true
+      changed_when: false
+      register: __bootloader_grep_configfile
+      ignore_errors: true
+
+    - name: Use a general grub and user conf path if UEFI path has a stub config
+      when:
+        - __bootloader_grep_configfile.stdout | length > 0
+        - __bootloader_grub_conf == __bootloader_uefi_conf_dir ~ 'grub.cfg'
+      set_fact:
+        __bootloader_grub_conf: /boot/grub2/grub.cfg
+        __bootloader_user_conf: /boot/grub2/user.cfg
 
 - name: >-
     Update boot loader timeout configuration in {{ __bootloader_default_grub }}
