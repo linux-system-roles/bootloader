@@ -19,7 +19,7 @@
         {{ test_kernel.initrd |
         regex_replace(' .*$', '') }}_clone{{ __bootloader_clone_num }}
 
-- name: Create kernel Clone{{ __bootloader_clone_num }} 
+- name: Create kernel Clone{{ __bootloader_clone_num }}
   vars:
     bootloader_settings:
       - kernel:

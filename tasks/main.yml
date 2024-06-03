@@ -40,7 +40,7 @@
         dest: "{{ __bootloader_default_grub }}"
         owner: root
         group: root
-        mode: 0644
+        mode: "0644"
 
 - name: Determine platform type
   stat:
@@ -118,7 +118,7 @@
       copy:
         content: GRUB2_PASSWORD={{ __bootloader_pass_hash.stdout }}
         dest: "{{ __bootloader_user_conf }}"
-        mode: 0600
+        mode: "0600"
       changed_when: true
       no_log: true
 
