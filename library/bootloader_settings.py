@@ -102,7 +102,7 @@ def compare_dicts(dict1, dict2):
     dict2_keys = set(dict2.keys())
     shared_keys = dict1_keys.intersection(dict2_keys)
     diff = {o: (dict1[o], dict2[o]) for o in shared_keys if dict1[o] != dict2[o]}
-    same = set(o for o in shared_keys if dict1[o] == dict2[o])
+    same = list(set(o for o in shared_keys if dict1[o] == dict2[o]))
     return diff, same
 
 
@@ -139,7 +139,8 @@ def get_single_kernel(bootloader_setting_kernel):
 def get_create_kernel(bootloader_setting_kernel):
     """Get kernel in the format expected by 'grubby --add-kernel=' from a multiple-element dict"""
     kernel = ""
-    for key, value in bootloader_setting_kernel.items():
+    for key in sorted(bootloader_setting_kernel.keys()):
+        value = bootloader_setting_kernel[key]
         if key == "path":
             kernel += " --add-kernel=" + escapeval(value)
         elif key == "title":
@@ -222,7 +223,7 @@ def validate_kernels(module, bootloader_setting, bootloader_facts):
         # diff, same = compare_dicts(bootloader_setting["kernel"], fact)
         if diff and same:
             module.fail_json(
-                "A kernel with provided %s already exists and it's other fields are different %s"
+                "A kernel with provided %s already exists and its other fields are different %s"
                 % (same, diff)
             )
         elif not diff and same:

@@ -263,7 +263,7 @@ class InputValidator(unittest.TestCase):
         self.reset_vars()
 
         err = (
-            "A kernel with provided {'path'} already exists and it's other fields are different "
+            "A kernel with provided ['path'] already exists and its other fields are different "
             + "{'title': ('Fedora Linux', 'Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)')}"
         )
         cmd_args = SETTINGS[6], FACTS
@@ -288,7 +288,7 @@ class InputValidator(unittest.TestCase):
         self.assertEqual(self.kernel_action, "create")
         self.assertEqual(
             self.kernel,
-            "--title='Fedora Linux' --add-kernel=/boot/vmlinuz-6 --initrd=/boot/initramfs-6.6.img",
+            "--initrd=/boot/initramfs-6.6.img --add-kernel=/boot/vmlinuz-6 --title='Fedora Linux'",
         )
         self.reset_vars()
 
@@ -327,7 +327,7 @@ class InputValidator(unittest.TestCase):
             self.mock_module, self.result, SETTINGS[8]["options"], self.kernel
         )
         expected_cmd = (
-            "grubby --title='Fedora Linux' --add-kernel=/boot/vmlinuz-6 --initrd=/boot/initramfs-6.6.img "
+            "grubby --initrd=/boot/initramfs-6.6.img --add-kernel=/boot/vmlinuz-6 --title='Fedora Linux' "
             + "--args='arg_with_str_value=test_value arg_with_int_value=1 arg_without_val arg_with_str_value_absent=test_value "
             + "arg_with_int_value_absent=1 arg_without_val_absent' --copy-default"
         )
