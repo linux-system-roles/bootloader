@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Gather architecture facts
+  setup:
+    gather_subset: architecture
+  when: '"architecture" not in ansible_facts.keys() | list'
+
+- name: End host on s390x architecture
+  when: ansible_architecture == 's390x'
+  meta: end_host
