@@ -4,11 +4,9 @@
   hosts: all
   gather_facts: false  # for testing the role fact gathering
   tasks:
-    - name: Run in a block to clean up afterwards
-      block:
-        - name: Run with default parameters
-          include_role:
-            name: linux-system-roles.bootloader
-      rescue:
-        - name: Assert failure on s390x architecture
-          include_tasks: tasks/assert_fail_on_s390x.yml
+    - name: Skip on s390x architecture
+      include_tasks: tasks/skip_on_s390x.yml
+
+    - name: Run with default parameters
+      include_role:
+        name: linux-system-roles.bootloader

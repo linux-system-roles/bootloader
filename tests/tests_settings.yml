@@ -10,6 +10,9 @@
   tasks:
     - name: Run in a block to clean up afterwards
       block:
+        - name: Skip on s390x architecture
+          include_tasks: tasks/skip_on_s390x.yml
+
         - name: Get bootloader_facts
           vars:
             bootloader_gather_facts: true
@@ -170,9 +173,6 @@
             regex('set timeout=4')
           register: __bootloader_default_grub_content
           changed_when: false
-      rescue:
-        - name: Assert failure on s390x architecture
-          include_tasks: tasks/assert_fail_on_s390x.yml
       always:
         - name: Remove cloned kernels
           command: >-
