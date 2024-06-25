@@ -16,9 +16,14 @@ galaxy_info:
         - "8"
         - "7"
   galaxy_tags:
+    - boot
+    - bootloader
+    - el7
+    - el8
+    - el9
+    - el10
+    - fedora
     - grub
     - grubby
-    - boot
     - loader
-    - bootloader
 dependencies: []
