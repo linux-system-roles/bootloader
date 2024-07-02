@@ -1,6 +1,18 @@
 Changelog
 =========
 
+[1.0.7] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#109)
+
+### Other Changes
+
+- test: Skip hosts on s390x. Asserting error doesn't work due to a bug (#107)
+- ci: ansible-lint action now requires absolute directory (#108)
+
 [1.0.6] - 2024-06-11
 --------------------
 
