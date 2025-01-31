@@ -3,7 +3,7 @@
 # Copyright: (c) 2023, Sergei Petrosian <spetrosi@redhat.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-""" Unit tests for the bootloader_settings module """
+"""Unit tests for the bootloader_settings module"""
 
 from __future__ import absolute_import, division, print_function
 
