@@ -39,7 +39,7 @@
           vars:
             __default_args: "{{
               (bootloader_facts | selectattr('title', 'defined') |
-              selectattr('default') |
+              rejectattr('title', 'search', 'Clone1') |
               first).args }}"
           assert:
             that: >-
