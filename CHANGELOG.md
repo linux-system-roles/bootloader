@@ -1,6 +1,28 @@
 Changelog
 =========
 
+[1.0.9] - 2025-05-21
+--------------------
+
+### Other Changes
+
+- ci: bump codecov/codecov-action from 4 to 5 (#124)
+- ci: Use Fedora 41, drop Fedora 39 (#125)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#126)
+- ci: Check spelling with codespell (#127)
+- ci: ansible-plugin-scan is disabled for now (#128)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#131)
+- refactor: fix python black formatting (#132)
+- ci: Add test plan that runs CI tests and customize it for each role (#133)
+- ci: In test plans, prefix all relate variables with SR_ (#134)
+- ci: Fix bug with ARTIFACTS_URL after prefixing with SR_ (#135)
+- ci: several changes related to new qemu test, ansible-lint, python versions, ubuntu versions (#136)
+- ci: use tox-lsr 3.6.0; improve qemu test logging (#138)
+- ci: skip storage scsi, nvme tests in github qemu ci (#139)
+- ci: bump sclorg/testing-farm-as-github-action from 3 to 4 (#140)
+- ci: bump tox-lsr to 3.8.0; rename qemu/kvm tests (#141)
+- ci: Add Fedora 42; use tox-lsr 3.9.0; use lsr-report-errors for qemu tests (#142)
+
 [1.0.8] - 2024-10-30
 --------------------
 
