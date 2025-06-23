@@ -67,6 +67,8 @@
                   - name: no_timer_check
                     state: present
                   - name: quiet
+                  - name: option_with_value
+                    value: option_value
                   - previous: replaced
               - kernel: ALL
                 options:
@@ -89,7 +91,7 @@
               (bootloader_facts |
               selectattr('index', 'search', cloned_kernel.index) | first).args |
               regex_search('^.*console=tty0 print-fatal-signals=1 no_timer_check
-              quiet debug( |)$')
+              quiet option_with_value=option_value debug( |)$')
 
         - name: Verify boot loader timeout configuration
           command: cat {{ __bootloader_grub_conf }}
@@ -110,6 +112,8 @@
                     state: absent
                   - name: debug
                     state: absent
+                  - name: option_with_value
+                    state: absent
             bootloader_timeout: 4
           include_role:
             name: linux-system-roles.bootloader
@@ -121,13 +125,15 @@
           assert:
             that: not (bootloader_reboot_required | d(false))
 
-        - name: Verify settings
+        - name: Verify that existing settings remained and removed settings are not present
+          vars:
+            __settings: "{{ (bootloader_facts | selectattr('index', 'search', cloned_kernel.index) | first).args }}"
           assert:
-            that: >-
-              (bootloader_facts |
-              selectattr('index', 'search', cloned_kernel.index) | first).args |
-              regex_search('^.*console=tty0 print-fatal-signals=1
-              no_timer_check( |)$')
+            that:
+              - __settings | regex_search('^.*console=tty0 print-fatal-signals=1 no_timer_check( |)$')
+              - not __settings | regex_search('quiet')
+              - not __settings | regex_search('debug')
+              - not __settings | regex_search('option_with_value')
 
         - name: Verify boot loader timeout configuration
           command: cat {{ __bootloader_grub_conf }}

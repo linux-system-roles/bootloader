@@ -319,7 +319,9 @@ def mod_boot_args(module, result, bootloader_setting_options, kernel, kernel_inf
     for kernel_setting in bootloader_setting_options:
         setting_name = get_setting_name(kernel_setting)
         if "state" in kernel_setting and kernel_setting["state"] == "absent":
-            if re.search(r"(^|$| )" + setting_name + r"(^|$| )", bootloader_args):
+            if re.search(
+                r"(^|$| )" + kernel_setting["name"] + r"($| |=)", bootloader_args
+            ):
                 boot_absent_args += setting_name + " "
         else:
             if not re.search(r"(^|$| )" + setting_name + r"(^|$| )", bootloader_args):
