@@ -1,6 +1,18 @@
 Changelog
 =========
 
+[1.0.10] - 2025-06-25
+--------------------
+
+### Bug Fixes
+
+- fix: Fix removing kernel options with values (#146)
+
+### Other Changes
+
+- ci: Add support for bootc end-to-end validation tests (#144)
+- ci: Use ansible 2.19 for fedora 42 testing; support python 3.13 (#145)
+
 [1.0.9] - 2025-05-21
 --------------------
 
