@@ -465,3 +465,179 @@ class InputValidator(unittest.TestCase):
         self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"], [])
         self.reset_vars()
+
+    def test_validate_default_kernel(self):
+        """Test validate_default_kernel function"""
+        self.reset_vars()
+
+        # Test with no default kernels - should pass
+        settings_no_default = [
+            {"kernel": "ALL", "options": OPTIONS},
+            {"kernel": {"index": 1}, "options": OPTIONS},
+        ]
+        bootloader_settings.validate_default_kernel(
+            self.mock_module, settings_no_default
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.reset_vars()
+
+        # Test with one default kernel (string) - should fail
+        settings_one_default_str = [
+            {"kernel": "ALL", "options": OPTIONS, "default": True},
+            {"kernel": {"index": 1}, "options": OPTIONS},
+        ]
+        try:
+            bootloader_settings.validate_default_kernel(
+                self.mock_module, settings_one_default_str
+            )
+        except SystemExit:
+            self.mock_module.fail_json.assert_called_once_with(
+                "You cannot set a kernel as default when you are using a string kernel - ALL"
+            )
+        self.reset_vars()
+
+        # Test with DEFAULT string kernel as default - should fail
+        settings_default_str = [
+            {"kernel": "DEFAULT", "options": OPTIONS, "default": True}
+        ]
+        try:
+            bootloader_settings.validate_default_kernel(
+                self.mock_module, settings_default_str
+            )
+        except SystemExit:
+            self.mock_module.fail_json.assert_called_once_with(
+                "You cannot set a kernel as default when you are using a string kernel - DEFAULT"
+            )
+        self.reset_vars()
+
+        # Test with one default kernel (dict) - should pass
+        settings_one_default_dict = [
+            {"kernel": "ALL", "options": OPTIONS},
+            {"kernel": {"index": 1}, "options": OPTIONS, "default": True},
+        ]
+        bootloader_settings.validate_default_kernel(
+            self.mock_module, settings_one_default_dict
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.reset_vars()
+
+        # Test with one default kernel (dict with path) - should pass
+        settings_one_default_path = [
+            {
+                "kernel": {"path": "/boot/vmlinuz-test"},
+                "options": OPTIONS,
+                "default": True,
+            }
+        ]
+        bootloader_settings.validate_default_kernel(
+            self.mock_module, settings_one_default_path
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.reset_vars()
+
+        # Test with one default kernel (dict with title) - should pass
+        settings_one_default_title = [
+            {"kernel": {"title": "Test Kernel"}, "options": OPTIONS, "default": True}
+        ]
+        bootloader_settings.validate_default_kernel(
+            self.mock_module, settings_one_default_title
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.reset_vars()
+
+        # Test with multiple default kernels (both dicts) - should fail
+        settings_multiple_defaults = [
+            {
+                "kernel": {"path": "/boot/vmlinuz-test1"},
+                "options": OPTIONS,
+                "default": True,
+            },
+            {
+                "kernel": {"path": "/boot/vmlinuz-test2"},
+                "options": OPTIONS,
+                "default": True,
+            },
+        ]
+        try:
+            bootloader_settings.validate_default_kernel(
+                self.mock_module, settings_multiple_defaults
+            )
+        except SystemExit:
+            self.mock_module.fail_json.assert_called_once_with(
+                "Only one kernel can be set as default. Found 2 kernels with 'default: true' - /boot/vmlinuz-test1, /boot/vmlinuz-test2"
+            )
+        self.reset_vars()
+
+        # Test with multiple defaults including dict with title and index
+        settings_multiple_with_title = [
+            {"kernel": {"title": "Test Kernel"}, "options": OPTIONS, "default": True},
+            {"kernel": {"index": 2}, "options": OPTIONS, "default": True},
+        ]
+        try:
+            bootloader_settings.validate_default_kernel(
+                self.mock_module, settings_multiple_with_title
+            )
+        except SystemExit:
+            self.mock_module.fail_json.assert_called_once_with(
+                "Only one kernel can be set as default. Found 2 kernels with 'default: true' - Test Kernel, 2"
+            )
+        self.reset_vars()
+
+    def test_get_default_kernel_path(self):
+        """Test get_default_kernel_path function"""
+        self.reset_vars()
+
+        # Test with facts that have a default kernel
+        facts_with_default = [
+            {"path": "/boot/vmlinuz-1", "default": False},
+            {"path": "/boot/vmlinuz-2", "default": True},
+            {"path": "/boot/vmlinuz-3", "default": False},
+        ]
+        result = bootloader_settings.get_default_kernel_path(
+            facts_with_default, self.result, self.mock_module
+        )
+        self.assertEqual(result, "/boot/vmlinuz-2")
+        self.mock_module.fail_json.assert_not_called()
+        self.reset_vars()
+
+        # Test with facts from the existing FACTS constant (index 2 is default)
+        # Create a copy of FACTS with "kernel" key renamed to "path"
+        facts_with_path = []
+        for fact in FACTS:
+            fact_copy = fact.copy()
+            if "kernel" in fact_copy:
+                fact_copy["path"] = fact_copy.pop("kernel")
+            facts_with_path.append(fact_copy)
+
+        result = bootloader_settings.get_default_kernel_path(
+            facts_with_path, self.result, self.mock_module
+        )
+        self.assertEqual(result, "/boot/vmlinuz-6.5.7-100.fc37.x86_64")
+        self.mock_module.fail_json.assert_not_called()
+        self.reset_vars()
+
+        # Test with facts that have no default kernel - should fail
+        facts_no_default = [
+            {"path": "/boot/vmlinuz-1", "default": False},
+            {"path": "/boot/vmlinuz-2", "default": False},
+        ]
+        try:
+            bootloader_settings.get_default_kernel_path(
+                facts_no_default, self.result, self.mock_module
+            )
+        except SystemExit:
+            self.mock_module.fail_json.assert_called_once_with(
+                "Cannot find the default kernel"
+            )
+        self.reset_vars()
+
+        # Test with empty facts list - should fail
+        try:
+            bootloader_settings.get_default_kernel_path(
+                [], self.result, self.mock_module
+            )
+        except SystemExit:
+            self.mock_module.fail_json.assert_called_once_with(
+                "Cannot find the default kernel"
+            )
+        self.reset_vars()

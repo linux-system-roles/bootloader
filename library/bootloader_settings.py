@@ -163,6 +163,11 @@ def validate_default_kernel(module, bootloader_settings):
         if bootloader_setting.get("default", False):
             default_count += 1
             kernel = bootloader_setting["kernel"]
+            if isinstance(kernel, str):
+                module.fail_json(
+                    "You cannot set a kernel as default when you are using a string kernel - %s"
+                    % (kernel)
+                )
             if isinstance(kernel, dict):
                 # Get the identifier from the kernel dict (path, title, or index)
                 kernel_id = (
