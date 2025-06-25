@@ -40,6 +40,11 @@ options:
                 required: false
                 type: list
                 elements: dict
+            default:
+                description: Whether to make this kernel the default or not.
+                required: false
+                type: bool
+                default: false
 author:
     - Sergei Petrosian (@spetrosi)
 """
@@ -150,6 +155,29 @@ def get_create_kernel(bootloader_setting_kernel):
     return kernel.strip()
 
 
+def validate_default_kernel(module, bootloader_settings):
+    """Validate that the bootloader_settings dict lists `default: true` not more than once"""
+    default_count = 0
+    default_kernels_paths = []
+    for bootloader_setting in bootloader_settings:
+        if bootloader_setting.get("default", False):
+            default_count += 1
+            kernel = bootloader_setting["kernel"]
+            if isinstance(kernel, dict):
+                # Get the identifier from the kernel dict (path, title, or index)
+                kernel_id = (
+                    kernel.get("path")
+                    or kernel.get("title")
+                    or str(kernel.get("index", ""))
+                )
+            default_kernels_paths.append(kernel_id)
+    if default_count > 1:
+        module.fail_json(
+            "Only one kernel can be set as default. Found %d kernels with 'default: true' - %s"
+            % (default_count, ", ".join(default_kernels_paths))
+        )
+
+
 def validate_kernels(module, bootloader_setting, bootloader_facts):
     """Validate that user passes bootloader_setting correctly"""
     kernel_action = ""
@@ -220,7 +248,6 @@ def validate_kernels(module, bootloader_setting, bootloader_facts):
             fact["path"] = fact.pop("kernel")
         fact_trunc = get_dict_same_keys(bootloader_setting["kernel"], fact)
         diff, same = compare_dicts(bootloader_setting["kernel"], fact_trunc)
-        # diff, same = compare_dicts(bootloader_setting["kernel"], fact)
         if diff and same:
             module.fail_json(
                 "A kernel with provided %s already exists and its other fields are different %s"
@@ -347,6 +374,25 @@ def rm_kernel(module, result, kernel):
     result["actions"].append(cmd)
 
 
+def get_default_kernel_path(bootloader_facts, result, module):
+    """Get the kernel path of the current default kernel from bootloader_facts"""
+    for fact in bootloader_facts:
+        if fact["default"]:
+            return fact["path"]
+    module.fail_json("Cannot find the default kernel")
+    return ""
+
+
+def set_default_kernel(module, result, kernel_path, bootloader_facts):
+    """Set a kernel as default"""
+    if get_default_kernel_path(bootloader_facts, result, module) == kernel_path:
+        return
+    cmd = "grubby --set-default=%s" % kernel_path
+    _unused, stdout, _unused = module.run_command(cmd)
+    result["changed"] = True
+    result["actions"].append(cmd)
+
+
 def run_module():
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
@@ -365,6 +411,9 @@ def run_module():
     # args/params passed to the execution, as well as if the module
     # supports check mode
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
+
+    validate_default_kernel(module, module.params["bootloader_settings"])
+
     for bootloader_setting in module.params["bootloader_settings"]:
         _unused, kernels_info, stderr = module.run_command("grubby --info=ALL")
         if "Permission denied" in stderr:
@@ -401,6 +450,12 @@ def run_module():
         # Remove a kernel
         if kernel_action == "remove":
             rm_kernel(module, result, kernel)
+
+        # Set default kernel
+        if bootloader_setting.get("default", False):
+            set_default_kernel(
+                module, result, bootloader_setting["kernel"]["path"], bootloader_facts
+            )
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results

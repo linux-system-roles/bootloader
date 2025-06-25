@@ -29,8 +29,14 @@
         - name: Flush handlers
           meta: flush_handlers
 
+        - name: Set fact with the default kernel to use for clones
+          set_fact:
+            __default_kernel: "{{ bootloader_facts | rejectattr('initrd', 'undefined')
+              | selectattr('default') | first }}"
+
         - name: Clone kernel to Clone1
           vars:
+            __bootloader_kernel_source: "{{ __default_kernel }}"
             __bootloader_clone_num: 1
             __bootloader_copy_default: true
           include_tasks: tasks/clone_kernel.yml

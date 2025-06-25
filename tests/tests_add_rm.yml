@@ -29,31 +29,87 @@
         - name: Flush handlers
           meta: flush_handlers
 
+        - name: Set fact with the default kernel to use for clones
+          set_fact:
+            __default_kernel: "{{ bootloader_facts | rejectattr('initrd', 'undefined')
+              | selectattr('default') | first }}"
+
         - name: Clone kernel to Clone1
           vars:
+            __bootloader_kernel_source: "{{ __default_kernel }}"
             __bootloader_clone_num: 1
             __bootloader_copy_default: true
+            __bootloader_make_default: true
           include_tasks: tasks/clone_kernel.yml
 
-        - name: Verify settings
+        - name: Clone again to check idempotency
           vars:
-            __default_args: "{{
-              (bootloader_facts | selectattr('title', 'defined') |
-              selectattr('default') |
-              first).args }}"
-          assert:
-            that: >-
-              (bootloader_facts | selectattr('title', 'defined') |
+            __bootloader_kernel_source: "{{ __default_kernel }}"
+            __bootloader_clone_num: 1
+            __bootloader_copy_default: true
+            __bootloader_make_default: true
+          include_tasks: tasks/clone_kernel.yml
+
+        - name: Verify settings for Clone1
+          vars:
+            default_args: "{{ __default_kernel.args }}"
+            cloned_kernel: "{{ bootloader_facts | selectattr('title', 'defined') |
               selectattr('title', 'search', 'Clone1') |
-              first).args == __default_args ~ ' test=kernel'
+              first }}"
+            cloned_kernel_args: "{{ cloned_kernel.args }}"
+          assert:
+            that:
+              - cloned_kernel_args == default_args ~ ' test=kernel'
+              - cloned_kernel.default | bool
+
+        - name: Clone kernel to Clone2
+          vars:
+            __bootloader_kernel_source: "{{ __default_kernel }}"
+            __bootloader_clone_num: 2
+            __bootloader_copy_default: false
+          include_tasks: tasks/clone_kernel.yml
+
+        - name: Verify settings for Clone2
+          vars:
+            default_args: "{{ __default_kernel.args }}"
+            cloned_kernel: "{{ bootloader_facts | selectattr('title', 'defined') |
+              selectattr('title', 'search', 'Clone2') |
+              first }}"
+            cloned_kernel_args: "{{ cloned_kernel.args }}"
+          assert:
+            that:
+              - cloned_kernel_args == 'test=kernel'
+              - not cloned_kernel.default
+
+        - name: Get error when trying to set two default kernels
+          block:
+            - name: Try to configure two default kernels
+              vars:
+                bootloader_settings:
+                  - kernel:
+                      path: "{{ __default_kernel.kernel }}_clone1"
+                    default: true
+                  - kernel:
+                      path: "{{ __default_kernel.kernel }}_clone2"
+                    default: true
+              include_role:
+                name: linux-system-roles.bootloader
+
+            - name: Unreachable task
+              fail:
+                msg: The above task must fail
+          rescue:
+            - name: Assert that the role failed with multiple default kernels set
+              assert:
+                that: "'Only one kernel can be set as default' in ansible_failed_result.msg"
 
         - name: Remove Clone1 kernel with 3 kernel keys
           vars:
             bootloader_gather_facts: true
             bootloader_settings:
               - kernel:
-                  path: "{{ test_kernel.kernel }}_clone1"
-                  initrd: "{{ test_kernel.initrd |
+                  path: "{{ __default_kernel.kernel }}_clone1"
+                  initrd: "{{ __default_kernel.initrd |
                     regex_replace(' .*$', '') }}_clone1"
                   title: Clone1
                 options:
@@ -65,44 +121,29 @@
           include_role:
             name: linux-system-roles.bootloader
 
-        - name: Verify that Clone1 kernel is removed
-          assert:
-            that: bootloader_facts | selectattr('title', 'defined') |
-              selectattr('title', 'search', 'Clone1') |
-              list | length == 0
-
-        - name: Clone kernel to Clone2
-          vars:
-            __bootloader_clone_num: 2
-            __bootloader_copy_default: false
-          include_tasks: tasks/clone_kernel.yml
-
-        - name: Verify settings
-          assert:
-            that: >-
-              (bootloader_facts | selectattr('title', 'defined') |
-              selectattr('title', 'search', 'Clone2') |
-              first).args == 'test=kernel'
-
         - name: Remove Clone2 kernel with kernel path
           vars:
             bootloader_gather_facts: true
             bootloader_settings:
               - kernel:
-                  path: "{{ test_kernel.kernel }}_clone2"
+                  path: "{{ __default_kernel.kernel }}_clone2"
                 state: absent
           include_role:
             name: linux-system-roles.bootloader
 
-        - name: Verify that Clone2 kernel is removed
+        - name: Verify that kernel is removed {{ item }}
           assert:
-            that: bootloader_facts | selectattr('title', 'defined') |
-              selectattr('title', 'search', 'Clone2') |
+            that: >-
+              bootloader_facts | selectattr('title', 'defined') |
+              selectattr('title', 'search', '{{ item }}') |
               list | length == 0
+          loop:
+            - Clone1
+            - Clone2
       always:
         - name: Remove cloned kernels
           command: >-
-            grubby --remove-kernel={{ test_kernel.kernel }}_clone{{ item }}
+            grubby --remove-kernel={{ __default_kernel.kernel }}_clone{{ item }}
           loop:
             - 1
             - 2
