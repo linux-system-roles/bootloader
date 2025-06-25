@@ -131,9 +131,9 @@
           assert:
             that:
               - __settings | regex_search('^.*console=tty0 print-fatal-signals=1 no_timer_check( |)$') | length > 0
-              - __settings | regex_search('option_without_value') == None
-              - __settings | regex_search('option_set_from_ALL')  == None
-              - __settings | regex_search('option_with_value') == None
+              - __settings | regex_search('option_without_value') == none
+              - __settings | regex_search('option_set_from_ALL')  == none
+              - __settings | regex_search('option_with_value') == none
 
         - name: Verify boot loader timeout configuration
           command: cat {{ __bootloader_grub_conf }}
