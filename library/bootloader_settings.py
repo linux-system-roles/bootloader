@@ -326,8 +326,8 @@ def get_setting_name(kernel_setting):
 
 def add_kernel(module, result, bootloader_setting, kernel):
     """Add a kernel with specified args"""
-    bootloader_setting_options=bootloader_setting.get("options", [])
-    bootloader_setting_default=bootloader_setting.get("default", False)
+    bootloader_setting_options = bootloader_setting.get("options", [])
+    bootloader_setting_default = bootloader_setting.get("default", False)
     boot_args = ""
     args = ""
     for kernel_setting in bootloader_setting_options:
@@ -347,9 +347,9 @@ def add_kernel(module, result, bootloader_setting, kernel):
 
 def mod_boot_args(module, result, bootloader_setting, kernel, kernel_info):
     """Build cmd to modify args for a kernel"""
-    bootloader_setting_options=bootloader_setting.get("options", [])
-    bootloader_setting_kernel=bootloader_setting.get("kernel", {})
-    bootloader_setting_default=bootloader_setting.get("default", False)
+    bootloader_setting_options = bootloader_setting.get("options", [])
+    bootloader_setting_kernel = bootloader_setting.get("kernel", {})
+    bootloader_setting_default = bootloader_setting.get("default", False)
     boot_absent_args = ""
     boot_present_args = ""
     boot_mod_args = ""
@@ -457,9 +457,7 @@ def run_module():
             _unused, kernel_info, _unused = module.run_command(
                 "grubby --info=" + kernel
             )
-            mod_boot_args(
-                module, result, bootloader_setting, kernel, kernel_info
-            )
+            mod_boot_args(module, result, bootloader_setting, kernel, kernel_info)
 
         # Remove a kernel
         if kernel_action == "remove":
