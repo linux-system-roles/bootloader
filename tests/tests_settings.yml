@@ -188,6 +188,6 @@
       always:
         - name: Remove cloned kernels
           command: >-
-            grubby --remove-kernel={{ test_kernel.kernel }}_clone1
+            grubby --remove-kernel={{ __default_kernel.kernel }}_clone1
           changed_when: true
           failed_when: false

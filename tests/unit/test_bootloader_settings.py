@@ -324,7 +324,7 @@ class InputValidator(unittest.TestCase):
         self.reset_vars()
         self.kernel = bootloader_settings.get_create_kernel(SETTINGS[8]["kernel"])
         bootloader_settings.add_kernel(
-            self.mock_module, self.result, SETTINGS[8]["options"], self.kernel
+            self.mock_module, self.result, SETTINGS[8], self.kernel
         )
         expected_cmd = (
             "grubby --initrd=/boot/initramfs-6.6.img --add-kernel=/boot/vmlinuz-6 --title='Fedora Linux' "
@@ -387,7 +387,7 @@ class InputValidator(unittest.TestCase):
         bootloader_settings.mod_boot_args(
             self.mock_module,
             self.result,
-            OPTIONS,
+            SETTINGS[12],
             str(KERNELS[1]["kernel"]["kernel_index"]),
             INFO,
         )
@@ -400,7 +400,7 @@ class InputValidator(unittest.TestCase):
         bootloader_settings.mod_boot_args(
             self.mock_module,
             self.result,
-            OPTIONS,
+            SETTINGS[12],
             KERNELS[3]["kernel"]["kernel_path"],
             INFO,
         )
@@ -413,7 +413,7 @@ class InputValidator(unittest.TestCase):
         bootloader_settings.mod_boot_args(
             self.mock_module,
             self.result,
-            OPTIONS,
+            SETTINGS[12],
             bootloader_settings.escapeval(
                 "TITLE=" + KERNELS[5]["kernel"]["kernel_title"]
             ),
@@ -431,7 +431,7 @@ class InputValidator(unittest.TestCase):
         bootloader_settings.mod_boot_args(
             self.mock_module,
             self.result,
-            OPTIONS,
+            SETTINGS[12],
             KERNELS[6]["kernel"],
             INFO,
         )
@@ -444,7 +444,7 @@ class InputValidator(unittest.TestCase):
         bootloader_settings.mod_boot_args(
             self.mock_module,
             self.result,
-            OPTIONS,
+            SETTINGS[12],
             KERNELS[7]["kernel"],
             INFO,
         )
@@ -457,7 +457,7 @@ class InputValidator(unittest.TestCase):
         bootloader_settings.mod_boot_args(
             self.mock_module,
             self.result,
-            OPTIONS,
+            SETTINGS[12],
             str(KERNELS[1]["kernel"]["kernel_index"]),
             INFO_SAME_ARGS,
         )
@@ -583,61 +583,27 @@ class InputValidator(unittest.TestCase):
             )
         self.reset_vars()
 
-    def test_get_default_kernel_path(self):
-        """Test get_default_kernel_path function"""
+    def test_get_default_kernel(self):
+        """Test get_default_kernel function"""
         self.reset_vars()
 
-        # Test with facts that have a default kernel
-        facts_with_default = [
-            {"path": "/boot/vmlinuz-1", "default": False},
-            {"path": "/boot/vmlinuz-2", "default": True},
-            {"path": "/boot/vmlinuz-3", "default": False},
-        ]
-        result = bootloader_settings.get_default_kernel_path(
-            facts_with_default, self.result, self.mock_module
-        )
-        self.assertEqual(result, "/boot/vmlinuz-2")
-        self.mock_module.fail_json.assert_not_called()
+        # Test getting default kernel by kernel (path)
+        self.mock_module.run_command.return_value = ("0", "/boot/vmlinuz-test", "")
+        result = bootloader_settings.get_default_kernel("kernel", self.mock_module)
+        self.assertEqual(result, "/boot/vmlinuz-test")
+        self.mock_module.run_command.assert_called_once_with("grubby --default-kernel")
         self.reset_vars()
 
-        # Test with facts from the existing FACTS constant (index 2 is default)
-        # Create a copy of FACTS with "kernel" key renamed to "path"
-        facts_with_path = []
-        for fact in FACTS:
-            fact_copy = fact.copy()
-            if "kernel" in fact_copy:
-                fact_copy["path"] = fact_copy.pop("kernel")
-            facts_with_path.append(fact_copy)
-
-        result = bootloader_settings.get_default_kernel_path(
-            facts_with_path, self.result, self.mock_module
-        )
-        self.assertEqual(result, "/boot/vmlinuz-6.5.7-100.fc37.x86_64")
-        self.mock_module.fail_json.assert_not_called()
+        # Test getting default kernel by title
+        self.mock_module.run_command.return_value = ("0", "Test Kernel Title", "")
+        result = bootloader_settings.get_default_kernel("title", self.mock_module)
+        self.assertEqual(result, "Test Kernel Title")
+        self.mock_module.run_command.assert_called_once_with("grubby --default-title")
         self.reset_vars()
 
-        # Test with facts that have no default kernel - should fail
-        facts_no_default = [
-            {"path": "/boot/vmlinuz-1", "default": False},
-            {"path": "/boot/vmlinuz-2", "default": False},
-        ]
-        try:
-            bootloader_settings.get_default_kernel_path(
-                facts_no_default, self.result, self.mock_module
-            )
-        except SystemExit:
-            self.mock_module.fail_json.assert_called_once_with(
-                "Cannot find the default kernel"
-            )
-        self.reset_vars()
-
-        # Test with empty facts list - should fail
-        try:
-            bootloader_settings.get_default_kernel_path(
-                [], self.result, self.mock_module
-            )
-        except SystemExit:
-            self.mock_module.fail_json.assert_called_once_with(
-                "Cannot find the default kernel"
-            )
+        # Test getting default kernel by index
+        self.mock_module.run_command.return_value = ("0", "2", "")
+        result = bootloader_settings.get_default_kernel("index", self.mock_module)
+        self.assertEqual(result, "2")
+        self.mock_module.run_command.assert_called_once_with("grubby --default-index")
         self.reset_vars()

@@ -158,7 +158,7 @@ def get_create_kernel(bootloader_setting_kernel):
 def validate_default_kernel(module, bootloader_settings):
     """Validate that the bootloader_settings dict lists `default: true` not more than once"""
     default_count = 0
-    default_kernels_paths = []
+    default_kernels = []
     for bootloader_setting in bootloader_settings:
         if bootloader_setting.get("default", False):
             default_count += 1
@@ -175,11 +175,11 @@ def validate_default_kernel(module, bootloader_settings):
                     or kernel.get("title")
                     or str(kernel.get("index", ""))
                 )
-            default_kernels_paths.append(kernel_id)
+            default_kernels.append(kernel_id)
     if default_count > 1:
         module.fail_json(
             "Only one kernel can be set as default. Found %d kernels with 'default: true' - %s"
-            % (default_count, ", ".join(default_kernels_paths))
+            % (default_count, ", ".join(default_kernels))
         )
 
 
@@ -193,7 +193,7 @@ def validate_kernels(module, bootloader_setting, bootloader_facts):
     kernel_create_keys = ["path", "title", "initrd"]
     kernel_mod_keys = ["path", "title", "index"]
     states = ["present", "absent"]
-    state = bootloader_setting["state"] if "state" in bootloader_setting else "present"
+    state = bootloader_setting.get("state", "present")
 
     if "state" in bootloader_setting and bootloader_setting["state"] not in states:
         module.fail_json("State must be one of '%s'" % ", ".join(states))
@@ -324,8 +324,10 @@ def get_setting_name(kernel_setting):
         return kernel_setting["name"]
 
 
-def add_kernel(module, result, bootloader_setting_options, kernel):
+def add_kernel(module, result, bootloader_setting, kernel):
     """Add a kernel with specified args"""
+    bootloader_setting_options=bootloader_setting.get("options", [])
+    bootloader_setting_default=bootloader_setting.get("default", False)
     boot_args = ""
     args = ""
     for kernel_setting in bootloader_setting_options:
@@ -335,14 +337,19 @@ def add_kernel(module, result, bootloader_setting_options, kernel):
         args = "--args=" + escapeval(boot_args.strip())
     if {"copy_default": True} in bootloader_setting_options:
         args += " --copy-default"
+    if bootloader_setting_default:
+        args += " --make-default"
     cmd = "grubby %s %s" % (kernel, args.strip())
     _unused, stdout, _unused = module.run_command(cmd)
     result["changed"] = True
     result["actions"].append(cmd)
 
 
-def mod_boot_args(module, result, bootloader_setting_options, kernel, kernel_info):
+def mod_boot_args(module, result, bootloader_setting, kernel, kernel_info):
     """Build cmd to modify args for a kernel"""
+    bootloader_setting_options=bootloader_setting.get("options", [])
+    bootloader_setting_kernel=bootloader_setting.get("kernel", {})
+    bootloader_setting_default=bootloader_setting.get("default", False)
     boot_absent_args = ""
     boot_present_args = ""
     boot_mod_args = ""
@@ -362,6 +369,21 @@ def mod_boot_args(module, result, bootloader_setting_options, kernel, kernel_inf
         boot_mod_args = " --remove-args=" + escapeval(boot_absent_args.strip())
     if len(boot_present_args) > 0:
         boot_mod_args += " --args=" + escapeval(boot_present_args.strip())
+    if bootloader_setting_default:
+        # Determine which kernel identifier to use
+        if bootloader_setting_kernel.get("path"):
+            kernel_key, kernel_val = "kernel", bootloader_setting_kernel["path"]
+        elif bootloader_setting_kernel.get("title"):
+            kernel_key, kernel_val = "title", bootloader_setting_kernel["title"]
+        elif bootloader_setting_kernel.get("index") is not None:
+            kernel_key, kernel_val = "index", str(bootloader_setting_kernel["index"])
+        else:
+            kernel_key, kernel_val = None, None
+
+        if kernel_key and kernel_val:
+            current_default = get_default_kernel(kernel_key, module)
+            if current_default != kernel_val:
+                boot_mod_args += " --make-default"
     if boot_mod_args:
         cmd = "grubby --update-kernel=" + kernel + boot_mod_args
         _unused, stdout, _unused = module.run_command(cmd)
@@ -379,23 +401,10 @@ def rm_kernel(module, result, kernel):
     result["actions"].append(cmd)
 
 
-def get_default_kernel_path(bootloader_facts, result, module):
-    """Get the kernel path of the current default kernel from bootloader_facts"""
-    for fact in bootloader_facts:
-        if fact["default"]:
-            return fact["path"]
-    module.fail_json("Cannot find the default kernel")
-    return ""
-
-
-def set_default_kernel(module, result, kernel_path, bootloader_facts):
-    """Set a kernel as default"""
-    if get_default_kernel_path(bootloader_facts, result, module) == kernel_path:
-        return
-    cmd = "grubby --set-default=%s" % kernel_path
+def get_default_kernel(kernel_key, module):
+    cmd = "grubby --default-" + kernel_key
     _unused, stdout, _unused = module.run_command(cmd)
-    result["changed"] = True
-    result["actions"].append(cmd)
+    return stdout.strip()
 
 
 def run_module():
@@ -441,7 +450,7 @@ def run_module():
 
         # Create a kernel with provided options
         if kernel_action == "create":
-            add_kernel(module, result, bootloader_setting["options"], kernel)
+            add_kernel(module, result, bootloader_setting, kernel)
 
         # Modify boot settings
         if kernel_action == "modify":
@@ -449,18 +458,12 @@ def run_module():
                 "grubby --info=" + kernel
             )
             mod_boot_args(
-                module, result, bootloader_setting["options"], kernel, kernel_info
+                module, result, bootloader_setting, kernel, kernel_info
             )
 
         # Remove a kernel
         if kernel_action == "remove":
             rm_kernel(module, result, kernel)
-
-        # Set default kernel
-        if bootloader_setting.get("default", False):
-            set_default_kernel(
-                module, result, bootloader_setting["kernel"]["path"], bootloader_facts
-            )
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results
