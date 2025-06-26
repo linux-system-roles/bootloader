@@ -17,15 +17,6 @@
     use: "{{ (__bootloader_is_ostree | d(false)) |
       ternary('ansible.posix.rhel_rpm_ostree', omit) }}"
 
-# Due to this bug, on latest grubby default kernel can change unexpectedly:
-# https://bugzilla.redhat.com/show_bug.cgi?id=2361624
-# So we need to get the default kernel in the beginning of the role and reset it at the end
-- name: Get default kernel in the beginning of the role
-  command: grubby --default-kernel
-  register: __bootloader_default_kernel
-  changed_when: false
-  when: bootloader_settings | selectattr('default', 'defined') | selectattr('default') | list | length == 0
-
 - name: Get stat of {{ __bootloader_default_grub }}
   stat:
     path: "{{ __bootloader_default_grub }}"
@@ -146,17 +137,6 @@
     path: "{{ __bootloader_user_conf }}"
     state: absent
   when: bootloader_remove_password | bool
-
-- name: Ensure that the default kernel remains the default
-  bootloader_settings:
-    bootloader_settings:
-      - kernel:
-          path: "{{ __bootloader_default_kernel.stdout }}"
-        default: true
-  when: bootloader_settings | selectattr('default', 'defined') | selectattr('default') | list | length == 0
-  notify:
-    - Fix default kernel boot parameters
-    - Reboot system
 
 # Keep at the end of tasks to collect latest info
 - name: Collect bootloader facts
