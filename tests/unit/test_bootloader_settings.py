@@ -212,7 +212,7 @@ class InputValidator(unittest.TestCase):
                 self.mock_module, *cmd_args
             )
         except SystemExit:
-            self.mock_module.fail_json.assert_called_once_with(err)
+            self.mock_module.fail_json.assert_called_once_with(msg=err)
 
     def test_validate_kernels(self):
         self.reset_vars()
@@ -492,7 +492,7 @@ class InputValidator(unittest.TestCase):
             )
         except SystemExit:
             self.mock_module.fail_json.assert_called_once_with(
-                "You cannot set a kernel as default when you are using a string kernel - ALL"
+                msg="You cannot set a kernel as default when you are using a string kernel - ALL"
             )
         self.reset_vars()
 
@@ -506,7 +506,7 @@ class InputValidator(unittest.TestCase):
             )
         except SystemExit:
             self.mock_module.fail_json.assert_called_once_with(
-                "You cannot set a kernel as default when you are using a string kernel - DEFAULT"
+                msg="You cannot set a kernel as default when you are using a string kernel - DEFAULT"
             )
         self.reset_vars()
 
@@ -564,7 +564,7 @@ class InputValidator(unittest.TestCase):
             )
         except SystemExit:
             self.mock_module.fail_json.assert_called_once_with(
-                "Only one kernel can be set as default. Found 2 kernels with 'default: true' - /boot/vmlinuz-test1, /boot/vmlinuz-test2"
+                msg="Only one kernel can be set as default. Found 2 kernels with 'default: true' - /boot/vmlinuz-test1, /boot/vmlinuz-test2"
             )
         self.reset_vars()
 
@@ -579,7 +579,7 @@ class InputValidator(unittest.TestCase):
             )
         except SystemExit:
             self.mock_module.fail_json.assert_called_once_with(
-                "Only one kernel can be set as default. Found 2 kernels with 'default: true' - Test Kernel, 2"
+                msg="Only one kernel can be set as default. Found 2 kernels with 'default: true' - Test Kernel, 2"
             )
         self.reset_vars()
 
