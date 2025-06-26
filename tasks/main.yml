@@ -24,7 +24,7 @@
   command: grubby --default-kernel
   register: __bootloader_default_kernel
   changed_when: false
-  when: bootloader_settings | selectattr('default', 'defined') | selectattr('default', 'equalto', true) | list | length == 0
+  when: bootloader_settings | selectattr('default', 'defined') | selectattr('default') | list | length == 0
 
 - name: Get stat of {{ __bootloader_default_grub }}
   stat:
@@ -153,12 +153,7 @@
       - kernel:
           path: "{{ __bootloader_default_kernel.stdout }}"
         default: true
-        options:
-          - name: test
-            value: kernel
-            state: present
-          - copy_default: false
-  when: bootloader_settings | selectattr('default', 'defined') | selectattr('default', 'equalto', true) | list | length == 0
+  when: bootloader_settings | selectattr('default', 'defined') | selectattr('default') | list | length == 0
   notify:
     - Fix default kernel boot parameters
     - Reboot system

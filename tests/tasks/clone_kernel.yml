@@ -1,25 +1,25 @@
 # SPDX-License-Identifier: MIT
 ---
-- name: Copy kernel and initrd for test purposes from {{ __default_kernel.kernel }}
+- name: Copy kernel and initrd for test purposes from {{ __bootloader_kernel_source.kernel }}
   copy:
     src: "{{ item.src }}"
     remote_src: true
     dest: "{{ item.dest }}"
     mode: preserve
   loop:
-    - src: "{{ __default_kernel.kernel }}"
-      dest: "{{ __default_kernel.kernel }}_clone{{ __bootloader_clone_num }}"
-    - src: "{{ __default_kernel.initrd | regex_replace(' .*$', '') }}"
+    - src: "{{ __bootloader_kernel_source.kernel }}"
+      dest: "{{ __bootloader_kernel_source.kernel }}_clone{{ __bootloader_clone_num }}"
+    - src: "{{ __bootloader_kernel_source.initrd | regex_replace(' .*$', '') }}"
       dest: >-
-        {{ __default_kernel.initrd |
+        {{ __bootloader_kernel_source.initrd |
         regex_replace(' .*$', '') }}_clone{{ __bootloader_clone_num }}
 
 - name: Create kernel Clone{{ __bootloader_clone_num }}
   vars:
     bootloader_settings:
       - kernel:
-          path: "{{ __default_kernel.kernel }}_clone{{ __bootloader_clone_num }}"
-          initrd: "{{ __default_kernel.initrd |
+          path: "{{ __bootloader_kernel_source.kernel }}_clone{{ __bootloader_clone_num }}"
+          initrd: "{{ __bootloader_kernel_source.initrd |
             regex_replace(' .*$', '') }}_clone{{ __bootloader_clone_num }}"
           title: Clone{{ __bootloader_clone_num }}
         options:
