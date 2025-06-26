@@ -73,7 +73,7 @@ from ansible.module_utils.basic import AnsibleModule
 import ansible.module_utils.six.moves as ansible_six_moves
 
 
-def get_facts(kernels_info, default_kernel):
+def get_facts(kernels_info, default_kernel_index):
     """Get kernel facts"""
     kernels_info_lines = kernels_info.strip().split("\n")
     kernels = []
@@ -82,7 +82,7 @@ def get_facts(kernels_info, default_kernel):
     for line in kernels_info_lines:
         index = re.search(r"index=(\d+)", line)
         if index:
-            is_default = index.group(1) == default_kernel.strip()
+            is_default = index.group(1) == default_kernel_index.strip()
             index_count += 1
             kernels.append({})
         search = re.search(r"(.*?)=(.*)", line)
@@ -348,8 +348,6 @@ def add_kernel(module, result, bootloader_setting, kernel):
 def mod_boot_args(module, result, bootloader_setting, kernel, kernel_info):
     """Build cmd to modify args for a kernel"""
     bootloader_setting_options = bootloader_setting.get("options", [])
-    bootloader_setting_kernel = bootloader_setting.get("kernel", {})
-    bootloader_setting_default = bootloader_setting.get("default", False)
     boot_absent_args = ""
     boot_present_args = ""
     boot_mod_args = ""
@@ -369,21 +367,6 @@ def mod_boot_args(module, result, bootloader_setting, kernel, kernel_info):
         boot_mod_args = " --remove-args=" + escapeval(boot_absent_args.strip())
     if len(boot_present_args) > 0:
         boot_mod_args += " --args=" + escapeval(boot_present_args.strip())
-    if bootloader_setting_default:
-        # Determine which kernel identifier to use
-        if bootloader_setting_kernel.get("path"):
-            kernel_key, kernel_val = "kernel", bootloader_setting_kernel["path"]
-        elif bootloader_setting_kernel.get("title"):
-            kernel_key, kernel_val = "title", bootloader_setting_kernel["title"]
-        elif bootloader_setting_kernel.get("index") is not None:
-            kernel_key, kernel_val = "index", str(bootloader_setting_kernel["index"])
-        else:
-            kernel_key, kernel_val = None, None
-
-        if kernel_key and kernel_val:
-            current_default = get_default_kernel(kernel_key, module)
-            if current_default != kernel_val:
-                boot_mod_args += " --make-default"
     if boot_mod_args:
         cmd = "grubby --update-kernel=" + kernel + boot_mod_args
         _unused, stdout, _unused = module.run_command(cmd)
@@ -391,6 +374,27 @@ def mod_boot_args(module, result, bootloader_setting, kernel, kernel_info):
         result["actions"].append(cmd)
     else:
         result["changed"] = False
+
+
+def mod_default_kernel(module, result, bootloader_setting, kernel_info):
+    """Modify default kernel"""
+    bootloader_setting_default = bootloader_setting.get("default", False)
+    if not bootloader_setting_default:
+        return
+
+    kernel_match = re.search(r'^kernel="([^"]*)"', kernel_info, re.MULTILINE)
+    if not kernel_match:
+        return
+
+    kernel = kernel_match.group(1)
+    current_default = get_default_kernel(module, "kernel")
+    if current_default == kernel:
+        return
+
+    cmd = "grubby --set-default=" + kernel
+    _unused, stdout, _unused = module.run_command(cmd)
+    result["changed"] = True
+    result["actions"].append(cmd)
 
 
 def rm_kernel(module, result, kernel):
@@ -401,8 +405,10 @@ def rm_kernel(module, result, kernel):
     result["actions"].append(cmd)
 
 
-def get_default_kernel(kernel_key, module):
-    cmd = "grubby --default-" + kernel_key
+def get_default_kernel(module, type):
+    if type not in ["kernel", "title", "index"]:
+        module.fail_json(msg="Type must be one of 'kernel', 'title', or 'index'")
+    cmd = "grubby --default-" + type
     _unused, stdout, _unused = module.run_command(cmd)
     return stdout.strip()
 
@@ -433,8 +439,8 @@ def run_module():
         if "Permission denied" in stderr:
             module.fail_json(msg="You must run this as sudo")
 
-        _unused, default_kernel, _unused = module.run_command("grubby --default-index")
-        bootloader_facts = get_facts(kernels_info, default_kernel)
+        default_kernel_index = get_default_kernel(module, "index")
+        bootloader_facts = get_facts(kernels_info, default_kernel_index)
 
         kernel_action, kernel = validate_kernels(
             module, bootloader_setting, bootloader_facts
@@ -458,6 +464,9 @@ def run_module():
                 "grubby --info=" + kernel
             )
             mod_boot_args(module, result, bootloader_setting, kernel, kernel_info)
+
+            # Modify default kernel
+            mod_default_kernel(module, result, bootloader_setting, kernel_info)
 
         # Remove a kernel
         if kernel_action == "remove":

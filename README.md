@@ -76,7 +76,7 @@ Each list should specify the same kernel using one or multiple keys.
     * `previous` - Optional - the only value is `replaced` - this is used to specify that the previous settings should be replaced with the given settings.
     * `copy_default` - Optional - when you create a kernel, you can specify `copy_default: true` to copy the default arguments to the created kernel
 
-4. 'default' - boolean that identifies whether to make this kernel the default or not.
+4. 'default' - boolean that identifies whether to make this kernel the default.
 By default, the role does not change the default kernel.
 
 For an example, see [Example Playbook](#example-playbook).

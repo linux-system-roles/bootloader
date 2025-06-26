@@ -589,21 +589,118 @@ class InputValidator(unittest.TestCase):
 
         # Test getting default kernel by kernel (path)
         self.mock_module.run_command.return_value = ("0", "/boot/vmlinuz-test", "")
-        result = bootloader_settings.get_default_kernel("kernel", self.mock_module)
+        result = bootloader_settings.get_default_kernel(self.mock_module, "kernel")
         self.assertEqual(result, "/boot/vmlinuz-test")
         self.mock_module.run_command.assert_called_once_with("grubby --default-kernel")
         self.reset_vars()
 
         # Test getting default kernel by title
         self.mock_module.run_command.return_value = ("0", "Test Kernel Title", "")
-        result = bootloader_settings.get_default_kernel("title", self.mock_module)
+        result = bootloader_settings.get_default_kernel(self.mock_module, "title")
         self.assertEqual(result, "Test Kernel Title")
         self.mock_module.run_command.assert_called_once_with("grubby --default-title")
         self.reset_vars()
 
         # Test getting default kernel by index
         self.mock_module.run_command.return_value = ("0", "2", "")
-        result = bootloader_settings.get_default_kernel("index", self.mock_module)
+        result = bootloader_settings.get_default_kernel(self.mock_module, "index")
         self.assertEqual(result, "2")
         self.mock_module.run_command.assert_called_once_with("grubby --default-index")
+        self.reset_vars()
+
+    def test_mod_default_kernel(self):
+        """Test mod_default_kernel function"""
+        self.reset_vars()
+
+        # Mock kernel info with quoted kernel path
+        kernel_info_with_kernel = '''index=0
+kernel="/boot/vmlinuz-6.5.12-100.fc37.x86_64"
+args="ro rootflags=subvol=root rhgb quiet"
+root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
+initrd="/boot/initramfs-6.5.12-100.fc37.x86_64.img"
+title="Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)"
+id="c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64"'''
+
+        # Test setting kernel as default when it's not currently default
+        bootloader_setting = {
+            "kernel": {"path": "/boot/vmlinuz-6.5.12-100.fc37.x86_64"},
+            "default": True,
+        }
+
+        # Mock current default kernel to be different
+        self.mock_module.run_command.return_value = ("0", "/boot/vmlinuz-different", "")
+
+        bootloader_settings.mod_default_kernel(
+            self.mock_module, self.result, bootloader_setting, kernel_info_with_kernel
+        )
+
+        self.assertEqual(self.mock_module.run_command.call_count, 2)
+        self.mock_module.run_command.assert_any_call("grubby --default-kernel")
+        self.mock_module.run_command.assert_any_call(
+            "grubby --set-default=/boot/vmlinuz-6.5.12-100.fc37.x86_64"
+        )
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(
+            self.result["actions"][0],
+            "grubby --set-default=/boot/vmlinuz-6.5.12-100.fc37.x86_64",
+        )
+        self.reset_vars()
+
+        # Test when kernel is already default - should not change anything
+        self.mock_module.run_command.return_value = (
+            "0",
+            "/boot/vmlinuz-6.5.12-100.fc37.x86_64",
+            "",
+        )
+
+        bootloader_settings.mod_default_kernel(
+            self.mock_module, self.result, bootloader_setting, kernel_info_with_kernel
+        )
+
+        # Should only call once to get current default, not call set-default
+        self.assertEqual(self.mock_module.run_command.call_count, 1)
+        self.mock_module.run_command.assert_called_with("grubby --default-kernel")
+        self.assertEqual(self.result["changed"], False)
+        self.assertEqual(self.result["actions"], [])
+        self.reset_vars()
+
+        # Test when default is False - should not change anything
+        bootloader_setting_no_default = {
+            "kernel": {"path": "/boot/vmlinuz-6.5.12-100.fc37.x86_64"},
+            "default": False,
+        }
+
+        bootloader_settings.mod_default_kernel(
+            self.mock_module,
+            self.result,
+            bootloader_setting_no_default,
+            kernel_info_with_kernel,
+        )
+
+        self.mock_module.run_command.assert_not_called()
+        self.assertEqual(self.result["changed"], False)
+        self.assertEqual(self.result["actions"], [])
+        self.reset_vars()
+
+        # Test when kernel info doesn't have kernel field
+        kernel_info_no_kernel = '''index=0
+args="ro rootflags=subvol=root rhgb quiet"
+root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"'''
+
+        bootloader_settings.mod_default_kernel(
+            self.mock_module, self.result, bootloader_setting, kernel_info_no_kernel
+        )
+
+        self.mock_module.run_command.assert_not_called()
+        self.assertEqual(self.result["changed"], False)
+        self.assertEqual(self.result["actions"], [])
+        self.reset_vars()
+
+        # Test invalid type parameter
+        try:
+            bootloader_settings.get_default_kernel(self.mock_module, "invalid")
+        except SystemExit:
+            self.mock_module.fail_json.assert_called_once_with(
+                msg="Type must be one of 'kernel', 'title', or 'index'"
+            )
         self.reset_vars()
