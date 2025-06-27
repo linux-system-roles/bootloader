@@ -144,7 +144,7 @@ def run_module():
 
     rc, kernels_info, stderr = module.run_command("grubby --info=ALL")
     if "Permission denied" in stderr:
-        module.fail_json(msg="You must run this as sudo", **result)
+        module.fail_json("You must run this as sudo", **result)
     rc, default_kernel, stderr = module.run_command("grubby --default-index")
     result["ansible_facts"]["bootloader_facts"] = get_facts(
         kernels_info, default_kernel
