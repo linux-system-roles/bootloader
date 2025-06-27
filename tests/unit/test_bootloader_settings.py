@@ -212,7 +212,7 @@ class InputValidator(unittest.TestCase):
                 self.mock_module, *cmd_args
             )
         except SystemExit:
-            self.mock_module.fail_json.assert_called_once_with(msg=err)
+            self.mock_module.fail_json.assert_called_once_with(err)
 
     def test_validate_kernels(self):
         self.reset_vars()
@@ -334,6 +334,92 @@ class InputValidator(unittest.TestCase):
         self.mock_module.run_command.assert_called_once_with(expected_cmd)
         self.assertEqual(self.result["changed"], True)
         self.assertEqual(self.result["actions"][0], expected_cmd)
+        self.reset_vars()
+
+        # Test adding kernel with default=True (covers --make-default code path)
+        kernel_setting_with_default = {
+            "kernel": {
+                "title": "Test Kernel",
+                "path": "/boot/vmlinuz-test",
+                "initrd": "/boot/initramfs-test.img",
+            },
+            "options": [
+                {"name": "console", "value": "tty0"},
+                {"name": "quiet"},
+            ],
+            "default": True,
+        }
+
+        test_kernel = bootloader_settings.get_create_kernel(
+            kernel_setting_with_default["kernel"]
+        )
+        bootloader_settings.add_kernel(
+            self.mock_module, self.result, kernel_setting_with_default, test_kernel
+        )
+        expected_cmd_with_default = (
+            "grubby --initrd=/boot/initramfs-test.img --add-kernel=/boot/vmlinuz-test --title='Test Kernel' "
+            + "--args='console=tty0 quiet' --make-default"
+        )
+        self.mock_module.run_command.assert_called_once_with(expected_cmd_with_default)
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["actions"][0], expected_cmd_with_default)
+        self.reset_vars()
+
+        # Test adding kernel with both copy_default and make-default
+        kernel_setting_both = {
+            "kernel": {
+                "title": "Test Kernel Both",
+                "path": "/boot/vmlinuz-test-both",
+                "initrd": "/boot/initramfs-test-both.img",
+            },
+            "options": [
+                {"name": "console", "value": "tty0"},
+                {"copy_default": True},
+            ],
+            "default": True,
+        }
+
+        test_kernel_both = bootloader_settings.get_create_kernel(
+            kernel_setting_both["kernel"]
+        )
+        bootloader_settings.add_kernel(
+            self.mock_module, self.result, kernel_setting_both, test_kernel_both
+        )
+        expected_cmd_both = (
+            "grubby --initrd=/boot/initramfs-test-both.img --add-kernel=/boot/vmlinuz-test-both --title='Test Kernel Both' "
+            + "--args=console=tty0 --copy-default --make-default"
+        )
+        self.mock_module.run_command.assert_called_once_with(expected_cmd_both)
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["actions"][0], expected_cmd_both)
+        self.reset_vars()
+
+        # Test adding kernel with no options but default=True
+        kernel_setting_no_options = {
+            "kernel": {
+                "title": "Test Kernel No Options",
+                "path": "/boot/vmlinuz-test-no-options",
+                "initrd": "/boot/initramfs-test-no-options.img",
+            },
+            "default": True,
+        }
+
+        test_kernel_no_options = bootloader_settings.get_create_kernel(
+            kernel_setting_no_options["kernel"]
+        )
+        bootloader_settings.add_kernel(
+            self.mock_module,
+            self.result,
+            kernel_setting_no_options,
+            test_kernel_no_options,
+        )
+        expected_cmd_no_options = (
+            "grubby --initrd=/boot/initramfs-test-no-options.img --add-kernel=/boot/vmlinuz-test-no-options --title='Test Kernel No Options' "
+            + "--make-default"
+        )
+        self.mock_module.run_command.assert_called_once_with(expected_cmd_no_options)
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["actions"][0], expected_cmd_no_options)
         self.reset_vars()
 
     def test_rm_kernel(self):
@@ -492,7 +578,7 @@ class InputValidator(unittest.TestCase):
             )
         except SystemExit:
             self.mock_module.fail_json.assert_called_once_with(
-                msg="You cannot set a kernel as default when you are using a string kernel - ALL"
+                "You cannot set a kernel as default when you are using a string kernel - ALL"
             )
         self.reset_vars()
 
@@ -506,7 +592,7 @@ class InputValidator(unittest.TestCase):
             )
         except SystemExit:
             self.mock_module.fail_json.assert_called_once_with(
-                msg="You cannot set a kernel as default when you are using a string kernel - DEFAULT"
+                "You cannot set a kernel as default when you are using a string kernel - DEFAULT"
             )
         self.reset_vars()
 
@@ -564,7 +650,7 @@ class InputValidator(unittest.TestCase):
             )
         except SystemExit:
             self.mock_module.fail_json.assert_called_once_with(
-                msg="Only one kernel can be set as default. Found 2 kernels with 'default: true' - /boot/vmlinuz-test1, /boot/vmlinuz-test2"
+                "Only one kernel can be set as default. Found 2 kernels with 'default: true' - /boot/vmlinuz-test1, /boot/vmlinuz-test2"
             )
         self.reset_vars()
 
@@ -579,7 +665,7 @@ class InputValidator(unittest.TestCase):
             )
         except SystemExit:
             self.mock_module.fail_json.assert_called_once_with(
-                msg="Only one kernel can be set as default. Found 2 kernels with 'default: true' - Test Kernel, 2"
+                "Only one kernel can be set as default. Found 2 kernels with 'default: true' - Test Kernel, 2"
             )
         self.reset_vars()
 
@@ -701,6 +787,6 @@ root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"'''
             bootloader_settings.get_default_kernel(self.mock_module, "invalid")
         except SystemExit:
             self.mock_module.fail_json.assert_called_once_with(
-                msg="Type must be one of 'kernel', 'title', or 'index'"
+                "Type must be one of 'kernel', 'title', or 'index'"
             )
         self.reset_vars()
