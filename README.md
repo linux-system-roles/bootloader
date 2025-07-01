@@ -27,6 +27,11 @@ from external collections.  Please use the following command to install them:
 ansible-galaxy collection install -vv -r meta/collection-requirements.yml
 ```
 
+## Considerations
+
+Since Fedora 42, or grubby-8.40-82.fc42.x86_64, there is a bug [BZ#2361624](https://bugzilla.redhat.com/show_bug.cgi?id=2361624) that causes the default kernel to change to a newly added kernel.
+You can ensure that a particular kernel is booted by setting the `default: true` entry for the kernel within the [bootloader_settings](#bootloader_settings) variable.
+
 ## Role Variables
 
 ### bootloader_gather_facts
@@ -76,7 +81,7 @@ Each list should specify the same kernel using one or multiple keys.
     * `previous` - Optional - the only value is `replaced` - this is used to specify that the previous settings should be replaced with the given settings.
     * `copy_default` - Optional - when you create a kernel, you can specify `copy_default: true` to copy the default arguments to the created kernel
 
-4. 'default' - boolean that identifies whether to make this kernel the default.
+4. `default` - boolean that identifies whether to make this kernel the default.
 By default, the role does not change the default kernel.
 
 For an example, see [Example Playbook](#example-playbook).
