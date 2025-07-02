@@ -29,22 +29,18 @@
         - name: Flush handlers
           meta: flush_handlers
 
+        - name: Set fact with the default kernel to use for clones
+          set_fact:
+            __default_kernel: "{{ bootloader_facts | rejectattr('initrd', 'undefined')
+              | selectattr('default') | first }}"
+
         - name: Clone kernel to Clone1
           vars:
+            __bootloader_kernel_source: "{{ __default_kernel }}"
             __bootloader_clone_num: 1
             __bootloader_copy_default: true
+            __bootloader_make_default: true
           include_tasks: tasks/clone_kernel.yml
-
-        - name: >-
-            Verify that default bootloader is correct in bootloader_gather_facts
-          vars:
-            default_bootloader: "{{
-              (bootloader_facts | selectattr('default') |
-              first).kernel }}"
-          command: grubby --default-kernel
-          changed_when: false
-          register: __default_kernel_cmd
-          failed_when: default_bootloader != __default_kernel_cmd.stdout
 
         - name: Set fact with the test clone
           set_fact:
@@ -53,12 +49,21 @@
               selectattr('title', 'search', 'Clone1') |
               first }}"
 
-        - name: Replace configuration with settings using kernel index
+        - name: >-
+            Verify that the clone kernel is default
+          vars:
+            default_bootloader: "{{
+              (bootloader_facts | selectattr('default') |
+              first) }}"
+          assert:
+            that: cloned_kernel == default_bootloader
+
+        - name: Replace configuration with settings using kernel path
           vars:
             bootloader_gather_facts: true
             bootloader_settings:
               - kernel:
-                  index: "{{ cloned_kernel.index }}"
+                  path: "{{ cloned_kernel.kernel }}"
                 options:
                   - name: console
                     value: tty0
@@ -74,6 +79,9 @@
                 options:
                   - name: option_set_from_ALL
                     state: present
+              - kernel:
+                  path: "{{ __default_kernel.kernel }}"
+                default: true
             bootloader_timeout: 6
           include_role:
             name: linux-system-roles.bootloader
@@ -85,13 +93,19 @@
           assert:
             that: not (bootloader_reboot_required | d(false))
 
-        - name: Verify settings
+        - name: Verify clone kernel arguments and that it is not default
+          vars:
+            default_bootloader: "{{
+              (bootloader_facts | selectattr('default') |
+              first) }}"
           assert:
-            that: >-
-              (bootloader_facts |
-              selectattr('index', 'search', cloned_kernel.index) | first).args |
-              regex_search('^.*console=tty0 print-fatal-signals=1 no_timer_check
-              option_without_value option_with_value=option_value option_set_from_ALL( |)$') | length > 0
+            that:
+              - cloned_kernel != default_bootloader
+              - >-
+                (bootloader_facts |
+                selectattr('kernel', 'search', cloned_kernel.kernel) | first).args |
+                regex_search('^.*console=tty0 print-fatal-signals=1 no_timer_check
+                option_without_value option_with_value=option_value option_set_from_ALL( |)$') | length > 0
 
         - name: Verify boot loader timeout configuration
           command: cat {{ __bootloader_grub_conf }}
@@ -127,7 +141,7 @@
 
         - name: Verify that existing settings remained and removed settings are not present
           vars:
-            __settings: "{{ (bootloader_facts | selectattr('index', 'search', cloned_kernel.index) | first).args }}"
+            __settings: "{{ (bootloader_facts | selectattr('kernel', 'search', cloned_kernel.kernel) | first).args }}"
           assert:
             that:
               - __settings | regex_search('^.*console=tty0 print-fatal-signals=1 no_timer_check( |)$') | length > 0
@@ -168,7 +182,7 @@
           assert:
             that: >-
               (bootloader_facts |
-              selectattr('index', 'search', cloned_kernel.index) | first).args |
+              selectattr('kernel', 'search', cloned_kernel.kernel) | first).args |
               regex_search('^.*console=tty0 print-fatal-signals=1
               no_timer_check( |)$') | length > 0
 
@@ -182,6 +196,6 @@
       always:
         - name: Remove cloned kernels
           command: >-
-            grubby --remove-kernel={{ test_kernel.kernel }}_clone1
+            grubby --remove-kernel={{ __default_kernel.kernel }}_clone1
           changed_when: true
           failed_when: false

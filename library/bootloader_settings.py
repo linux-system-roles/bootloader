@@ -40,6 +40,11 @@ options:
                 required: false
                 type: list
                 elements: dict
+            default:
+                description: Whether to make this kernel the default or not.
+                required: false
+                type: bool
+                default: false
 author:
     - Sergei Petrosian (@spetrosi)
 """
@@ -68,7 +73,7 @@ from ansible.module_utils.basic import AnsibleModule
 import ansible.module_utils.six.moves as ansible_six_moves
 
 
-def get_facts(kernels_info, default_kernel):
+def get_facts(kernels_info, default_kernel_index):
     """Get kernel facts"""
     kernels_info_lines = kernels_info.strip().split("\n")
     kernels = []
@@ -77,7 +82,7 @@ def get_facts(kernels_info, default_kernel):
     for line in kernels_info_lines:
         index = re.search(r"index=(\d+)", line)
         if index:
-            is_default = index.group(1) == default_kernel.strip()
+            is_default = index.group(1) == default_kernel_index.strip()
             index_count += 1
             kernels.append({})
         search = re.search(r"(.*?)=(.*)", line)
@@ -150,6 +155,34 @@ def get_create_kernel(bootloader_setting_kernel):
     return kernel.strip()
 
 
+def validate_default_kernel(module, bootloader_settings):
+    """Validate that the bootloader_settings dict lists `default: true` not more than once"""
+    default_count = 0
+    default_kernels = []
+    for bootloader_setting in bootloader_settings:
+        if bootloader_setting.get("default", False):
+            default_count += 1
+            kernel = bootloader_setting["kernel"]
+            if isinstance(kernel, str):
+                module.fail_json(
+                    "You cannot set a kernel as default when you are using a string kernel - %s"
+                    % (kernel)
+                )
+            if isinstance(kernel, dict):
+                # Get the identifier from the kernel dict (path, title, or index)
+                kernel_id = (
+                    kernel.get("path")
+                    or kernel.get("title")
+                    or str(kernel.get("index", ""))
+                )
+            default_kernels.append(kernel_id)
+    if default_count > 1:
+        module.fail_json(
+            "Only one kernel can be set as default. Found %d kernels with 'default: true' - %s"
+            % (default_count, ", ".join(default_kernels))
+        )
+
+
 def validate_kernels(module, bootloader_setting, bootloader_facts):
     """Validate that user passes bootloader_setting correctly"""
     kernel_action = ""
@@ -160,7 +193,7 @@ def validate_kernels(module, bootloader_setting, bootloader_facts):
     kernel_create_keys = ["path", "title", "initrd"]
     kernel_mod_keys = ["path", "title", "index"]
     states = ["present", "absent"]
-    state = bootloader_setting["state"] if "state" in bootloader_setting else "present"
+    state = bootloader_setting.get("state", "present")
 
     if "state" in bootloader_setting and bootloader_setting["state"] not in states:
         module.fail_json("State must be one of '%s'" % ", ".join(states))
@@ -220,7 +253,6 @@ def validate_kernels(module, bootloader_setting, bootloader_facts):
             fact["path"] = fact.pop("kernel")
         fact_trunc = get_dict_same_keys(bootloader_setting["kernel"], fact)
         diff, same = compare_dicts(bootloader_setting["kernel"], fact_trunc)
-        # diff, same = compare_dicts(bootloader_setting["kernel"], fact)
         if diff and same:
             module.fail_json(
                 "A kernel with provided %s already exists and its other fields are different %s"
@@ -292,8 +324,10 @@ def get_setting_name(kernel_setting):
         return kernel_setting["name"]
 
 
-def add_kernel(module, result, bootloader_setting_options, kernel):
+def add_kernel(module, result, bootloader_setting, kernel):
     """Add a kernel with specified args"""
+    bootloader_setting_options = bootloader_setting.get("options", [])
+    bootloader_setting_default = bootloader_setting.get("default", False)
     boot_args = ""
     args = ""
     for kernel_setting in bootloader_setting_options:
@@ -303,14 +337,17 @@ def add_kernel(module, result, bootloader_setting_options, kernel):
         args = "--args=" + escapeval(boot_args.strip())
     if {"copy_default": True} in bootloader_setting_options:
         args += " --copy-default"
+    if bootloader_setting_default:
+        args += " --make-default"
     cmd = "grubby %s %s" % (kernel, args.strip())
     _unused, stdout, _unused = module.run_command(cmd)
     result["changed"] = True
     result["actions"].append(cmd)
 
 
-def mod_boot_args(module, result, bootloader_setting_options, kernel, kernel_info):
+def mod_boot_args(module, result, bootloader_setting, kernel, kernel_info):
     """Build cmd to modify args for a kernel"""
+    bootloader_setting_options = bootloader_setting.get("options", [])
     boot_absent_args = ""
     boot_present_args = ""
     boot_mod_args = ""
@@ -339,12 +376,41 @@ def mod_boot_args(module, result, bootloader_setting_options, kernel, kernel_inf
         result["changed"] = False
 
 
+def mod_default_kernel(module, result, bootloader_setting, kernel_info):
+    """Modify default kernel"""
+    bootloader_setting_default = bootloader_setting.get("default", False)
+    if not bootloader_setting_default:
+        return
+
+    kernel_match = re.search(r'^kernel="([^"]*)"', kernel_info, re.MULTILINE)
+    if not kernel_match:
+        return
+
+    kernel = kernel_match.group(1)
+    current_default = get_default_kernel(module, "kernel")
+    if current_default == kernel:
+        return
+
+    cmd = "grubby --set-default=" + kernel
+    _unused, stdout, _unused = module.run_command(cmd)
+    result["changed"] = True
+    result["actions"].append(cmd)
+
+
 def rm_kernel(module, result, kernel):
     """Remove a kernel"""
     cmd = "grubby --remove-kernel=%s" % kernel
     _unused, stdout, _unused = module.run_command(cmd)
     result["changed"] = True
     result["actions"].append(cmd)
+
+
+def get_default_kernel(module, type):
+    if type not in ["kernel", "title", "index"]:
+        module.fail_json("Type must be one of 'kernel', 'title', or 'index'")
+    cmd = "grubby --default-" + type
+    _unused, stdout, _unused = module.run_command(cmd)
+    return stdout.strip()
 
 
 def run_module():
@@ -365,13 +431,16 @@ def run_module():
     # args/params passed to the execution, as well as if the module
     # supports check mode
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
+
+    validate_default_kernel(module, module.params["bootloader_settings"])
+
     for bootloader_setting in module.params["bootloader_settings"]:
         _unused, kernels_info, stderr = module.run_command("grubby --info=ALL")
         if "Permission denied" in stderr:
             module.fail_json("You must run this as sudo")
 
-        _unused, default_kernel, _unused = module.run_command("grubby --default-index")
-        bootloader_facts = get_facts(kernels_info, default_kernel)
+        default_kernel_index = get_default_kernel(module, "index")
+        bootloader_facts = get_facts(kernels_info, default_kernel_index)
 
         kernel_action, kernel = validate_kernels(
             module, bootloader_setting, bootloader_facts
@@ -387,16 +456,17 @@ def run_module():
 
         # Create a kernel with provided options
         if kernel_action == "create":
-            add_kernel(module, result, bootloader_setting["options"], kernel)
+            add_kernel(module, result, bootloader_setting, kernel)
 
         # Modify boot settings
         if kernel_action == "modify":
             _unused, kernel_info, _unused = module.run_command(
                 "grubby --info=" + kernel
             )
-            mod_boot_args(
-                module, result, bootloader_setting["options"], kernel, kernel_info
-            )
+            mod_boot_args(module, result, bootloader_setting, kernel, kernel_info)
+
+            # Modify default kernel
+            mod_default_kernel(module, result, bootloader_setting, kernel_info)
 
         # Remove a kernel
         if kernel_action == "remove":

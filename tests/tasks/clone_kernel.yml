@@ -1,30 +1,25 @@
 # SPDX-License-Identifier: MIT
 ---
-- name: Set fact with the default kernel to use for clones
-  set_fact:
-    test_kernel: "{{ bootloader_facts | rejectattr('initrd', 'undefined')
-      | selectattr('default') | first }}"
-
-- name: Clone test_kernel kernel and initrd for test purposes
+- name: Copy kernel and initrd for test purposes from {{ __bootloader_kernel_source.kernel }}
   copy:
     src: "{{ item.src }}"
     remote_src: true
     dest: "{{ item.dest }}"
     mode: preserve
   loop:
-    - src: "{{ test_kernel.kernel }}"
-      dest: "{{ test_kernel.kernel }}_clone{{ __bootloader_clone_num }}"
-    - src: "{{ test_kernel.initrd | regex_replace(' .*$', '') }}"
+    - src: "{{ __bootloader_kernel_source.kernel }}"
+      dest: "{{ __bootloader_kernel_source.kernel }}_clone{{ __bootloader_clone_num }}"
+    - src: "{{ __bootloader_kernel_source.initrd | regex_replace(' .*$', '') }}"
       dest: >-
-        {{ test_kernel.initrd |
+        {{ __bootloader_kernel_source.initrd |
         regex_replace(' .*$', '') }}_clone{{ __bootloader_clone_num }}
 
 - name: Create kernel Clone{{ __bootloader_clone_num }}
   vars:
     bootloader_settings:
       - kernel:
-          path: "{{ test_kernel.kernel }}_clone{{ __bootloader_clone_num }}"
-          initrd: "{{ test_kernel.initrd |
+          path: "{{ __bootloader_kernel_source.kernel }}_clone{{ __bootloader_clone_num }}"
+          initrd: "{{ __bootloader_kernel_source.initrd |
             regex_replace(' .*$', '') }}_clone{{ __bootloader_clone_num }}"
           title: Clone{{ __bootloader_clone_num }}
         options:
@@ -32,6 +27,7 @@
             value: kernel
             state: present
           - copy_default: "{{ __bootloader_copy_default }}"
+        default: "{{ __bootloader_make_default | d(false) }}"
   include_role:
     name: linux-system-roles.bootloader
 

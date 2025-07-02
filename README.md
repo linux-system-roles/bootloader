@@ -27,6 +27,11 @@ from external collections.  Please use the following command to install them:
 ansible-galaxy collection install -vv -r meta/collection-requirements.yml
 ```
 
+## Considerations
+
+Since Fedora 42, or grubby-8.40-82.fc42.x86_64, there is a bug [BZ#2361624](https://bugzilla.redhat.com/show_bug.cgi?id=2361624) that causes the default kernel to change to a newly added kernel.
+You can ensure that a particular kernel is booted by setting the `default: true` entry for the kernel within the [bootloader_settings](#bootloader_settings) variable.
+
 ## Role Variables
 
 ### bootloader_gather_facts
@@ -41,14 +46,14 @@ Type: `bool`
 
 With this variable, list kernels and their command line parameters that you want to set.
 
-Required keys:
+Available keys:
 
 1. `kernel` - with this, specify the kernel to update settings for.
 Each list should specify the same kernel using one or multiple keys.
 
-    If you want to you add a kernel, you must specify three keys - `path`, `title`, `initrd`.
+    If you want to add a kernel, you must specify three keys: `path`, `title`, `initrd`.
 
-    If you want to modify or remove a kerne, you can specify one or more key.
+    If you want to modify or remove a kernel, you can specify one or more key.
 
     You can also specify `DEFAULT` or `ALL` to update the default or all kernels.
 
@@ -75,6 +80,9 @@ Each list should specify the same kernel using one or multiple keys.
     * `state` - `present` (default) or `absent`. The value `absent` means to remove a setting with `name` name - name must be provided.
     * `previous` - Optional - the only value is `replaced` - this is used to specify that the previous settings should be replaced with the given settings.
     * `copy_default` - Optional - when you create a kernel, you can specify `copy_default: true` to copy the default arguments to the created kernel
+
+4. `default` - boolean that identifies whether to make this kernel the default.
+By default, the role does not change the default kernel.
 
 For an example, see [Example Playbook](#example-playbook).
 
@@ -201,12 +209,14 @@ For example:
             value: tty0
             state: present
           - previous: replaced
+        default: false
       # Update an existing kernel using index
       - kernel:
           index: 1
         options:
           - name: print-fatal-signals
             value: 1
+        default: true
       # Update an existing kernel using title
       - kernel:
           title: Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8
