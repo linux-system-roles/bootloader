@@ -1,6 +1,13 @@
 Changelog
 =========
 
+[1.1.0] - 2025-07-02
+--------------------
+
+### New Features
+
+- feat: Add ability to configure default kernel (#147)
+
 [1.0.10] - 2025-06-25
 --------------------
 
