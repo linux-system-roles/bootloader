@@ -44,16 +44,16 @@ Type: `bool`
 
 ### bootloader_settings
 
-With this variable, list kernels and their command line parameters that you want to set.
+Use this variable to list kernels and their command line parameters.
 
 Available keys:
 
 1. `kernel` - with this, specify the kernel to update settings for.
-Each list should specify the same kernel using one or multiple keys.
+Each entry should specify a kernel using one or more keys.
 
     If you want to add a kernel, you must specify three keys: `path`, `title`, `initrd`.
 
-    If you want to modify or remove a kernel, you can specify one or more key.
+    If you want to modify or remove a kernel, you can specify one or more keys.
 
     You can also specify `DEFAULT` or `ALL` to update the default or all kernels.
 
@@ -73,13 +73,13 @@ Each list should specify the same kernel using one or multiple keys.
 
     Default: `present`
 
-3. `options` - with this, specify settings to update
+3. `options` - use this to specify settings to update
 
-    * `name` - The name of the setting. `name` is omitted when using `replaced`.
+    * `name` - The name of the setting. Omit `name` when using `replaced`.
     * `value` - The value for the setting. You must omit `value` if the setting has no value, e.g. `quiet`.
-    * `state` - `present` (default) or `absent`. The value `absent` means to remove a setting with `name` name - name must be provided.
-    * `previous` - Optional - the only value is `replaced` - this is used to specify that the previous settings should be replaced with the given settings.
-    * `copy_default` - Optional - when you create a kernel, you can specify `copy_default: true` to copy the default arguments to the created kernel
+    * `state` - `present` (default) or `absent`. The value `absent` means to remove a setting with the given `name` - the name must be provided.
+    * `previous` - Optional - the only supported value is `replaced` - use this to specify that the previous settings should be replaced with the given settings.
+    * `copy_default` - Optional - when creating a kernel, you can specify `copy_default: true` to copy the default arguments to the created kernel.
 
 4. `default` - boolean that identifies whether to make this kernel the default.
 By default, the role does not change the default kernel.
@@ -92,7 +92,7 @@ Type: `dict`
 
 ### bootloader_timeout
 
-With this variable, you can customize the loading time of the GRUB bootloader.
+Use this variable to customize the loading time of the GRUB bootloader.
 
 Default: `5`
 
@@ -100,11 +100,11 @@ Type: `int`
 
 ### bootloader_password
 
-With this variable, you can protect boot parameters with a password.
+Use this variable to protect boot parameters with a password.
 
-__WARNING__: Changing bootloader password is not idempotent.
+**WARNING**: Changing the bootloader password is not idempotent.
 
-Boot loader username is always `root`.
+The bootloader username is always `root`.
 
 This should come from vault.
 
@@ -116,7 +116,7 @@ Type: `string`
 
 ### bootloader_remove_password
 
-By setting this variable to `true`, you can remove bootloader password.
+Set this variable to `true` to remove the bootloader password.
 
 Default: `false`
 
@@ -124,11 +124,11 @@ Type: `bool`
 
 ### bootloader_reboot_ok
 
-If `true`, if the role detects that something was changed that requires a reboot to take effect, the role will reboot the managed host.
+If `true`, the role will reboot the managed host when it detects that changes require a reboot to take effect.
 
 If `false`, it is up to you to determine when to reboot the managed host.
 
-The role will returns the variable `bootloader_reboot_required` (see below) with a value of `true` to indicate that some change has occurred which needs a reboot to take effect.
+The role will return the variable `bootloader_reboot_required` (see below) with a value of `true` to indicate that changes have occurred which need a reboot to take effect.
 
 Default: `false`
 
@@ -140,7 +140,7 @@ The role exports the following variables:
 
 ### bootloader_reboot_needed
 
-Default `false` - if `true`, this means a reboot is needed to apply the changes made by the role
+Default: `false` - if `true`, this means a reboot is needed to apply the changes made by the role.
 
 ### bootloader_facts
 
