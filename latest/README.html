@@ -210,17 +210,17 @@ that contain boot information for all kernels.</p>
 <p>Default: <code>false</code></p>
 <p>Type: <code>bool</code></p>
 <h2 id="bootloader_settings">bootloader_settings</h2>
-<p>With this variable, list kernels and their command line parameters
-that you want to set.</p>
+<p>Use this variable to list kernels and their command line
+parameters.</p>
 <p>Available keys:</p>
 <ol type="1">
 <li><p><code>kernel</code> - with this, specify the kernel to update
-settings for. Each list should specify the same kernel using one or
-multiple keys.</p>
+settings for. Each entry should specify a kernel using one or more
+keys.</p>
 <p>If you want to add a kernel, you must specify three keys:
 <code>path</code>, <code>title</code>, <code>initrd</code>.</p>
 <p>If you want to modify or remove a kernel, you can specify one or more
-key.</p>
+keys.</p>
 <p>You can also specify <code>DEFAULT</code> or <code>ALL</code> to
 update the default or all kernels.</p>
 <p>Available keys:</p>
@@ -238,22 +238,23 @@ update the default or all kernels.</p>
 <li><p><code>state</code> - state of the kernel.</p>
 <p>Available values: <code>present</code>, <code>absent</code></p>
 <p>Default: <code>present</code></p></li>
-<li><p><code>options</code> - with this, specify settings to update</p>
+<li><p><code>options</code> - use this to specify settings to update</p>
 <ul>
-<li><code>name</code> - The name of the setting. <code>name</code> is
-omitted when using <code>replaced</code>.</li>
+<li><code>name</code> - The name of the setting. Omit <code>name</code>
+when using <code>replaced</code>.</li>
 <li><code>value</code> - The value for the setting. You must omit
 <code>value</code> if the setting has no value, e.g.
 <code>quiet</code>.</li>
 <li><code>state</code> - <code>present</code> (default) or
 <code>absent</code>. The value <code>absent</code> means to remove a
-setting with <code>name</code> name - name must be provided.</li>
-<li><code>previous</code> - Optional - the only value is
-<code>replaced</code> - this is used to specify that the previous
-settings should be replaced with the given settings.</li>
-<li><code>copy_default</code> - Optional - when you create a kernel, you
+setting with the given <code>name</code> - the name must be
+provided.</li>
+<li><code>previous</code> - Optional - the only supported value is
+<code>replaced</code> - use this to specify that the previous settings
+should be replaced with the given settings.</li>
+<li><code>copy_default</code> - Optional - when creating a kernel, you
 can specify <code>copy_default: true</code> to copy the default
-arguments to the created kernel</li>
+arguments to the created kernel.</li>
 </ul></li>
 <li><p><code>default</code> - boolean that identifies whether to make
 this kernel the default. By default, the role does not change the
@@ -264,43 +265,41 @@ Playbook</a>.</p>
 <p>Default: <code>{}</code></p>
 <p>Type: <code>dict</code></p>
 <h2 id="bootloader_timeout">bootloader_timeout</h2>
-<p>With this variable, you can customize the loading time of the GRUB
+<p>Use this variable to customize the loading time of the GRUB
 bootloader.</p>
 <p>Default: <code>5</code></p>
 <p>Type: <code>int</code></p>
 <h2 id="bootloader_password">bootloader_password</h2>
-<p>With this variable, you can protect boot parameters with a
-password.</p>
-<p><strong>WARNING</strong>: Changing bootloader password is not
+<p>Use this variable to protect boot parameters with a password.</p>
+<p><strong>WARNING</strong>: Changing the bootloader password is not
 idempotent.</p>
-<p>Boot loader username is always <code>root</code>.</p>
+<p>The bootloader username is always <code>root</code>.</p>
 <p>This should come from vault.</p>
 <p>If unset, current configuration is not touched.</p>
 <p>Default: <code>null</code></p>
 <p>Type: <code>string</code></p>
 <h2 id="bootloader_remove_password">bootloader_remove_password</h2>
-<p>By setting this variable to <code>true</code>, you can remove
-bootloader password.</p>
+<p>Set this variable to <code>true</code> to remove the bootloader
+password.</p>
 <p>Default: <code>false</code></p>
 <p>Type: <code>bool</code></p>
 <h2 id="bootloader_reboot_ok">bootloader_reboot_ok</h2>
-<p>If <code>true</code>, if the role detects that something was changed
-that requires a reboot to take effect, the role will reboot the managed
-host.</p>
+<p>If <code>true</code>, the role will reboot the managed host when it
+detects that changes require a reboot to take effect.</p>
 <p>If <code>false</code>, it is up to you to determine when to reboot
 the managed host.</p>
-<p>The role will returns the variable
+<p>The role will return the variable
 <code>bootloader_reboot_required</code> (see below) with a value of
-<code>true</code> to indicate that some change has occurred which needs
-a reboot to take effect.</p>
+<code>true</code> to indicate that changes have occurred which need a
+reboot to take effect.</p>
 <p>Default: <code>false</code></p>
 <p>Type: <code>bool</code></p>
 <h1 id="variables-exported-by-the-role">Variables Exported by the
 Role</h1>
 <p>The role exports the following variables:</p>
 <h2 id="bootloader_reboot_needed">bootloader_reboot_needed</h2>
-<p>Default <code>false</code> - if <code>true</code>, this means a
-reboot is needed to apply the changes made by the role</p>
+<p>Default: <code>false</code> - if <code>true</code>, this means a
+reboot is needed to apply the changes made by the role.</p>
 <h2 id="bootloader_facts">bootloader_facts</h2>
 <p>Contains boot information for all kernels.</p>
 <p>The role returns this variable when you set
