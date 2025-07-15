@@ -1,6 +1,13 @@
 Changelog
 =========
 
+[1.1.1] - 2025-07-15
+--------------------
+
+### Other Changes
+
+- docs: Fix wording in README with the help of Cursor AI (#149)
+
 [1.1.0] - 2025-07-02
 --------------------
 
