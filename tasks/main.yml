@@ -10,6 +10,24 @@
       Let us know if you need the role to support it.
   when: ansible_architecture == 's390x'
 
+# null is allowed as a value for state: absent - but it is not needed
+# and should not be used
+- name: Check bootloader settings for boolean and null values
+  fail:
+    msg: Boolean and null values are not allowed for bootloader settings
+  when:
+    - (__values | selectattr("value", "sameas", true) | list | length > 0) or
+      (__values | selectattr("value", "sameas", false) | list | length > 0) or
+      (__values_with_null_and_state_present | length > 0) or
+      (__values_with_null_and_no_state | length > 0)
+  vars:
+    __values: "{{ bootloader_settings | selectattr('options', 'defined') |
+      map(attribute='options') | flatten | selectattr('value', 'defined') | list }}"
+    __values_with_null_and_state_present: "{{ __values | selectattr('state', 'defined') |
+      selectattr('state', 'match', 'present$') | selectattr('value', 'sameas', none) | list }}"
+    __values_with_null_and_no_state: "{{ __values | rejectattr('state', 'defined') |
+      selectattr('value', 'sameas', none) | list }}"
+
 - name: Ensure required packages are installed
   package:
     name: "{{ __bootloader_packages }}"

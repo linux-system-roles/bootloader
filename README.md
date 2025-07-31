@@ -77,6 +77,12 @@ Each entry should specify a kernel using one or more keys.
 
     * `name` - The name of the setting. Omit `name` when using `replaced`.
     * `value` - The value for the setting. You must omit `value` if the setting has no value, e.g. `quiet`.
+      **NOTE** - a value must not be [YAML bool type](https://yaml.org/type/bool.html).
+      One situation where this might be a problem is using `value: on` or other
+      YAML `bool` typed value.  You must quote these values, or otherwise pass
+      them as a value of `str` type e.g.  `value: "on"`.  The same applies to `null` values.
+      If you specify a value, it must not be `null` - values such as `value:` or `value: ~`
+      or `value: null` are not allowed and will raise an error.
     * `state` - `present` (default) or `absent`. The value `absent` means to remove a setting with the given `name` - the name must be provided.
     * `previous` - Optional - the only supported value is `replaced` - use this to specify that the previous settings should be replaced with the given settings.
     * `copy_default` - Optional - when creating a kernel, you can specify `copy_default: true` to copy the default arguments to the created kernel.
