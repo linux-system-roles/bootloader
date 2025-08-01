@@ -1,0 +1,92 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Test boolean and null values not allowed
+  hosts: all
+  tasks:
+    - name: Validate no boolean true values for bootloader values
+      block:
+        - name: Try to pass boolean true for bootloader values
+          include_role:
+            name: linux-system-roles.bootloader
+          vars:
+            bootloader_settings:
+              - kernel: ALL
+                options:
+                  - name: valid_value_1
+                    value: "true"
+                  - name: somevalue_1
+                    value: yes  # yamllint disable-line rule:truthy
+              - kernel: ALL
+                options:
+                  - name: valid_value_2
+                    value: "false"
+                  - name: somevalue_2
+                    value: on  # yamllint disable-line rule:truthy
+
+        - name: Unreachable task
+          fail:
+            msg: UNREACH
+
+      rescue:
+        - name: Verify that the task failed
+          assert:
+            that:
+              - ansible_failed_result.msg == "Boolean and null values are not allowed for bootloader settings"
+
+    - name: Validate no boolean false values for bootloader values
+      block:
+        - name: Try to pass boolean false for bootloader values
+          include_role:
+            name: linux-system-roles.bootloader
+          vars:
+            bootloader_settings:
+              - kernel: ALL
+                options:
+                  - name: valid_value_1
+                    value: "true"
+                  - name: somevalue_1
+                    value: no  # yamllint disable-line rule:truthy
+              - kernel: ALL
+                options:
+                  - name: valid_value_2
+                    value: "false"
+                  - name: somevalue_2
+                    value: off  # yamllint disable-line rule:truthy
+
+        - name: Unreachable task
+          fail:
+            msg: UNREACH
+
+      rescue:
+        - name: Verify that the task failed
+          assert:
+            that:
+              - ansible_failed_result.msg == "Boolean and null values are not allowed for bootloader settings"
+
+    - name: Validate no boolean null values for bootloader values
+      block:
+        - name: Try to pass boolean null for bootloader values
+          include_role:
+            name: linux-system-roles.bootloader
+          vars:
+            bootloader_settings:
+              - kernel: ALL
+                options:
+                  - name: valid_value_1
+                    value: "null"
+                  - name: somevalue_1
+                    value: null
+              - kernel: ALL
+                options:
+                  - name: valid_value_2
+                    value: "somevalue"
+
+        - name: Unreachable task
+          fail:
+            msg: UNREACH
+
+      rescue:
+        - name: Verify that the task failed
+          assert:
+            that:
+              - ansible_failed_result.msg == "Boolean and null values are not allowed for bootloader settings"
