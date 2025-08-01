@@ -118,7 +118,7 @@ def validate_kernel_initrd(module, bootloader_setting_kernel, kernel_mod_keys):
         and "initrd" in bootloader_setting_kernel.keys()
     ):
         module.fail_json(
-            "You can use 'initrd' as a kernel key only when you must create a kernel. To modify or remove an existing kernel, use one of %s"
+            msg="You can use 'initrd' as a kernel key only when you must create a kernel. To modify or remove an existing kernel, use one of %s"
             % ", ".join(kernel_mod_keys)
         )
 
@@ -165,7 +165,7 @@ def validate_default_kernel(module, bootloader_settings):
             kernel = bootloader_setting["kernel"]
             if isinstance(kernel, str):
                 module.fail_json(
-                    "You cannot set a kernel as default when you are using a string kernel - %s"
+                    msg="You cannot set a kernel as default when you are using a string kernel - %s"
                     % (kernel)
                 )
             if isinstance(kernel, dict):
@@ -178,7 +178,7 @@ def validate_default_kernel(module, bootloader_settings):
             default_kernels.append(kernel_id)
     if default_count > 1:
         module.fail_json(
-            "Only one kernel can be set as default. Found %d kernels with 'default: true' - %s"
+            msg="Only one kernel can be set as default. Found %d kernels with 'default: true' - %s"
             % (default_count, ", ".join(default_kernels))
         )
 
@@ -196,13 +196,13 @@ def validate_kernels(module, bootloader_setting, bootloader_facts):
     state = bootloader_setting.get("state", "present")
 
     if "state" in bootloader_setting and bootloader_setting["state"] not in states:
-        module.fail_json("State must be one of '%s'" % ", ".join(states))
+        module.fail_json(msg="State must be one of '%s'" % ", ".join(states))
 
     if (not isinstance(bootloader_setting["kernel"], dict)) and (
         not isinstance(bootloader_setting["kernel"], str)
     ):
         module.fail_json(
-            "kernel value in %s must be of type str or dict"
+            msg="kernel value in %s must be of type str or dict"
             % bootloader_setting["kernel"]
         )
 
@@ -210,7 +210,7 @@ def validate_kernels(module, bootloader_setting, bootloader_facts):
         bootloader_setting["kernel"] not in kernel_str_values
     ):
         module.fail_json(
-            "kernel %s is of type str, it must be one of '%s'"
+            msg="kernel %s is of type str, it must be one of '%s'"
             % (
                 bootloader_setting["kernel"],
                 ", ".join(kernel_str_values),
@@ -227,7 +227,7 @@ def validate_kernels(module, bootloader_setting, bootloader_facts):
     for key, value in bootloader_setting["kernel"].items():
         if key not in kernel_keys:
             module.fail_json(
-                "kernel key in '%s: %s' must be one of '%s'"
+                msg="kernel key in '%s: %s' must be one of '%s'"
                 % (
                     key,
                     value,
@@ -236,7 +236,7 @@ def validate_kernels(module, bootloader_setting, bootloader_facts):
             )
         if (not isinstance(value, str)) and (not isinstance(value, int)):
             module.fail_json(
-                "kernel value in '%s: %s' must be of type str or int" % (key, value)
+                msg="kernel value in '%s: %s' must be of type str or int" % (key, value)
             )
 
     # Validate with len(bootloader_setting["kernel"]) == 1
@@ -255,7 +255,7 @@ def validate_kernels(module, bootloader_setting, bootloader_facts):
         diff, same = compare_dicts(bootloader_setting["kernel"], fact_trunc)
         if diff and same:
             module.fail_json(
-                "A kernel with provided %s already exists and its other fields are different %s"
+                msg="A kernel with provided %s already exists and its other fields are different %s"
                 % (same, diff)
             )
         elif not diff and same:
@@ -268,7 +268,7 @@ def validate_kernels(module, bootloader_setting, bootloader_facts):
             sorted(bootloader_setting["kernel"].keys()) != sorted(kernel_create_keys)
         ):
             module.fail_json(
-                "To create a kernel, you must provide 3 kernel keys - '%s'"
+                msg="To create a kernel, you must provide 3 kernel keys - '%s'"
                 % ", ".join(kernel_create_keys)
             )
         kernel_action = "create" if state == "present" else "remove"
@@ -407,7 +407,7 @@ def rm_kernel(module, result, kernel):
 
 def get_default_kernel(module, type):
     if type not in ["kernel", "title", "index"]:
-        module.fail_json("Type must be one of 'kernel', 'title', or 'index'")
+        module.fail_json(msg="Type must be one of 'kernel', 'title', or 'index'")
     cmd = "grubby --default-" + type
     _unused, stdout, _unused = module.run_command(cmd)
     return stdout.strip()
@@ -437,7 +437,7 @@ def run_module():
     for bootloader_setting in module.params["bootloader_settings"]:
         _unused, kernels_info, stderr = module.run_command("grubby --info=ALL")
         if "Permission denied" in stderr:
-            module.fail_json("You must run this as sudo")
+            module.fail_json(msg="You must run this as sudo")
 
         default_kernel_index = get_default_kernel(module, "index")
         bootloader_facts = get_facts(kernels_info, default_kernel_index)
