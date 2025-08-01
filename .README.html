@@ -243,8 +243,16 @@ update the default or all kernels.</p>
 <li><code>name</code> - The name of the setting. Omit <code>name</code>
 when using <code>replaced</code>.</li>
 <li><code>value</code> - The value for the setting. You must omit
-<code>value</code> if the setting has no value, e.g.
-<code>quiet</code>.</li>
+<code>value</code> if the setting has no value, e.g. <code>quiet</code>.
+<strong>NOTE</strong> - a value must not be <a
+href="https://yaml.org/type/bool.html">YAML bool type</a>. One situation
+where this might be a problem is using <code>value: on</code> or other
+YAML <code>bool</code> typed value. You must quote these values, or
+otherwise pass them as a value of <code>str</code> type e.g.
+<code>value: "on"</code>. The same applies to <code>null</code> values.
+If you specify a value, it must not be <code>null</code> - values such
+as <code>value:</code> or <code>value: ~</code> or
+<code>value: null</code> are not allowed and will raise an error.</li>
 <li><code>state</code> - <code>present</code> (default) or
 <code>absent</code>. The value <code>absent</code> means to remove a
 setting with the given <code>name</code> - the name must be

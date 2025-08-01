@@ -1,6 +1,14 @@
 Changelog
 =========
 
+[1.1.2] - 2025-08-01
+--------------------
+
+### Bug Fixes
+
+- fix: boolean values and null values are not allowed (#153)
+- fix: Fix Python 2.7.5 compatibility by using msg= in fail_json() calls (#154)
+
 [1.1.1] - 2025-07-15
 --------------------
 
