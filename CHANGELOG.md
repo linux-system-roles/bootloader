@@ -1,6 +1,13 @@
 Changelog
 =========
 
+[1.1.3] - 2025-08-02
+--------------------
+
+### Other Changes
+
+- test: test for boolean values and null values are not allowed (#156)
+
 [1.1.2] - 2025-08-01
 --------------------
 
