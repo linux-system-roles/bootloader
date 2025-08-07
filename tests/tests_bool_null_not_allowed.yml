@@ -3,6 +3,9 @@
 - name: Test boolean and null values not allowed
   hosts: all
   tasks:
+    - name: Skip on s390x architecture
+      include_tasks: tasks/skip_on_s390x.yml
+
     - name: Validate no boolean true values for bootloader values
       block:
         - name: Try to pass boolean true for bootloader values
