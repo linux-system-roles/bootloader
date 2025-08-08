@@ -1,6 +1,13 @@
 Changelog
 =========
 
+[1.1.4] - 2025-08-08
+--------------------
+
+### Other Changes
+
+- test: Skip all tests on s390x, avoid redundant clean ups (#158)
+
 [1.1.3] - 2025-08-02
 --------------------
 
