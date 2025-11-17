@@ -1,6 +1,29 @@
 Changelog
 =========
 
+[1.1.5] - 2025-11-17
+--------------------
+
+### Bug Fixes
+
+- fix: cannot use community-general version 12 - no py27 and py36 support (#175)
+
+### Other Changes
+
+- ci: bump actions/checkout from 4 to 5 (#160)
+- ci: rollout several recent changes to CI testing (#162)
+- ci: support openSUSE Leap in qemu/kvm test matrix (#163)
+- ci: use the new epel feature to enable EPEL for testing farm (#164)
+- ci: use tox-lsr 3.12.0 for osbuild_config.yml feature (#166)
+- ci: use JSON format for __bootc_validation (#167)
+- ci: bump actions/setup-python from 5 to 6 (#168)
+- ci: bump actions/github-script from 7 to 8 (#169)
+- ci: bump github/codeql-action from 3 to 4 (#170)
+- ci: bump actions/upload-artifact from 4 to 5 (#171)
+- ci: use versioned upload-artifact instead of master; bump codeql-action to v4; bump upload-artifact to v5 (#172)
+- ci: bump tox-lsr to 3.13.0 (#173)
+- ci: bump tox-lsr to 3.14.0 - this moves standard-inventory-qcow2 to tox-lsr (#174)
+
 [1.1.4] - 2025-08-08
 --------------------
 
