@@ -8,7 +8,7 @@
     msg: >-
       This role does not support s390x architecture.
       Let us know if you need the role to support it.
-  when: ansible_architecture == 's390x'
+  when: ansible_facts['architecture'] == 's390x'
 
 # null is allowed as a value for state: absent - but it is not needed
 # and should not be used
@@ -159,4 +159,11 @@
 # Keep at the end of tasks to collect latest info
 - name: Collect bootloader facts
   bootloader_facts:
+  when: bootloader_gather_facts | bool
+
+# With Ansible 2.20, creating variables from facts is deprecated.
+# This task is a workaround to set the bootloader_facts variable.
+- name: Set bootloader_facts variable
+  set_fact:
+    bootloader_facts: "{{ ansible_facts['bootloader_facts'] }}"
   when: bootloader_gather_facts | bool
