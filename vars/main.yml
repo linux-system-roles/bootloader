@@ -16,9 +16,9 @@ __bootloader_packages:
   - grubby
 __bootloader_default_grub: /etc/default/grub
 __bootloader_uefi_conf_dir: >-
-  {%- if ansible_os_family == 'RedHat' -%}
-  /boot/efi/EFI/{{ ansible_distribution | lower }}/
-  {%- elif ansible_os_family == 'Suse' -%}
+  {%- if ansible_facts['os_family'] == 'RedHat' -%}
+  /boot/efi/EFI/{{ ansible_facts['distribution'] | lower }}/
+  {%- elif ansible_facts['os_family'] == 'Suse' -%}
   /boot/efi/EFI/BOOT/
   {%- endif -%}
 __bootloader_bios_conf_dir: /boot/grub2/
@@ -35,8 +35,8 @@ __bootloader_rh_distros:
 __bootloader_rh_distros_fedora: "{{ __bootloader_rh_distros + ['Fedora'] }}"
 
 # Use this in conditionals to check if distro is Red Hat or clone
-__bootloader_is_rh_distro: "{{ ansible_distribution in __bootloader_rh_distros }}"
+__bootloader_is_rh_distro: "{{ ansible_facts['distribution'] in __bootloader_rh_distros }}"
 
 # Use this in conditionals to check if distro is Red Hat or clone, or Fedora
-__bootloader_is_rh_distro_fedora: "{{ ansible_distribution in __bootloader_rh_distros_fedora }}"
+__bootloader_is_rh_distro_fedora: "{{ ansible_facts['distribution'] in __bootloader_rh_distros_fedora }}"
 # END - DO NOT EDIT THIS BLOCK - rh distros variables

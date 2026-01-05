@@ -6,5 +6,5 @@
   when: '"architecture" not in ansible_facts.keys() | list'
 
 - name: End host on s390x architecture
-  when: ansible_architecture == 's390x'
+  when: ansible_facts['architecture'] == 's390x'
   meta: end_host
