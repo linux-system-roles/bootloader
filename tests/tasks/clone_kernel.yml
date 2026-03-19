@@ -28,8 +28,7 @@
             state: present
           - copy_default: "{{ __bootloader_copy_default }}"
         default: "{{ __bootloader_make_default | d(false) }}"
-  include_role:
-    name: linux-system-roles.bootloader
+  include_tasks: tasks/run_role_with_clear_facts.yml
 
 - name: Flush handlers
   meta: flush_handlers
@@ -41,5 +40,4 @@
 - name: Get bootloader_facts
   vars:
     bootloader_gather_facts: true
-  include_role:
-    name: linux-system-roles.bootloader
+  include_tasks: tasks/run_role_with_clear_facts.yml

@@ -2,7 +2,6 @@
 ---
 - name: Test creating, modifying, and removing kernels
   hosts: all
-  gather_facts: false
   tags:
     - tests::reboot
   vars:
@@ -16,8 +15,7 @@
         - name: Get bootloader_facts
           vars:
             bootloader_gather_facts: true
-          include_role:
-            name: linux-system-roles.bootloader
+          include_tasks: tasks/run_role_with_clear_facts.yml
 
         - name: Skip test on ostree systems
           meta: end_host
@@ -92,8 +90,7 @@
                   - kernel:
                       path: "{{ __default_kernel.kernel }}_clone2"
                     default: true
-              include_role:
-                name: linux-system-roles.bootloader
+              include_tasks: tasks/run_role_with_clear_facts.yml
 
             - name: Unreachable task
               fail:
@@ -118,8 +115,7 @@
                     state: present
                   - copy_default: true
                 state: absent
-          include_role:
-            name: linux-system-roles.bootloader
+          include_tasks: tasks/run_role_with_clear_facts.yml
 
         - name: Remove Clone2 kernel with kernel path
           vars:
@@ -128,8 +124,7 @@
               - kernel:
                   path: "{{ __default_kernel.kernel }}_clone2"
                 state: absent
-          include_role:
-            name: linux-system-roles.bootloader
+          include_tasks: tasks/run_role_with_clear_facts.yml
 
         - name: Verify that kernel is removed {{ item }}
           assert:

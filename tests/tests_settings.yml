@@ -2,7 +2,6 @@
 ---
 - name: Test bootloader_settings variable
   hosts: all
-  gather_facts: false
   tags:
     - tests::reboot
   vars:
@@ -16,8 +15,7 @@
         - name: Get bootloader_facts
           vars:
             bootloader_gather_facts: true
-          include_role:
-            name: linux-system-roles.bootloader
+          include_tasks: tasks/run_role_with_clear_facts.yml
 
         - name: Skip test on ostree systems
           meta: end_host
@@ -83,8 +81,7 @@
                   path: "{{ __default_kernel.kernel }}"
                 default: true
             bootloader_timeout: 6
-          include_role:
-            name: linux-system-roles.bootloader
+          include_tasks: tasks/run_role_with_clear_facts.yml
 
         - name: Flush handlers
           meta: flush_handlers
@@ -129,8 +126,7 @@
                   - name: option_with_value
                     state: absent
             bootloader_timeout: 4
-          include_role:
-            name: linux-system-roles.bootloader
+          include_tasks: tasks/run_role_with_clear_facts.yml
 
         - name: Flush handlers
           meta: flush_handlers
@@ -168,8 +164,7 @@
                     value: tty0
                     state: present
             bootloader_timeout: 4
-          include_role:
-            name: linux-system-roles.bootloader
+          include_tasks: tasks/run_role_with_clear_facts.yml
 
         - name: Flush handlers
           meta: flush_handlers

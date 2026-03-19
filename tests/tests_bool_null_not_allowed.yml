@@ -9,8 +9,7 @@
     - name: Validate no boolean true values for bootloader values
       block:
         - name: Try to pass boolean true for bootloader values
-          include_role:
-            name: linux-system-roles.bootloader
+          include_tasks: tasks/run_role_with_clear_facts.yml
           vars:
             bootloader_settings:
               - kernel: ALL
@@ -39,8 +38,7 @@
     - name: Validate no boolean false values for bootloader values
       block:
         - name: Try to pass boolean false for bootloader values
-          include_role:
-            name: linux-system-roles.bootloader
+          include_tasks: tasks/run_role_with_clear_facts.yml
           vars:
             bootloader_settings:
               - kernel: ALL
@@ -69,8 +67,7 @@
     - name: Validate no boolean null values for bootloader values
       block:
         - name: Try to pass boolean null for bootloader values
-          include_role:
-            name: linux-system-roles.bootloader
+          include_tasks: tasks/run_role_with_clear_facts.yml
           vars:
             bootloader_settings:
               - kernel: ALL

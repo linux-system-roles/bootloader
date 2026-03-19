@@ -1,7 +1,6 @@
 ---
 - name: Test role include variable override
   hosts: all
-  gather_facts: true
   tasks:
     - name: Skip on s390x architecture
       include_tasks: tasks/skip_on_s390x.yml
