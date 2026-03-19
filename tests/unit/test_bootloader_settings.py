@@ -139,8 +139,7 @@ KERNELS = [
 ]
 
 changed_args = "arg_with_str_value_absent=test_value arg_with_int_value_absent=1 arg_without_val_absent"
-INFO = (
-    """
+INFO = """
 index=0
 kernel="/boot/vmlinuz-6.5.12-100.fc37.x86_64"
 args="%s"
@@ -148,13 +147,10 @@ root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
 initrd="/boot/initramfs-6.5.12-100.fc37.x86_64.img $tuned_initrd"
 title="Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)"
 id="c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64"
-"""
-    % changed_args
-)
+""" % changed_args
 
 same_args = "arg_with_str_value=test_value arg_with_int_value=1 arg_without_val"
-INFO_SAME_ARGS = (
-    """
+INFO_SAME_ARGS = """
 index=0
 kernel="/boot/vmlinuz-6.5.12-100.fc37.x86_64"
 args="%s"
@@ -162,12 +158,9 @@ root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
 initrd="/boot/initramfs-6.5.12-100.fc37.x86_64.img $tuned_initrd"
 title="Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)"
 id="c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64"
-"""
-    % same_args
-)
+""" % same_args
 
-INFO_RHEL7 = (
-    """
+INFO_RHEL7 = """
 index=0
 kernel=/boot/vmlinuz-6.5.12-100.fc37.x86_64
 args="%s"
@@ -175,9 +168,7 @@ root=UUID=65c70529-e9ad-4778-9001-18fe8c525285
 initrd=/boot/initramfs-6.5.12-100.fc37.x86_64.img $tuned_initrd
 title=Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)
 id=c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64
-"""
-    % changed_args
-)
+""" % changed_args
 
 kernels_keys = ["kernel_index", "kernel_path", "kernel_title", "DEFAULT", "ALL"]
 
