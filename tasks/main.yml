@@ -140,7 +140,7 @@
         | sed -e "s/PBKDF2 hash of your password is //"
       register: __bootloader_pass_hash
       changed_when: true
-      no_log: true
+      no_log: "{{ bootloader_secure_logging }}"
 
     - name: Put boot loader password to {{ __bootloader_user_conf }}
       copy:
@@ -148,7 +148,7 @@
         dest: "{{ __bootloader_user_conf }}"
         mode: "0600"
       changed_when: true
-      no_log: true
+      no_log: "{{ bootloader_secure_logging }}"
 
 - name: Remove boot loader password configuration
   file:
