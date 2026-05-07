@@ -159,6 +159,8 @@ id="toc-bootloader_password">bootloader_password</a></li>
 id="toc-bootloader_remove_password">bootloader_remove_password</a></li>
 <li><a href="#bootloader_reboot_ok"
 id="toc-bootloader_reboot_ok">bootloader_reboot_ok</a></li>
+<li><a href="#bootloader_secure_logging"
+id="toc-bootloader_secure_logging">bootloader_secure_logging</a></li>
 </ul></li>
 <li><a href="#variables-exported-by-the-role"
 id="toc-variables-exported-by-the-role">Variables Exported by the
@@ -301,6 +303,20 @@ the managed host.</p>
 <code>true</code> to indicate that changes have occurred which need a
 reboot to take effect.</p>
 <p>Default: <code>false</code></p>
+<p>Type: <code>bool</code></p>
+<h2 id="bootloader_secure_logging">bootloader_secure_logging</h2>
+<p>If <code>true</code>, suppress potentially sensitive output from
+tasks that handle credentials, secrets, and other sensitive data by
+setting <code>no_log: true</code> on those tasks. This prevents
+passwords, API tokens, private keys, and similar sensitive information
+from appearing in Ansible logs and console output.</p>
+<p>If you need to debug issues with credential handling or secret
+management, you can temporarily set
+<code>bootloader_secure_logging: false</code> to see the full output
+from these tasks. However, be aware that this may expose sensitive
+information in logs, so it should only be used in development or
+troubleshooting scenarios.</p>
+<p>Default: <code>true</code></p>
 <p>Type: <code>bool</code></p>
 <h1 id="variables-exported-by-the-role">Variables Exported by the
 Role</h1>

@@ -1,6 +1,17 @@
 Changelog
 =========
 
+[1.3.0] - 2026-05-07
+--------------------
+
+### New Features
+
+- feat: new variable `bootloader_secure_logging` defaulting to `true` (#209)
+
+### Other Changes
+
+- ci: Bump actions/github-script from 8 to 9 (#208)
+
 [1.2.0] - 2026-04-28
 --------------------
 
