@@ -454,6 +454,140 @@ class InputValidator(unittest.TestCase):
         self.assertEqual(self.result["actions"][0], expected_cmd)
         self.reset_vars()
 
+    def test_get_duplicate_present_option_names(self):
+        """Test get_duplicate_present_option_names with mixed option entries"""
+        options = [
+            {"previous": "replaced"},
+            {"copy_default": True},
+            {"foo": "bar"},
+            {"name": "console", "value": "tty0"},
+            {"name": "console", "value": "ttyS0"},
+            {"name": "mitigations", "value": "auto"},
+            {"name": "mitigations", "value": "off"},
+            {"name": "quiet"},
+            {"name": "debug", "value": "1"},
+            {"name": "console", "value": "tty1", "state": "absent"},
+            {"name": "rhgb", "state": "absent"},
+        ]
+        self.assertEqual(
+            bootloader_settings.get_duplicate_present_option_names(options),
+            {"console", "mitigations"},
+        )
+
+    def test_duplicate_option_names(self):
+        """Test duplicate option name handling (issue #191)"""
+        duplicate_console_setting = {
+            "kernel": "ALL",
+            "options": [
+                {"name": "console", "value": "tty0"},
+                {"name": "console", "value": "ttyS0"},
+            ],
+        }
+
+        self.assertEqual(
+            bootloader_settings.get_duplicate_present_option_names(
+                duplicate_console_setting["options"]
+            ),
+            {"console"},
+        )
+        self.assertEqual(
+            bootloader_settings.get_duplicate_present_option_names(
+                [{"name": "console", "value": "tty0"}]
+            ),
+            set(),
+        )
+        self.assertEqual(
+            bootloader_settings.find_boot_arg_tokens(
+                "ro console=tty0 console=ttyS0 quiet", "console"
+            ),
+            ["console=tty0", "console=ttyS0"],
+        )
+
+        info_empty_args = """
+index=0
+kernel="/boot/vmlinuz-test"
+args=""
+title="Fedora Linux"
+"""
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            duplicate_console_setting,
+            "ALL",
+            info_empty_args,
+        )
+        self.mock_module.run_command.assert_called_once_with(
+            "grubby --update-kernel=ALL --args='console=tty0 console=ttyS0'"
+        )
+        self.reset_vars()
+
+        info_one_console = """
+index=0
+kernel="/boot/vmlinuz-test"
+args="ro console=tty0 rhgb quiet"
+title="Fedora Linux"
+"""
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            duplicate_console_setting,
+            "ALL",
+            info_one_console,
+        )
+        self.mock_module.run_command.assert_called_once_with(
+            "grubby --update-kernel=ALL "
+            + "--remove-args=console=tty0 "
+            + "--args='console=tty0 console=ttyS0'"
+        )
+        self.reset_vars()
+
+        info_both_consoles = """
+index=0
+kernel="/boot/vmlinuz-test"
+args="ro console=tty0 console=ttyS0 rhgb quiet"
+title="Fedora Linux"
+"""
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            duplicate_console_setting,
+            "ALL",
+            info_both_consoles,
+        )
+        self.mock_module.run_command.assert_not_called()
+        self.assertEqual(self.result["changed"], False)
+        self.reset_vars()
+
+        duplicate_same_value_setting = {
+            "kernel": "ALL",
+            "options": [
+                {"name": "console", "value": "tty0"},
+                {"name": "console", "value": "tty0"},
+            ],
+        }
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            duplicate_same_value_setting,
+            "ALL",
+            info_empty_args,
+        )
+        self.mock_module.run_command.assert_called_once_with(
+            "grubby --update-kernel=ALL --args=console=tty0"
+        )
+        self.reset_vars()
+
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            duplicate_same_value_setting,
+            "ALL",
+            info_one_console,
+        )
+        self.mock_module.run_command.assert_not_called()
+        self.assertEqual(self.result["changed"], False)
+        self.reset_vars()
+
     def test_mod_boot_args(self):
         self.reset_vars()
         args = (
