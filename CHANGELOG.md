@@ -1,6 +1,20 @@
 Changelog
 =========
 
+[1.3.1] - 2026-06-24
+--------------------
+
+### Bug Fixes
+
+- fix: support duplicate option names with different values (#214)
+
+### Other Changes
+
+- refactor: use ansible.posix 2.1.X for EL7 compatibility [citest_skip] (#211)
+- ci: Add config file for CodeRabbit with custom rules (#212)
+- ci: Skip reviews for PRs with [citest_skip] in the title (#213)
+- test: remove unused files (#215)
+
 [1.3.0] - 2026-05-07
 --------------------
 
