@@ -15,6 +15,11 @@ __bootloader_required_facts_subsets: "{{ ['!all', '!min'] +
 __bootloader_packages:
   - grubby
 __bootloader_default_grub: /etc/default/grub
+# Mode for default grub file, it doesn't fall under CIS Benchmark 1.4.2
+__bootloader_default_grub_mode: '0644'
+# Mode for bootloader grub and user conf files according to CIS benchmarks
+# CIS Benchmark 1.4.2 Ensure access to bootloader config is configured
+__bootloader_conf_mode: '0600'
 __bootloader_uefi_conf_dir: >-
   {%- if ansible_facts['os_family'] == 'RedHat' -%}
   /boot/efi/EFI/{{ ansible_facts['distribution'] | lower }}/

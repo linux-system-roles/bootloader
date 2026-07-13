@@ -136,6 +136,15 @@
             - Clone1
             - Clone2
       always:
+        # grubby might select the debug kernel to be default and won't boot
+        - name: Restore the original default kernel
+          command: grubby --set-default={{ __default_kernel.kernel }}
+          changed_when: true
+          when:
+            - __default_kernel is defined
+            - __default_kernel.kernel is defined
+          failed_when: false
+
         - name: Remove cloned kernels
           command: >-
             grubby --remove-kernel={{ __default_kernel.kernel }}_clone{{ item }}
