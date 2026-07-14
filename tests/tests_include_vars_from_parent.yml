@@ -59,3 +59,4 @@
           loop: "{{ __varfiles_created.results }}"
           delegate_to: localhost
           when: inventory_hostname == ansible_play_hosts_all[0]
+          tags: tests::cleanup

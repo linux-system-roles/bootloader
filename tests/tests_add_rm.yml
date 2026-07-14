@@ -144,6 +144,7 @@
             - __default_kernel is defined
             - __default_kernel.kernel is defined
           failed_when: false
+          tags: tests::cleanup
 
         - name: Remove cloned kernels
           command: >-
@@ -153,3 +154,4 @@
             - 2
           changed_when: true
           failed_when: false
+          tags: tests::cleanup
