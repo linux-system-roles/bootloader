@@ -179,6 +179,7 @@ class InputValidator(unittest.TestCase):
     mock_module = MagicMock(
         run_command=MagicMock(return_value=("test_rc", "test_stdout", "test_err")),
         fail_json=MagicMock(side_effect=SystemExit),
+        check_mode=False,
     )
     result = dict(changed=False, actions=list())
     kernel = None
@@ -187,6 +188,7 @@ class InputValidator(unittest.TestCase):
     def reset_vars(self):
         self.mock_module.run_command.reset_mock()
         self.mock_module.fail_json.reset_mock()
+        self.mock_module.check_mode = False
         self.result = dict(changed=False, actions=list())
         try:
             del self.kernel
@@ -914,4 +916,121 @@ root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"'''
             self.mock_module.fail_json.assert_called_once_with(
                 msg="Type must be one of 'kernel', 'title', or 'index'"
             )
+        self.reset_vars()
+
+    def test_check_mode_skips_write_commands_only(self):
+        """Test that check mode skips write grubby commands but runs reads"""
+        self.reset_vars()
+        self.mock_module.check_mode = True
+
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            SETTINGS[12],
+            KERNELS[7]["kernel"],
+            INFO,
+        )
+        self.mock_module.run_command.assert_not_called()
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(len(self.result["actions"]), 1)
+        self.assertTrue(
+            self.result["actions"][0].startswith("grubby --update-kernel=ALL")
+        )
+        self.reset_vars()
+
+        self.mock_module.check_mode = True
+        bootloader_settings.add_kernel(
+            self.mock_module,
+            self.result,
+            SETTINGS[8],
+            bootloader_settings.get_create_kernel(SETTINGS[8]["kernel"]),
+        )
+        self.mock_module.run_command.assert_not_called()
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(len(self.result["actions"]), 1)
+        self.reset_vars()
+
+        self.mock_module.check_mode = True
+        bootloader_settings.rm_kernel(
+            self.mock_module,
+            self.result,
+            bootloader_settings.get_single_kernel(SETTINGS[3]["kernel"]),
+        )
+        self.mock_module.run_command.assert_not_called()
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(len(self.result["actions"]), 1)
+        self.reset_vars()
+
+        self.mock_module.check_mode = True
+        bootloader_settings.rm_boot_args(self.mock_module, self.result, INFO, "0")
+        self.mock_module.run_command.assert_not_called()
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(len(self.result["actions"]), 1)
+        self.reset_vars()
+
+        kernel_info_with_kernel = '''index=0
+kernel="/boot/vmlinuz-6.5.12-100.fc37.x86_64"
+args="ro rootflags=subvol=root rhgb quiet"
+root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
+initrd="/boot/initramfs-6.5.12-100.fc37.x86_64.img"
+title="Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)"
+id="c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64"'''
+        bootloader_setting = {
+            "kernel": {"path": "/boot/vmlinuz-6.5.12-100.fc37.x86_64"},
+            "default": True,
+        }
+        self.mock_module.check_mode = True
+        self.mock_module.run_command.return_value = ("0", "/boot/vmlinuz-different", "")
+        bootloader_settings.mod_default_kernel(
+            self.mock_module, self.result, bootloader_setting, kernel_info_with_kernel
+        )
+        self.mock_module.run_command.assert_called_once_with("grubby --default-kernel")
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(len(self.result["actions"]), 1)
+        self.assertTrue(self.result["actions"][0].startswith("grubby --set-default="))
+        self.reset_vars()
+
+        self.mock_module.check_mode = True
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            SETTINGS[12],
+            str(KERNELS[1]["kernel"]["kernel_index"]),
+            INFO_SAME_ARGS,
+        )
+        self.mock_module.run_command.assert_not_called()
+        self.assertEqual(self.result["changed"], False)
+        self.assertEqual(self.result["actions"], [])
+        self.reset_vars()
+
+        self.mock_module.check_mode = True
+        self.mock_module.run_command.return_value = ("0", "2", "")
+        bootloader_settings.get_default_kernel(self.mock_module, "index")
+        self.mock_module.run_command.assert_called_once_with("grubby --default-index")
+        self.reset_vars()
+
+        self.mock_module.check_mode = True
+        duplicate_console_setting = {
+            "kernel": "ALL",
+            "options": [{"name": "console", "value": "ttyS0"}],
+        }
+        info_without_console = """
+index=0
+kernel="/boot/vmlinuz-test"
+args="ro rhgb quiet"
+title="Fedora Linux"
+"""
+        bootloader_settings.mod_boot_args(
+            self.mock_module,
+            self.result,
+            duplicate_console_setting,
+            "ALL",
+            info_without_console,
+        )
+        self.mock_module.run_command.assert_not_called()
+        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(
+            self.result["actions"],
+            ["grubby --update-kernel=ALL --args=console=ttyS0"],
+        )
         self.reset_vars()

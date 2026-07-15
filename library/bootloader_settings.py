@@ -298,6 +298,18 @@ def get_boot_args(kernel_info):
     return args.group(1).strip()
 
 
+def apply_command(module, result, cmd):
+    """Run a grubby write command, or only record it in check mode.
+
+    Read-only grubby commands (for example --info, --default-kernel) must
+    call module.run_command() directly so they still run in check mode.
+    """
+    result["changed"] = True
+    result["actions"].append(cmd)
+    if not module.check_mode:
+        module.run_command(cmd)
+
+
 def rm_boot_args(module, result, kernel_info, kernel):
     """Remove all existing args for a kernel"""
     bootloader_args = get_boot_args(kernel_info)
@@ -307,9 +319,7 @@ def rm_boot_args(module, result, kernel_info, kernel):
         + " --remove-args="
         + escapeval(bootloader_args)
     )
-    _unused, stdout, _unused = module.run_command(cmd)
-    result["changed"] = True
-    result["actions"].append(cmd)
+    apply_command(module, result, cmd)
 
 
 def get_setting_name(kernel_setting):
@@ -367,9 +377,7 @@ def add_kernel(module, result, bootloader_setting, kernel):
     if bootloader_setting_default:
         args += " --make-default"
     cmd = "grubby %s %s" % (kernel, args.strip())
-    _unused, stdout, _unused = module.run_command(cmd)
-    result["changed"] = True
-    result["actions"].append(cmd)
+    apply_command(module, result, cmd)
 
 
 def mod_boot_args(module, result, bootloader_setting, kernel, kernel_info):
@@ -423,9 +431,7 @@ def mod_boot_args(module, result, bootloader_setting, kernel, kernel_info):
         boot_mod_args += " --args=" + escapeval(boot_present_args.strip())
     if boot_mod_args:
         cmd = "grubby --update-kernel=" + kernel + boot_mod_args
-        _unused, stdout, _unused = module.run_command(cmd)
-        result["changed"] = True
-        result["actions"].append(cmd)
+        apply_command(module, result, cmd)
     else:
         result["changed"] = False
 
@@ -446,17 +452,13 @@ def mod_default_kernel(module, result, bootloader_setting, kernel_info):
         return
 
     cmd = "grubby --set-default=" + kernel
-    _unused, stdout, _unused = module.run_command(cmd)
-    result["changed"] = True
-    result["actions"].append(cmd)
+    apply_command(module, result, cmd)
 
 
 def rm_kernel(module, result, kernel):
     """Remove a kernel"""
     cmd = "grubby --remove-kernel=%s" % kernel
-    _unused, stdout, _unused = module.run_command(cmd)
-    result["changed"] = True
-    result["actions"].append(cmd)
+    apply_command(module, result, cmd)
 
 
 def get_default_kernel(module, type):
