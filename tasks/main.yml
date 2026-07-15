@@ -58,7 +58,7 @@
         dest: "{{ __bootloader_default_grub }}"
         owner: root
         group: root
-        mode: "0644"
+        mode: "{{ __bootloader_default_grub_mode }}"
 
 - name: Determine platform type
   stat:
@@ -110,15 +110,14 @@
     regexp: '^GRUB_TIMEOUT=.*'
     replace: 'GRUB_TIMEOUT={{ bootloader_timeout }}'
     mode: "{{ __bootloader_default_grub_stat.stat.exists |
-      ternary(__bootloader_default_grub_stat.stat.mode, '0644') }}"
+      ternary(__bootloader_default_grub_stat.stat.mode, __bootloader_default_grub_mode) }}"
 
 - name: Update boot loader timeout configuration in {{ __bootloader_grub_conf }}
   replace:
     path: "{{ __bootloader_grub_conf }}"
     regexp: 'set timeout=.*'
     replace: 'set timeout={{ bootloader_timeout }}'
-    mode: "{{ __bootloader_grub_conf_stat.stat.exists |
-      ternary(__bootloader_grub_conf_stat.stat.mode, '0644') }}"
+    mode: "{{ __bootloader_conf_mode }}"
 
 - name: Ensure boot loader settings
   bootloader_settings:
@@ -146,7 +145,7 @@
       copy:
         content: GRUB2_PASSWORD={{ __bootloader_pass_hash.stdout }}
         dest: "{{ __bootloader_user_conf }}"
-        mode: "0600"
+        mode: "{{ __bootloader_conf_mode }}"
       changed_when: true
       no_log: "{{ bootloader_secure_logging }}"
 
