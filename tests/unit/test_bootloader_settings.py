@@ -325,7 +325,7 @@ class InputValidator(unittest.TestCase):
             + "arg_with_int_value_absent=1 arg_without_val_absent' --copy-default"
         )
         self.mock_module.run_command.assert_called_once_with(expected_cmd)
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"][0], expected_cmd)
         self.reset_vars()
 
@@ -354,7 +354,7 @@ class InputValidator(unittest.TestCase):
             + "--args='console=tty0 quiet' --make-default"
         )
         self.mock_module.run_command.assert_called_once_with(expected_cmd_with_default)
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"][0], expected_cmd_with_default)
         self.reset_vars()
 
@@ -383,7 +383,7 @@ class InputValidator(unittest.TestCase):
             + "--args=console=tty0 --copy-default --make-default"
         )
         self.mock_module.run_command.assert_called_once_with(expected_cmd_both)
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"][0], expected_cmd_both)
         self.reset_vars()
 
@@ -411,7 +411,7 @@ class InputValidator(unittest.TestCase):
             + "--make-default"
         )
         self.mock_module.run_command.assert_called_once_with(expected_cmd_no_options)
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"][0], expected_cmd_no_options)
         self.reset_vars()
 
@@ -426,7 +426,7 @@ class InputValidator(unittest.TestCase):
         bootloader_settings.rm_kernel(self.mock_module, self.result, self.kernel)
         expected_cmd = "grubby --remove-kernel=1"
         self.mock_module.run_command.assert_called_once_with(expected_cmd)
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"][0], expected_cmd)
         self.reset_vars()
 
@@ -452,7 +452,7 @@ class InputValidator(unittest.TestCase):
             + "'arg_with_str_value_absent=test_value arg_with_int_value_absent=1 arg_without_val_absent'"
         )
         self.mock_module.run_command.assert_called_once_with(expected_cmd)
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"][0], expected_cmd)
         self.reset_vars()
 
@@ -557,7 +557,6 @@ title="Fedora Linux"
             info_both_consoles,
         )
         self.mock_module.run_command.assert_not_called()
-        self.assertEqual(self.result["changed"], False)
         self.reset_vars()
 
         duplicate_same_value_setting = {
@@ -587,7 +586,6 @@ title="Fedora Linux"
             info_one_console,
         )
         self.mock_module.run_command.assert_not_called()
-        self.assertEqual(self.result["changed"], False)
         self.reset_vars()
 
     def test_mod_boot_args(self):
@@ -606,7 +604,7 @@ title="Fedora Linux"
         )
         expected_cmd = "grubby --update-kernel=2 " + args
         self.mock_module.run_command.assert_called_once_with(expected_cmd)
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"][0], expected_cmd)
         self.reset_vars()
 
@@ -619,7 +617,7 @@ title="Fedora Linux"
         )
         expected_cmd = "grubby --update-kernel=/path/3 " + args
         self.mock_module.run_command.assert_called_once_with(expected_cmd)
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"][0], expected_cmd)
         self.reset_vars()
 
@@ -637,7 +635,7 @@ title="Fedora Linux"
             + args
         )
         self.mock_module.run_command.assert_called_once_with(expected_cmd)
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"][0], expected_cmd)
         self.reset_vars()
 
@@ -650,7 +648,7 @@ title="Fedora Linux"
         )
         expected_cmd = "grubby --update-kernel=DEFAULT " + args
         self.mock_module.run_command.assert_called_once_with(expected_cmd)
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"][0], expected_cmd)
         self.reset_vars()
 
@@ -663,7 +661,7 @@ title="Fedora Linux"
         )
         expected_cmd = "grubby --update-kernel=ALL " + args
         self.mock_module.run_command.assert_called_once_with(expected_cmd)
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"][0], expected_cmd)
         self.reset_vars()
 
@@ -675,7 +673,6 @@ title="Fedora Linux"
             INFO_SAME_ARGS,
         )
         self.mock_module.run_command.assert_not_called()
-        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"], [])
         self.reset_vars()
 
@@ -852,7 +849,7 @@ id="c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64"'''
         self.mock_module.run_command.assert_any_call(
             "grubby --set-default=/boot/vmlinuz-6.5.12-100.fc37.x86_64"
         )
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(
             self.result["actions"][0],
             "grubby --set-default=/boot/vmlinuz-6.5.12-100.fc37.x86_64",
@@ -873,7 +870,6 @@ id="c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64"'''
         # Should only call once to get current default, not call set-default
         self.assertEqual(self.mock_module.run_command.call_count, 1)
         self.mock_module.run_command.assert_called_with("grubby --default-kernel")
-        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"], [])
         self.reset_vars()
 
@@ -891,7 +887,6 @@ id="c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64"'''
         )
 
         self.mock_module.run_command.assert_not_called()
-        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"], [])
         self.reset_vars()
 
@@ -905,7 +900,6 @@ root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"'''
         )
 
         self.mock_module.run_command.assert_not_called()
-        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"], [])
         self.reset_vars()
 
@@ -931,7 +925,7 @@ root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"'''
             INFO,
         )
         self.mock_module.run_command.assert_not_called()
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(len(self.result["actions"]), 1)
         self.assertTrue(
             self.result["actions"][0].startswith("grubby --update-kernel=ALL")
@@ -946,7 +940,7 @@ root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"'''
             bootloader_settings.get_create_kernel(SETTINGS[8]["kernel"]),
         )
         self.mock_module.run_command.assert_not_called()
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(len(self.result["actions"]), 1)
         self.reset_vars()
 
@@ -957,14 +951,14 @@ root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"'''
             bootloader_settings.get_single_kernel(SETTINGS[3]["kernel"]),
         )
         self.mock_module.run_command.assert_not_called()
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(len(self.result["actions"]), 1)
         self.reset_vars()
 
         self.mock_module.check_mode = True
         bootloader_settings.rm_boot_args(self.mock_module, self.result, INFO, "0")
         self.mock_module.run_command.assert_not_called()
-        self.assertEqual(self.result["changed"], True)
+        self.assertEqual(self.result["changed"], False)
         self.assertEqual(len(self.result["actions"]), 1)
         self.reset_vars()
 
@@ -985,7 +979,6 @@ id="c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64"'''
             self.mock_module, self.result, bootloader_setting, kernel_info_with_kernel
         )
         self.mock_module.run_command.assert_called_once_with("grubby --default-kernel")
-        self.assertEqual(self.result["changed"], True)
         self.assertEqual(len(self.result["actions"]), 1)
         self.assertTrue(self.result["actions"][0].startswith("grubby --set-default="))
         self.reset_vars()
@@ -999,7 +992,6 @@ id="c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64"'''
             INFO_SAME_ARGS,
         )
         self.mock_module.run_command.assert_not_called()
-        self.assertEqual(self.result["changed"], False)
         self.assertEqual(self.result["actions"], [])
         self.reset_vars()
 
@@ -1028,9 +1020,151 @@ title="Fedora Linux"
             info_without_console,
         )
         self.mock_module.run_command.assert_not_called()
-        self.assertEqual(self.result["changed"], True)
         self.assertEqual(
             self.result["actions"],
             ["grubby --update-kernel=ALL --args=console=ttyS0"],
         )
         self.reset_vars()
+
+    def test_apply_command_records_action(self):
+        """Test that apply_command records commands but does not set changed"""
+        self.reset_vars()
+        bootloader_settings.apply_command(
+            self.mock_module, self.result, "grubby --test"
+        )
+        self.assertEqual(self.result["actions"], ["grubby --test"])
+        self.assertFalse(self.result["changed"])
+        self.mock_module.run_command.assert_called_once_with("grubby --test")
+        self.reset_vars()
+
+        self.mock_module.check_mode = True
+        bootloader_settings.apply_command(
+            self.mock_module, self.result, "grubby --test"
+        )
+        self.assertEqual(self.result["actions"], ["grubby --test"])
+        self.assertFalse(self.result["changed"])
+        self.mock_module.run_command.assert_not_called()
+        self.reset_vars()
+
+    def test_rm_boot_args_empty(self):
+        """Test that rm_boot_args does nothing when there are no args"""
+        self.reset_vars()
+        kernel_info_empty = """
+index=0
+kernel="/boot/vmlinuz-test"
+args=""
+title="Fedora Linux"
+"""
+        bootloader_settings.rm_boot_args(
+            self.mock_module, self.result, kernel_info_empty, "0"
+        )
+        self.mock_module.run_command.assert_not_called()
+        self.assertEqual(self.result["actions"], [])
+        self.reset_vars()
+
+    def test_get_replaced_args(self):
+        """Test get_replaced_args builds correct sorted token list"""
+        options = [
+            {"previous": "replaced"},
+            {"name": "quiet"},
+            {"name": "console", "value": "tty0"},
+            {"name": "debug", "state": "absent"},
+        ]
+        result = bootloader_settings.get_replaced_args(options)
+        self.assertEqual(result, ["console=tty0", "quiet"])
+
+        options_dup = [
+            {"previous": "replaced"},
+            {"name": "console", "value": "tty0"},
+            {"name": "console", "value": "ttyS0"},
+            {"name": "quiet"},
+        ]
+        result = bootloader_settings.get_replaced_args(options_dup)
+        self.assertEqual(result, ["console=tty0", "console=ttyS0", "quiet"])
+
+        options_empty = [{"previous": "replaced"}]
+        result = bootloader_settings.get_replaced_args(options_empty)
+        self.assertEqual(result, [])
+
+    def test_needs_replacement(self):
+        """Test needs_replacement for 'previous: replaced' idempotency"""
+        options = [
+            {"previous": "replaced"},
+            {"name": "quiet"},
+            {"name": "console", "value": "tty0"},
+        ]
+
+        kernel_info_match = """
+index=0
+kernel="/boot/vmlinuz-test"
+args="quiet console=tty0"
+title="Fedora Linux"
+"""
+        self.assertFalse(
+            bootloader_settings.needs_replacement(options, kernel_info_match)
+        )
+
+        kernel_info_reordered = """
+index=0
+kernel="/boot/vmlinuz-test"
+args="console=tty0 quiet"
+title="Fedora Linux"
+"""
+        self.assertFalse(
+            bootloader_settings.needs_replacement(options, kernel_info_reordered)
+        )
+
+        kernel_info_extra = """
+index=0
+kernel="/boot/vmlinuz-test"
+args="quiet console=tty0 extra"
+title="Fedora Linux"
+"""
+        self.assertTrue(
+            bootloader_settings.needs_replacement(options, kernel_info_extra)
+        )
+
+        kernel_info_missing = """
+index=0
+kernel="/boot/vmlinuz-test"
+args="quiet"
+title="Fedora Linux"
+"""
+        self.assertTrue(
+            bootloader_settings.needs_replacement(options, kernel_info_missing)
+        )
+
+        kernel_info_empty = """
+index=0
+kernel="/boot/vmlinuz-test"
+args=""
+title="Fedora Linux"
+"""
+        self.assertTrue(
+            bootloader_settings.needs_replacement(options, kernel_info_empty)
+        )
+
+        options_all_absent = [
+            {"previous": "replaced"},
+            {"name": "debug", "state": "absent"},
+        ]
+        self.assertFalse(
+            bootloader_settings.needs_replacement(options_all_absent, kernel_info_empty)
+        )
+
+        options_with_absent = [
+            {"previous": "replaced"},
+            {"name": "quiet"},
+            {"name": "debug", "state": "absent"},
+        ]
+        kernel_info_with_debug = """
+index=0
+kernel="/boot/vmlinuz-test"
+args="quiet debug"
+title="Fedora Linux"
+"""
+        self.assertTrue(
+            bootloader_settings.needs_replacement(
+                options_with_absent, kernel_info_with_debug
+            )
+        )

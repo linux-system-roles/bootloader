@@ -304,7 +304,6 @@ def apply_command(module, result, cmd):
     Read-only grubby commands (for example --info, --default-kernel) must
     call module.run_command() directly so they still run in check mode.
     """
-    result["changed"] = True
     result["actions"].append(cmd)
     if not module.check_mode:
         module.run_command(cmd)
@@ -313,6 +312,8 @@ def apply_command(module, result, cmd):
 def rm_boot_args(module, result, kernel_info, kernel):
     """Remove all existing args for a kernel"""
     bootloader_args = get_boot_args(kernel_info)
+    if not bootloader_args:
+        return
     cmd = (
         "grubby --update-kernel="
         + kernel
@@ -432,8 +433,6 @@ def mod_boot_args(module, result, bootloader_setting, kernel, kernel_info):
     if boot_mod_args:
         cmd = "grubby --update-kernel=" + kernel + boot_mod_args
         apply_command(module, result, cmd)
-    else:
-        result["changed"] = False
 
 
 def mod_default_kernel(module, result, bootloader_setting, kernel_info):
@@ -467,6 +466,35 @@ def get_default_kernel(module, type):
     cmd = "grubby --default-" + type
     _unused, stdout, _unused = module.run_command(cmd)
     return stdout.strip()
+
+
+def get_replaced_args(bootloader_setting_options):
+    """Get the sorted list of desired arg tokens for a replacement check."""
+    tokens = []
+    duplicate_names = get_duplicate_present_option_names(bootloader_setting_options)
+    seen_dup_tokens = set()
+    for opt in bootloader_setting_options:
+        setting_name = get_setting_name(opt)
+        if not setting_name:
+            continue
+        if opt.get("state", "present") == "absent":
+            continue
+        name = opt.get("name", "")
+        if name in duplicate_names:
+            if setting_name not in seen_dup_tokens:
+                seen_dup_tokens.add(setting_name)
+                tokens.append(setting_name)
+        else:
+            tokens.append(setting_name)
+    return sorted(tokens)
+
+
+def needs_replacement(bootloader_setting_options, kernel_info):
+    """Check if a 'previous: replaced' operation would actually change the args."""
+    current_args = get_boot_args(kernel_info)
+    current_tokens = sorted(current_args.split()) if current_args else []
+    desired_tokens = get_replaced_args(bootloader_setting_options)
+    return current_tokens != desired_tokens
 
 
 def run_module():
@@ -508,7 +536,8 @@ def run_module():
             and {"previous": "replaced"} in bootloader_setting["options"]
         ) and (kernel_action != "remove"):
             rc, kernel_info, stderr = module.run_command("grubby --info=" + kernel)
-            rm_boot_args(module, result, kernel_info, kernel)
+            if needs_replacement(bootloader_setting.get("options", []), kernel_info):
+                rm_boot_args(module, result, kernel_info, kernel)
 
         # Create a kernel with provided options
         if kernel_action == "create":
@@ -528,8 +557,7 @@ def run_module():
         if kernel_action == "remove":
             rm_kernel(module, result, kernel)
 
-    # in the event of a successful module execution, you will want to
-    # simple AnsibleModule.exit_json(), passing the key/value results
+    result["changed"] = len(result["actions"]) > 0
     module.exit_json(**result)
 
 
