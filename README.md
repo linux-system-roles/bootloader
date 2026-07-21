@@ -100,7 +100,11 @@ Type: `dict`
 
 Use this variable to customize the loading time of the GRUB bootloader.
 
-Default: `5`
+Usually the native setting for timeout is `5`.
+
+When this variable is not set by a user, the role doesn't change the timeout setting.
+
+Default: `null`
 
 Type: `int`
 
