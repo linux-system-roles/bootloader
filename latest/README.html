@@ -277,7 +277,10 @@ Playbook</a>.</p>
 <h2 id="bootloader_timeout">bootloader_timeout</h2>
 <p>Use this variable to customize the loading time of the GRUB
 bootloader.</p>
-<p>Default: <code>5</code></p>
+<p>Usually the native setting for timeout is <code>5</code>.</p>
+<p>When this variable is not set by a user, the role doesn't change the
+timeout setting.</p>
+<p>Default: <code>null</code></p>
 <p>Type: <code>int</code></p>
 <h2 id="bootloader_password">bootloader_password</h2>
 <p>Use this variable to protect boot parameters with a password.</p>
