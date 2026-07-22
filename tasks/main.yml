@@ -103,21 +103,31 @@
         __bootloader_grub_conf: /boot/grub2/grub.cfg
         __bootloader_user_conf: /boot/grub2/user.cfg
 
-- name: >-
-    Update boot loader timeout configuration in {{ __bootloader_default_grub }}
-  replace:
-    path: "{{ __bootloader_default_grub }}"
-    regexp: '^GRUB_TIMEOUT=.*'
-    replace: 'GRUB_TIMEOUT={{ bootloader_timeout }}'
-    mode: "{{ __bootloader_default_grub_stat.stat.exists |
-      ternary(__bootloader_default_grub_stat.stat.mode, __bootloader_default_grub_mode) }}"
+    - name: Ensure secure permissions for bootloader grub config
+      file:
+        path: "{{ __bootloader_grub_conf }}"
+        owner: root
+        group: root
+        mode: "{{ __bootloader_conf_mode }}"
 
-- name: Update boot loader timeout configuration in {{ __bootloader_grub_conf }}
-  replace:
-    path: "{{ __bootloader_grub_conf }}"
-    regexp: 'set timeout=.*'
-    replace: 'set timeout={{ bootloader_timeout }}'
-    mode: "{{ __bootloader_conf_mode }}"
+- name: Update boot loader timeout configuration
+  when: bootloader_timeout is not none
+  block:
+    - name: Update timeout configuration in {{ __bootloader_default_grub }}
+      replace:
+        path: "{{ __bootloader_default_grub }}"
+        regexp: '^GRUB_TIMEOUT=.*'
+        replace: 'GRUB_TIMEOUT={{ bootloader_timeout }}'
+        mode: "{{ __bootloader_default_grub_stat.stat.exists |
+          ternary(__bootloader_default_grub_stat.stat.mode,
+          __bootloader_default_grub_mode) }}"
+
+    - name: Update timeout configuration in {{ __bootloader_grub_conf }}
+      replace:
+        path: "{{ __bootloader_grub_conf }}"
+        regexp: 'set timeout=.*'
+        replace: 'set timeout={{ bootloader_timeout }}'
+        mode: "{{ __bootloader_conf_mode }}"
 
 - name: Ensure boot loader settings
   bootloader_settings:

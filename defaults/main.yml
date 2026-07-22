@@ -1,6 +1,6 @@
 ---
 bootloader_settings: []
-bootloader_timeout: 5
+bootloader_timeout: null
 
 bootloader_password: null
 bootloader_remove_password: false
