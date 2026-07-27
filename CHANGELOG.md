@@ -1,6 +1,24 @@
 Changelog
 =========
 
+[2.0.0] - 2026-07-27
+--------------------
+
+### Bug Fixes
+
+- fix: Set mode for bootloader user and grub conf files to 0600 (#220)
+- fix: Fix the role running grubby commands in check mode (#221)
+- fix: Fix incorrect changed reporting in bootloader_settings module (#222)
+- fix!: Do not enforce bootloader timeout default (#223)
+
+### Other Changes
+
+- ci: Bump codecov/codecov-action from 6 to 7 (#217)
+- ci: Bump actions/checkout from 6 to 7 (#218)
+- ci: Use our own pr_title_lint.py instead of NPM commitlint [citest_skip] (#219)
+- ci: bump tox-lsr version to 3.20.0 to fix tox 4.58 api breakage [citest_skip] (#224)
+- ci: Add support for Fedora 44 and drop Fedora 42 - use ansible-core 2.21 [citest_skip] (#226)
+
 [1.3.1] - 2026-06-24
 --------------------
 
