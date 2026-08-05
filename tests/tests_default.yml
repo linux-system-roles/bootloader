@@ -18,6 +18,8 @@
 
     - name: Run with default parameters
       include_tasks: tasks/run_role_with_clear_facts.yml
+      vars:
+        bootloader_write_log_file: true
 
     # look for the exact module invocation, not some other message that might contain the string
     - name: Check system journal contains role fingerprints
@@ -33,3 +35,24 @@
           { echo ERROR: SUCCESS fingerprint not found; exit 1; }
       changed_when: false
       when: __register_dev_log.stat.exists
+
+    - name: Check that the log file was written
+      ansible.builtin.slurp:
+        path: /var/log/sysroles.jsonl
+      register: __register_log_file
+
+    - name: Show the log file contents
+      ansible.builtin.debug:
+        msg: "{{ __register_log_file.content | b64decode }}"
+
+    - name: Check contents of the log file
+      ansible.builtin.assert:
+        that:
+          - _log_items | length >= 2
+          - _log_items[0].role_name == _role_name
+          - _log_items[0].status == "begin"
+          - _log_items[1].role_name == _role_name
+          - _log_items[1].status == "success"
+      vars:
+        _log_items: "{{ (__register_log_file.content | b64decode).split('\n') | select | map('from_json') | list }}"
+        _role_name: bootloader

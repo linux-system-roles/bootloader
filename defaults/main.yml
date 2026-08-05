@@ -9,3 +9,5 @@ bootloader_reboot_ok: false
 
 bootloader_gather_facts: false
 bootloader_secure_logging: true
+
+bootloader_write_log_file: false

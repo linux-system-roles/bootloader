@@ -10,6 +10,7 @@ __metaclass__ = type
 
 import json
 import os
+import re
 import tempfile
 import unittest
 
@@ -217,6 +218,59 @@ class TestSrFingerprint(unittest.TestCase):
         finally:
             _cleanup_log(log_file)
 
+    def test_trim_multiple_lines(self):
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jsonl") as tmp:
+            log_file = tmp.name
+
+        try:
+            record = _sample_fingerprint_record()
+            sample = dict(record, role_name="role_0")
+            line_size = len(sr_fingerprint._format_fingerprint_jsonl(sample) + "\n")
+            # Log contains more than 3 lines.
+            n_initial = 4
+            max_size = line_size * n_initial
+            for _i in range(n_initial):
+                sr_fingerprint._write_jsonl_log(
+                    log_file,
+                    dict(record, role_name="role_%d" % _i),
+                    max_size=max_size,
+                )
+
+            with open(log_file, "r") as log_fd:
+                initial_lines = log_fd.read().splitlines()
+            self.assertEqual(len(initial_lines), n_initial)
+
+            # New record larger than one existing line (up to two) via a very
+            # long role_path, so trim removes exactly two oldest records.
+            base_record = dict(record, role_name="role_long", role_path="")
+            base_size = len(
+                sr_fingerprint._format_fingerprint_jsonl(base_record) + "\n"
+            )
+            path_len = 2 * line_size - base_size
+            self.assertGreater(path_len, 0)
+            long_path = "x" * path_len
+            long_record = dict(record, role_name="role_long", role_path=long_path)
+            new_line = sr_fingerprint._format_fingerprint_jsonl(long_record) + "\n"
+            self.assertGreater(len(new_line), line_size)
+            self.assertLessEqual(len(new_line), 2 * line_size)
+
+            sr_fingerprint._write_jsonl_log(log_file, long_record, max_size=max_size)
+
+            with open(log_file, "r") as log_fd:
+                lines = log_fd.read().splitlines()
+
+            # Exactly two oldest records removed; new record appended.
+            self.assertEqual(len(lines), n_initial - 2 + 1)
+            parsed = [json.loads(line) for line in lines]
+            role_names = [entry["role_name"] for entry in parsed]
+            self.assertEqual(role_names, ["role_2", "role_3", "role_long"])
+            self.assertEqual(parsed[-1], long_record)
+            self.assertEqual(parsed[-1]["role_path"], long_path)
+            self.assertNotIn("role_0", role_names)
+            self.assertNotIn("role_1", role_names)
+        finally:
+            _cleanup_log(log_file)
+
     def test_trim_disabled_when_zero(self):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jsonl") as tmp:
             log_file = tmp.name
@@ -349,10 +403,10 @@ class TestSrFingerprint(unittest.TestCase):
 
     def test_local_iso8601_no_microseconds_has_no_fraction(self):
         timestamp = sr_fingerprint._local_iso8601_no_microseconds()
-        self.assertRegex(
-            timestamp,
-            r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:?\d{2}$",
+        match = re.match(
+            r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:?\d{2}$", timestamp
         )
+        self.assertIsNotNone(match)
 
 
 if __name__ == "__main__":

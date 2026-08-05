@@ -185,4 +185,4 @@
     ansible_play_hosts_all: "{{ ansible_play_hosts_all }}"
     distribution: "{{ ansible_facts['distribution'] }}"
     distribution_version: "{{ ansible_facts['distribution_version'] }}"
-    write_log_file: false
+    write_log_file: "{{ bootloader_write_log_file }}"

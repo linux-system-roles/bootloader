@@ -14,7 +14,7 @@
     ansible_play_hosts_all: "{{ ansible_play_hosts_all }}"
     distribution: "{{ ansible_facts['distribution'] }}"
     distribution_version: "{{ ansible_facts['distribution_version'] }}"
-    write_log_file: false
+    write_log_file: "{{ bootloader_write_log_file }}"
 
 - name: Determine if system is ostree and set flag
   when: not __bootloader_is_ostree is defined
