@@ -26,10 +26,10 @@
         cmd: >-
           set -eo pipefail;
           journalctl --since "{{ __journal_start_time }}" --no-pager |
-          grep -v " Invoked with" | grep "sr_fingerprint.*begin system_role:bootloader" ||
+          grep -v " Invoked with" | grep "sr_fingerprint.*role_name=bootloader.*status=begin" ||
           { echo ERROR: BEGIN fingerprint not found; exit 1; };
           journalctl --since "{{ __journal_start_time }}" --no-pager |
-          grep -v " Invoked with" | grep "sr_fingerprint.*success system_role:bootloader" ||
+          grep -v " Invoked with" | grep "sr_fingerprint.*role_name=bootloader.*status=success" ||
           { echo ERROR: SUCCESS fingerprint not found; exit 1; }
       changed_when: false
       when: __register_dev_log.stat.exists
