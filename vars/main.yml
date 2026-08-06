@@ -28,6 +28,8 @@ __bootloader_uefi_conf_dir: >-
   {%- endif -%}
 __bootloader_bios_conf_dir: /boot/grub2/
 
+__bootloader_write_log_file: false
+
 # BEGIN - DO NOT EDIT THIS BLOCK - rh distros variables
 # Ansible distribution identifiers that the role treats like RHEL
 __bootloader_rh_distros:
