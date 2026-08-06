@@ -1,6 +1,20 @@
 Changelog
 =========
 
+[2.1.0] - 2026-08-06
+--------------------
+
+### New Features
+
+- feat: Write roles fingerprints to /var/log/sysroles.jsonl [citest_skip] (#230)
+
+### Other Changes
+
+- ci: Bump github/codeql-action from 4 to 4.37.3 (#228)
+- ci: Bump actions/setup-python from 6 to 7 (#229)
+- ci: ensure dependabot updates do not invoke ci tests [citest_skip] (#231)
+- ci: [citest_skip] Bump github/codeql-action from 4.37.3 to 4.37.4 (#232)
+
 [2.0.0] - 2026-07-27
 --------------------
 
