@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Assert bootloader_timeout is null or a non-negative integer
+  ansible.builtin.assert:
+    that:
+      - >-
+        (bootloader_timeout is none)
+        or (bootloader_timeout | string | trim is match('^[0-9]+$'))
+    fail_msg: >-
+      bootloader_timeout must be null or a non-negative integer,
+      got {{ bootloader_timeout | type_debug }}
+
+- name: Assert bootloader_password is null or a string
+  ansible.builtin.assert:
+    that:
+      - >-
+        (bootloader_password is none)
+        or (bootloader_password is string)
+    fail_msg: >-
+      bootloader_password must be null or a string,
+      got {{ bootloader_password | type_debug }}
+
+- name: Assert kernel in bootloader_settings is a string or dictionary
+  ansible.builtin.assert:
+    that:
+      - >-
+        item.kernel is string
+        or item.kernel is mapping
+    fail_msg: >-
+      bootloader_settings[{{ idx }}].kernel must be a string
+      or dictionary, got {{ item.kernel | type_debug }}
+  loop: "{{ bootloader_settings }}"
+  loop_control:
+    index_var: idx
+    label: "{{ idx }}"
+  when: item.kernel is defined
+
+- name: Assert value in bootloader_settings options is a string or integer
+  ansible.builtin.assert:
+    that:
+      - >-
+        item.1.value is string
+        or (item.1.value | type_debug) == 'int'
+    fail_msg: >-
+      bootloader_settings options value must be a string
+      or integer, got {{ item.1.value | type_debug }}
+  loop: >-
+    {{ bootloader_settings | subelements('options', skip_missing=True) }}
+  loop_control:
+    label: "{{ item.0.kernel | default('unknown') }} - {{ item.1.name | default('unnamed') }}"
+  when: item.1.value is defined and item.1.value is not none

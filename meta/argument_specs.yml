@@ -1,0 +1,137 @@
+# SPDX-License-Identifier: MIT
+---
+argument_specs:
+  main:
+    short_description: The bootloader role.
+    description: >
+      The bootloader role allows you to manage GRUB2 boot loader
+      settings, kernel command line parameters, boot loader
+      timeout, and boot loader password.
+    options:
+      bootloader_settings:
+        type: list
+        elements: dict
+        default: []
+        description: >
+          List of kernel entries and their command line parameters
+          to configure. Each entry specifies a kernel and the
+          boot loader settings to apply.
+        options:
+          kernel:
+            type: raw
+            required: true
+            description: >
+              The kernel to update settings for. Accepts the
+              string `DEFAULT` or `ALL` to target the default or
+              all kernels, or a dictionary with keys `path`,
+              `index`, `title`, and `initrd` to identify a
+              specific kernel.
+          state:
+            type: str
+            choices:
+              - present
+              - absent
+            default: present
+            description: >
+              Whether the kernel entry should be present
+              (`present`) or removed (`absent`).
+          options:
+            type: list
+            elements: dict
+            description: >
+              List of boot loader arguments to apply to the
+              specified kernel.
+            options:
+              name:
+                type: str
+                description: >
+                  The name of the boot loader setting. Not
+                  required when using `previous: replaced`.
+              value:
+                type: raw
+                description: >
+                  The value for the setting. Not required when
+                  the setting has no value, for example `quiet`.
+                  The value must not be a YAML boolean or null
+                  type.
+              state:
+                type: str
+                choices:
+                  - present
+                  - absent
+                default: present
+                description: >
+                  Whether the setting should be present
+                  (`present`) or removed (`absent`). The value
+                  `absent` removes the setting with the given
+                  `name`.
+              previous:
+                type: str
+                choices:
+                  - replaced
+                description: >
+                  Whether to replace all previous settings with
+                  the given settings. The only supported value
+                  is `replaced`.
+              copy_default:
+                type: bool
+                default: false
+                description: >
+                  Whether to copy the default arguments to the
+                  created kernel.
+          default:
+            type: bool
+            default: false
+            description: >
+              Whether to make this kernel the default boot
+              entry.
+
+      bootloader_timeout:
+        type: raw
+        default: null
+        description: >
+          The GRUB boot loader timeout in seconds. When set to
+          `null` or left unset, the role does not change the
+          timeout setting.
+
+      bootloader_password:
+        type: raw
+        default: null
+        description: >
+          The password to protect boot parameters. When set to
+          `null` or left unset, the current password
+          configuration is not modified. The boot loader
+          username is always `root`. This value should come
+          from an Ansible vault.
+
+      bootloader_remove_password:
+        type: bool
+        default: false
+        description: >
+          Whether to remove the boot loader password
+          configuration.
+
+      bootloader_reboot_ok:
+        type: bool
+        default: false
+        description: >
+          Whether the role is allowed to reboot the managed host
+          when changes require a reboot to take effect. If
+          `false`, the role sets `bootloader_reboot_required` to
+          `true` instead.
+
+      bootloader_gather_facts:
+        type: bool
+        default: false
+        description: >
+          Whether to gather bootloader facts containing boot
+          information for all kernels. The facts are returned
+          in the `bootloader_facts` variable.
+
+      bootloader_secure_logging:
+        type: bool
+        default: true
+        description: >
+          Whether to suppress potentially sensitive output from
+          tasks that handle credentials by setting `no_log` to
+          `true` on those tasks.

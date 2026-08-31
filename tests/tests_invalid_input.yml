@@ -1,0 +1,461 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Verify invalid parameters are rejected
+  hosts: all
+  tasks:
+    - name: Skip on s390x
+      meta: end_host
+      when: ansible_facts["architecture"] == "s390x"
+
+    - name: Run invalid input tests
+      block:
+        # ====================================================
+        # Section 1: Verify role works with valid defaults
+        # ====================================================
+        - name: Run role with valid defaults
+          ansible.builtin.include_role:
+            name: linux-system-roles.bootloader
+
+        # ====================================================
+        # Section 2: argument_specs validation (Ansible 2.10+)
+        # ====================================================
+        - name: Run argument specs validation tests
+          when: ansible_version.full is version("2.11", ">=")
+          block:
+            # --- Test: non-list bootloader_settings ---
+            - name: Argument specs reject non-list bootloader_settings
+              block:
+                - name: Run role with non-list bootloader_settings
+                  ansible.builtin.include_role:
+                    name: linux-system-roles.bootloader
+                  vars:
+                    bootloader_settings: "not_a_list"
+              rescue:
+                - name: Mark non-list bootloader_settings rejected
+                  ansible.builtin.set_fact:
+                    __invalid_input_settings_type_failed: true
+
+            - name: Assert non-list bootloader_settings was rejected
+              ansible.builtin.assert:
+                that:
+                  - __invalid_input_settings_type_failed | default(false)
+                fail_msg: >-
+                  argument_specs should reject bootloader_settings
+                  with type string
+
+            # --- Test: missing required kernel field ---
+            - name: Argument specs reject missing kernel field
+              block:
+                - name: Run role with missing kernel field
+                  ansible.builtin.include_role:
+                    name: linux-system-roles.bootloader
+                  vars:
+                    bootloader_settings:
+                      - options:
+                          - name: quiet
+              rescue:
+                - name: Mark missing kernel rejected
+                  ansible.builtin.set_fact:
+                    __invalid_input_missing_kernel_failed: true
+                  when: >-
+                    'missing required arguments' in
+                    (ansible_failed_result | default({}) | to_json)
+
+            - name: Assert missing kernel was rejected
+              ansible.builtin.assert:
+                that:
+                  - __invalid_input_missing_kernel_failed | default(false)
+                fail_msg: >-
+                  argument_specs should reject bootloader_settings
+                  entries missing the required kernel field
+
+            # --- Test: invalid state choice ---
+            - name: Argument specs reject invalid state choice
+              block:
+                - name: Run role with invalid state choice
+                  ansible.builtin.include_role:
+                    name: linux-system-roles.bootloader
+                  vars:
+                    bootloader_settings:
+                      - kernel: DEFAULT
+                        state: invalid_state
+              rescue:
+                - name: Mark invalid state choice rejected
+                  ansible.builtin.set_fact:
+                    __invalid_input_state_choice_failed: true
+
+            - name: Assert invalid state choice was rejected
+              ansible.builtin.assert:
+                that:
+                  - __invalid_input_state_choice_failed | default(false)
+                fail_msg: >-
+                  argument_specs should reject bootloader_settings
+                  state value 'invalid_state'
+
+            # --- Test: invalid option state choice ---
+            - name: Argument specs reject invalid option state choice
+              block:
+                - name: Run role with invalid option state choice
+                  ansible.builtin.include_role:
+                    name: linux-system-roles.bootloader
+                  vars:
+                    bootloader_settings:
+                      - kernel: DEFAULT
+                        options:
+                          - name: quiet
+                            state: invalid_option_state
+              rescue:
+                - name: Mark invalid option state choice rejected
+                  ansible.builtin.set_fact:
+                    __invalid_input_option_state_choice_failed: true
+
+            - name: Assert invalid option state choice was rejected
+              ansible.builtin.assert:
+                that:
+                  - >-
+                    __invalid_input_option_state_choice_failed
+                    | default(false)
+                fail_msg: >-
+                  argument_specs should reject options state value
+                  'invalid_option_state'
+
+            # --- Test: invalid previous choice ---
+            - name: Argument specs reject invalid previous choice
+              block:
+                - name: Run role with invalid previous choice
+                  ansible.builtin.include_role:
+                    name: linux-system-roles.bootloader
+                  vars:
+                    bootloader_settings:
+                      - kernel: DEFAULT
+                        options:
+                          - previous: invalid_previous
+              rescue:
+                - name: Mark invalid previous choice rejected
+                  ansible.builtin.set_fact:
+                    __invalid_input_previous_choice_failed: true
+
+            - name: Assert invalid previous choice was rejected
+              ansible.builtin.assert:
+                that:
+                  - >-
+                    __invalid_input_previous_choice_failed
+                    | default(false)
+                fail_msg: >-
+                  argument_specs should reject options previous
+                  value 'invalid_previous'
+
+            # --- Test: non-bool default suboption ---
+            - name: Argument specs reject non-bool default suboption
+              block:
+                - name: Run role with non-bool default suboption
+                  ansible.builtin.include_role:
+                    name: linux-system-roles.bootloader
+                  vars:
+                    bootloader_settings:
+                      - kernel: DEFAULT
+                        default: "not_a_bool"
+              rescue:
+                - name: Mark non-bool default suboption rejected
+                  ansible.builtin.set_fact:
+                    __invalid_input_default_subopt_type_failed: true
+
+            - name: Assert non-bool default suboption was rejected
+              ansible.builtin.assert:
+                that:
+                  - >-
+                    __invalid_input_default_subopt_type_failed
+                    | default(false)
+                fail_msg: >-
+                  argument_specs should reject bootloader_settings
+                  default suboption with type string
+
+            # --- Test: non-bool copy_default suboption ---
+            - name: Argument specs reject non-bool copy_default suboption
+              block:
+                - name: Run role with non-bool copy_default suboption
+                  ansible.builtin.include_role:
+                    name: linux-system-roles.bootloader
+                  vars:
+                    bootloader_settings:
+                      - kernel: DEFAULT
+                        options:
+                          - name: quiet
+                            copy_default: "not_a_bool"
+              rescue:
+                - name: Mark non-bool copy_default suboption rejected
+                  ansible.builtin.set_fact:
+                    __invalid_input_copy_default_type_failed: true
+
+            - name: Assert non-bool copy_default suboption was rejected
+              ansible.builtin.assert:
+                that:
+                  - >-
+                    __invalid_input_copy_default_type_failed
+                    | default(false)
+                fail_msg: >-
+                  argument_specs should reject options
+                  copy_default suboption with type string
+
+            # --- Test: non-bool bootloader_remove_password ---
+            - name: Argument specs reject non-bool bootloader_remove_password
+              block:
+                - name: Run role with non-bool bootloader_remove_password
+                  ansible.builtin.include_role:
+                    name: linux-system-roles.bootloader
+                  vars:
+                    bootloader_remove_password: "not_a_bool"
+              rescue:
+                - name: Mark non-bool bootloader_remove_password rejected
+                  ansible.builtin.set_fact:
+                    __invalid_input_remove_password_type_failed: true
+
+            - name: Assert non-bool bootloader_remove_password was rejected
+              ansible.builtin.assert:
+                that:
+                  - >-
+                    __invalid_input_remove_password_type_failed
+                    | default(false)
+                fail_msg: >-
+                  argument_specs should reject
+                  bootloader_remove_password with type string
+
+            # --- Test: non-bool bootloader_reboot_ok ---
+            - name: Argument specs reject non-bool bootloader_reboot_ok
+              block:
+                - name: Run role with non-bool bootloader_reboot_ok
+                  ansible.builtin.include_role:
+                    name: linux-system-roles.bootloader
+                  vars:
+                    bootloader_reboot_ok: "not_a_bool"
+              rescue:
+                - name: Mark non-bool bootloader_reboot_ok rejected
+                  ansible.builtin.set_fact:
+                    __invalid_input_reboot_ok_type_failed: true
+
+            - name: Assert non-bool bootloader_reboot_ok was rejected
+              ansible.builtin.assert:
+                that:
+                  - >-
+                    __invalid_input_reboot_ok_type_failed
+                    | default(false)
+                fail_msg: >-
+                  argument_specs should reject
+                  bootloader_reboot_ok with type string
+
+            # --- Test: non-bool bootloader_gather_facts ---
+            - name: Argument specs reject non-bool bootloader_gather_facts
+              block:
+                - name: Run role with non-bool bootloader_gather_facts
+                  ansible.builtin.include_role:
+                    name: linux-system-roles.bootloader
+                  vars:
+                    bootloader_gather_facts: "not_a_bool"
+              rescue:
+                - name: Mark non-bool bootloader_gather_facts rejected
+                  ansible.builtin.set_fact:
+                    __invalid_input_gather_facts_type_failed: true
+
+            - name: Assert non-bool bootloader_gather_facts was rejected
+              ansible.builtin.assert:
+                that:
+                  - >-
+                    __invalid_input_gather_facts_type_failed
+                    | default(false)
+                fail_msg: >-
+                  argument_specs should reject
+                  bootloader_gather_facts with type string
+
+            # --- Test: non-bool bootloader_secure_logging ---
+            - name: Argument specs reject non-bool bootloader_secure_logging
+              block:
+                - name: Run role with non-bool bootloader_secure_logging
+                  ansible.builtin.include_role:
+                    name: linux-system-roles.bootloader
+                  vars:
+                    bootloader_secure_logging: "not_a_bool"
+              rescue:
+                - name: Mark non-bool bootloader_secure_logging rejected
+                  ansible.builtin.set_fact:
+                    __invalid_input_secure_logging_type_failed: true
+
+            - name: Assert non-bool bootloader_secure_logging was rejected
+              ansible.builtin.assert:
+                that:
+                  - >-
+                    __invalid_input_secure_logging_type_failed
+                    | default(false)
+                fail_msg: >-
+                  argument_specs should reject
+                  bootloader_secure_logging with type string
+
+        # ====================================================
+        # Section 3: assert_role_vars validation (all versions)
+        # ====================================================
+
+        # --- Test: bootloader_timeout as string ---
+        - name: Assert rejects bootloader_timeout as string
+          block:
+            - name: Run role with bootloader_timeout as string
+              ansible.builtin.include_role:
+                name: linux-system-roles.bootloader
+              vars:
+                bootloader_timeout: "not_an_int"
+          rescue:
+            - name: Mark bootloader_timeout string rejected
+              ansible.builtin.set_fact:
+                __invalid_input_timeout_string_failed: true
+
+        - name: Assert bootloader_timeout as string was rejected
+          ansible.builtin.assert:
+            that:
+              - >-
+                __invalid_input_timeout_string_failed
+                | default(false)
+            fail_msg: >-
+              assert_role_vars should reject bootloader_timeout
+              when given a non-numeric string value
+
+        # --- Test: bootloader_timeout as boolean ---
+        - name: Assert rejects bootloader_timeout as boolean
+          block:
+            - name: Run role with bootloader_timeout as boolean
+              ansible.builtin.include_role:
+                name: linux-system-roles.bootloader
+              vars:
+                bootloader_timeout: true
+          rescue:
+            - name: Mark bootloader_timeout boolean rejected
+              ansible.builtin.set_fact:
+                __invalid_input_timeout_bool_failed: true
+
+        - name: Assert bootloader_timeout as boolean was rejected
+          ansible.builtin.assert:
+            that:
+              - >-
+                __invalid_input_timeout_bool_failed
+                | default(false)
+            fail_msg: >-
+              assert_role_vars should reject bootloader_timeout
+              when given a boolean value
+
+        # --- Test: bootloader_password as integer ---
+        - name: Assert rejects bootloader_password as integer
+          block:
+            - name: Run role with bootloader_password as integer
+              ansible.builtin.include_role:
+                name: linux-system-roles.bootloader
+              vars:
+                bootloader_password: 12345
+          rescue:
+            - name: Mark bootloader_password integer rejected
+              ansible.builtin.set_fact:
+                __invalid_input_password_int_failed: true
+
+        - name: Assert bootloader_password as integer was rejected
+          ansible.builtin.assert:
+            that:
+              - >-
+                __invalid_input_password_int_failed
+                | default(false)
+            fail_msg: >-
+              assert_role_vars should reject bootloader_password
+              when given an integer value
+
+        # --- Test: bootloader_password as boolean ---
+        - name: Assert rejects bootloader_password as boolean
+          block:
+            - name: Run role with bootloader_password as boolean
+              ansible.builtin.include_role:
+                name: linux-system-roles.bootloader
+              vars:
+                bootloader_password: true
+          rescue:
+            - name: Mark bootloader_password boolean rejected
+              ansible.builtin.set_fact:
+                __invalid_input_password_bool_failed: true
+
+        - name: Assert bootloader_password as boolean was rejected
+          ansible.builtin.assert:
+            that:
+              - >-
+                __invalid_input_password_bool_failed
+                | default(false)
+            fail_msg: >-
+              assert_role_vars should reject bootloader_password
+              when given a boolean value
+
+        # --- Test: kernel as integer ---
+        - name: Assert rejects kernel as integer
+          block:
+            - name: Run role with kernel as integer
+              ansible.builtin.include_role:
+                name: linux-system-roles.bootloader
+              vars:
+                bootloader_settings:
+                  - kernel: 123
+          rescue:
+            - name: Mark kernel integer rejected
+              ansible.builtin.set_fact:
+                __invalid_input_kernel_int_failed: true
+
+        - name: Assert kernel as integer was rejected
+          ansible.builtin.assert:
+            that:
+              - >-
+                __invalid_input_kernel_int_failed
+                | default(false)
+            fail_msg: >-
+              assert_role_vars should reject kernel when given
+              an integer value
+
+        # --- Test: value as list ---
+        - name: Assert rejects value as list
+          block:
+            - name: Run role with value as list
+              ansible.builtin.include_role:
+                name: linux-system-roles.bootloader
+              vars:
+                bootloader_settings:
+                  - kernel: DEFAULT
+                    options:
+                      - name: quiet
+                        value:
+                          - item1
+                          - item2
+          rescue:
+            - name: Mark value list rejected
+              ansible.builtin.set_fact:
+                __invalid_input_value_list_failed: true
+
+        - name: Assert value as list was rejected
+          ansible.builtin.assert:
+            that:
+              - >-
+                __invalid_input_value_list_failed
+                | default(false)
+            fail_msg: >-
+              assert_role_vars should reject options value when
+              given a list value
+
+      always:
+        - name: Clear test facts
+          ansible.builtin.set_fact:
+            __invalid_input_settings_type_failed:
+            __invalid_input_missing_kernel_failed:
+            __invalid_input_default_subopt_type_failed:
+            __invalid_input_copy_default_type_failed:
+            __invalid_input_state_choice_failed:
+            __invalid_input_option_state_choice_failed:
+            __invalid_input_previous_choice_failed:
+            __invalid_input_remove_password_type_failed:
+            __invalid_input_reboot_ok_type_failed:
+            __invalid_input_gather_facts_type_failed:
+            __invalid_input_secure_logging_type_failed:
+            __invalid_input_timeout_string_failed:
+            __invalid_input_timeout_bool_failed:
+            __invalid_input_password_int_failed:
+            __invalid_input_password_bool_failed:
+            __invalid_input_kernel_int_failed:
+            __invalid_input_value_list_failed:
+          tags: tests::cleanup
