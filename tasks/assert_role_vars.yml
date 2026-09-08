@@ -20,20 +20,20 @@
       bootloader_password must be null or a string,
       got {{ bootloader_password | type_debug }}
 
-- name: Assert kernel in bootloader_settings is a string or dictionary
+- name: Assert kernel in bootloader_settings is defined and valid type
   ansible.builtin.assert:
     that:
+      - item.kernel is defined
       - >-
         item.kernel is string
         or item.kernel is mapping
     fail_msg: >-
-      bootloader_settings[{{ idx }}].kernel must be a string
-      or dictionary, got {{ item.kernel | type_debug }}
+      bootloader_settings[{{ idx }}].kernel is required and must be
+      a string or dictionary, got {{ item.kernel | default('undefined') | type_debug }}
   loop: "{{ bootloader_settings }}"
   loop_control:
     index_var: idx
     label: "{{ idx }}"
-  when: item.kernel is defined
 
 - name: Assert value in bootloader_settings options is a string or integer
   ansible.builtin.assert:
