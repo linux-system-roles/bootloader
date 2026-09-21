@@ -113,12 +113,41 @@ Type: `int`
 Use this variable to protect boot parameters with a password.
 
 **WARNING**: Changing the bootloader password is not idempotent.
+Use `bootloader_password_hash` for idempotent password configuration.
+These two inputs cannot be used together.
 
 The bootloader username is always `root`.
 
 This should come from vault.
 
 If unset, current configuration is not touched.
+
+Default: `null`
+
+Type: `string`
+
+### bootloader_password_hash
+
+Use this variable to set a precomputed GRUB PBKDF2 SHA512 password hash
+for the bootloader user `root`. Generate the hash with
+`grub2-mkpasswd-pbkdf2` and store it in Ansible Vault.
+Supply only the resulting `grub.pbkdf2.sha512...` hash, without the command's
+explanatory text or a trailing newline. The hash must have a positive iteration
+count, a nonempty hexadecimal salt consisting of whole bytes, and a 64-byte
+hexadecimal digest.
+
+Setting the same hash repeatedly is idempotent. If unset or `null`, no hash
+is written. An empty string is invalid; use `bootloader_remove_password: true`
+with this variable unset or `null` to remove a password.
+
+Do not combine this variable with a non-null `bootloader_password` or with
+`bootloader_remove_password: true`.
+
+For example, where `vault_bootloader_password_hash` contains the generated hash:
+
+```yaml
+bootloader_password_hash: "{{ vault_bootloader_password_hash }}"
+```
 
 Default: `null`
 
