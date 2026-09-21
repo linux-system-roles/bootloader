@@ -20,6 +20,32 @@
       bootloader_password must be null or a string,
       got {{ bootloader_password | type_debug }}
 
+- name: Assert bootloader_password_hash is null or a GRUB PBKDF2 SHA512 hash
+  ansible.builtin.assert:
+    that:
+      - >-
+        (bootloader_password_hash is none)
+        or (bootloader_password_hash is string
+        and bootloader_password_hash is
+        match('^grub[.]pbkdf2[.]sha512[.][1-9][0-9]*[.]'
+        ~ '([0-9A-Fa-f]{2})+[.][0-9A-Fa-f]{128}\Z'))
+    fail_msg: >-
+      bootloader_password_hash must be null or a GRUB PBKDF2 SHA512 hash
+      with a positive iteration count, hexadecimal salt, and 64-byte digest
+  no_log: "{{ bootloader_secure_logging }}"
+
+- name: Assert bootloader_password_hash does not conflict with password settings
+  ansible.builtin.assert:
+    that:
+      - >-
+        bootloader_password_hash is none
+        or (bootloader_password is none
+        and not bootloader_remove_password | bool)
+    fail_msg: >-
+      bootloader_password_hash cannot be combined with bootloader_password
+      or bootloader_remove_password=true
+  no_log: "{{ bootloader_secure_logging }}"
+
 - name: Assert kernel in bootloader_settings is defined and valid type
   ansible.builtin.assert:
     that:

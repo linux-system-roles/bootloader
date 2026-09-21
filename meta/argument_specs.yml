@@ -104,6 +104,16 @@ argument_specs:
           username is always `root`. This value should come
           from an Ansible vault.
 
+      bootloader_password_hash:
+        type: raw
+        default: null
+        description: >
+          Precomputed GRUB PBKDF2 SHA512 password hash for the root
+          boot loader user. When null or unset, no hash is written.
+          Setting the same hash repeatedly is idempotent. Store the hash
+          in Ansible Vault. Cannot be combined with bootloader_password
+          or bootloader_remove_password=true.
+
       bootloader_remove_password:
         type: bool
         default: false

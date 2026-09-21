@@ -92,15 +92,16 @@
 - name: Use a general grub conf path if UEFI path has a stub config
   when: __bootloader_grub_conf_stat.stat.exists | bool
   block:
-    - name: Verify if there is a stab config in {{ __bootloader_grub_conf }}
+    - name: Verify if there is a stub config in {{ __bootloader_grub_conf }}
       shell: grep "configfile" {{ __bootloader_grub_conf }} || true
       changed_when: false
       register: __bootloader_grep_configfile
       ignore_errors: true
+      check_mode: false
 
     - name: Use a general grub and user conf path if UEFI path has a stub config
       when:
-        - __bootloader_grep_configfile.stdout | length > 0
+        - __bootloader_grep_configfile.stdout | d("") | length > 0
         - __bootloader_grub_conf == __bootloader_uefi_conf_dir ~ 'grub.cfg'
       set_fact:
         __bootloader_grub_conf: /boot/grub2/grub.cfg
@@ -161,6 +162,14 @@
         mode: "{{ __bootloader_conf_mode }}"
       changed_when: true
       no_log: "{{ bootloader_secure_logging }}"
+
+- name: Install precomputed boot loader password hash
+  ansible.builtin.copy:
+    content: "GRUB2_PASSWORD={{ bootloader_password_hash }}"
+    dest: "{{ __bootloader_user_conf }}"
+    mode: "{{ __bootloader_conf_mode }}"
+  when: bootloader_password_hash is not none
+  no_log: "{{ bootloader_secure_logging }}"
 
 - name: Remove boot loader password configuration
   file:
