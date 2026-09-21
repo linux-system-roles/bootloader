@@ -385,6 +385,28 @@
               assert_role_vars should reject bootloader_password
               when given a boolean value
 
+        - name: Reject invalid or conflicting password hashes
+          ansible.builtin.include_tasks: tasks/check_invalid_password_hash.yml
+          loop:
+            - hash: ""
+            - hash: 123
+            - hash: true
+            - hash: []
+            - hash: {}
+            - hash: not-a-hash
+            - hash: "{{ 'grub.pbkdf2.sha512.0.AA.' ~ ('AB' * 64) }}"
+            - hash: "{{ 'grub.pbkdf2.sha512.10000.A.' ~ ('AB' * 64) }}"
+            - hash: "{{ 'grub.pbkdf2.sha512.10000.GG.' ~ ('AB' * 64) }}"
+            - hash: "{{ 'grub.pbkdf2.sha512.10000.AA.' ~ ('AB' * 63) }}"
+            - hash: "{{ 'grub.pbkdf2.sha512.10000.AA.' ~ ('AB' * 64) }}\n"
+            - hash: "{{ 'grub.pbkdf2.sha512.10000.AA.' ~ ('AB' * 64) }}"
+              password: test-pass
+            - hash: "{{ 'grub.pbkdf2.sha512.10000.AA.' ~ ('AB' * 64) }}"
+              remove: true
+          loop_control:
+            loop_var: __bootloader_test_invalid_hash
+            label: Password hash validation case
+
         # --- Test: kernel as integer ---
         - name: Assert rejects kernel as integer
           block:
@@ -441,6 +463,7 @@
       always:
         - name: Clear test facts
           ansible.builtin.set_fact:
+            __bootloader_test_hash_rejected:
             __invalid_input_settings_type_failed:
             __invalid_input_missing_kernel_failed:
             __invalid_input_default_subopt_type_failed:
