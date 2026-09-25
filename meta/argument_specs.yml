@@ -12,6 +12,7 @@ argument_specs:
         type: list
         elements: dict
         default: []
+        doc_tags: [general]
         description: >
           List of kernel entries and their command line parameters
           to configure. Each entry specifies a kernel and the
@@ -89,6 +90,7 @@ argument_specs:
       bootloader_timeout:
         type: raw
         default: null
+        doc_tags: [general]
         description: >
           The GRUB boot loader timeout in seconds. When set to
           `null` or left unset, the role does not change the
@@ -97,6 +99,7 @@ argument_specs:
       bootloader_password:
         type: raw
         default: null
+        doc_tags: [security]
         description: >
           The password to protect boot parameters. When set to
           `null` or left unset, the current password
@@ -107,6 +110,7 @@ argument_specs:
       bootloader_password_hash:
         type: raw
         default: null
+        doc_tags: [security]
         description: >
           Precomputed GRUB PBKDF2 SHA512 password hash for the root
           boot loader user. When null or unset, no hash is written.
@@ -117,6 +121,7 @@ argument_specs:
       bootloader_remove_password:
         type: bool
         default: false
+        doc_tags: [security]
         description: >
           Whether to remove the boot loader password
           configuration.
@@ -124,6 +129,7 @@ argument_specs:
       bootloader_reboot_ok:
         type: bool
         default: false
+        doc_tags: [reboot]
         description: >
           Whether the role is allowed to reboot the managed host
           when changes require a reboot to take effect. If
@@ -133,6 +139,7 @@ argument_specs:
       bootloader_gather_facts:
         type: bool
         default: false
+        doc_tags: [general]
         description: >
           Whether to gather bootloader facts containing boot
           information for all kernels. The facts are returned
@@ -141,6 +148,7 @@ argument_specs:
       bootloader_secure_logging:
         type: bool
         default: true
+        doc_tags: [security]
         description: >
           Whether to suppress potentially sensitive output from
           tasks that handle credentials by setting `no_log` to

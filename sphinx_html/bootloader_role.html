@@ -1,0 +1,712 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="2.27.0" name="antsibull-docs" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fedora.linux_system_roles.bootloader role – The bootloader role. &mdash; linux-system-roles  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=41de9001" />
+      <link rel="stylesheet" type="text/css" href="_static/css/ansible.css?v=b54c304f" />
+      <link rel="stylesheet" type="text/css" href="_static/antsibull-minimal.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/rtd-ethical-ads.css?v=289b023e" />
+
+  
+    <link rel="shortcut icon" href="_static/images/Ansible-Mark-RGB_Black.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="linux-system-roles.bootloader" href="index.html" /><!-- extra head elements for Ansible beyond RTD Sphinx Theme -->
+
+
+
+
+</head>
+
+<body class="wy-body-for-nav"><!-- extra body elements for Ansible beyond RTD Sphinx Theme -->
+
+<div class="DocSite-globalNav ansibleNav">
+  <ul>
+    <li><a href="https://www.ansible.com/blog" target="_blank">Blog</a></li>
+    <li><a href="https://forum.ansible.com/" target="_blank">Ansible community forum</a></li>
+    <li><a href="https://docs.ansible.com/" target="_blank">Documentation</a></li>
+  </ul>
+</div>
+
+<a class="DocSite-nav" href="/" style="padding-bottom: 30px;">
+
+  <img class="DocSiteNav-logo"
+    src="_static/images/Ansible-Mark-RGB_White.png"
+    alt="Ansible Logo">
+  <div class="DocSiteNav-title">linux-system-roles  documentation</div>
+</a>
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            linux-system-roles
+          </a><!--- Based on https://github.com/rtfd/sphinx_rtd_theme/pull/438/files -->
+
+<div class="version">
+  
+    
+  
+</div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <label class="sr-only" for="q">Search docs:</label>
+    <input type="text" class="st-default-search-input" id="q" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+  
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">fedora.linux_system_roles.bootloader role – The bootloader role.</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#entry-point-main-the-bootloader-role">Entry point <code class="docutils literal notranslate"><span class="pre">main</span></code> – The bootloader role.</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#parameters">Parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#supported-architectures">Supported Architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#considerations">Considerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuring-grub-boot-loader-settings">Configuring GRUB Boot Loader Settings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#variables">Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#example-playbooks">Example Playbooks</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#bootloader-password-protection">Bootloader Password Protection</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Example Playbooks</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#system-reboot-behavior">System Reboot Behavior</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id3">Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4">Example Playbooks</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#return-variables">Return Variables</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#collection-links">Collection links</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<!-- extra nav elements for Ansible beyond RTD Sphinx Theme -->
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">linux-system-roles</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">fedora.linux_system_roles.bootloader role – The bootloader role.</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+
+  
+           <div itemprop="articleBody">
+             
+  <span class="target" id="ansible-collections-fedora-linux-system-roles-bootloader-role"></span><section id="fedora-linux-system-roles-bootloader-role-the-bootloader-role">
+<h1>fedora.linux_system_roles.bootloader role – The bootloader role.<a class="headerlink" href="#fedora-linux-system-roles-bootloader-role-the-bootloader-role" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This role is part of the <a class="reference external" href="https://galaxy.ansible.com/ui/repo/published/fedora/linux_system_roles/">fedora.linux_system_roles collection</a> (version 2.5.0).</p>
+<p>It is not included in <code class="docutils literal notranslate"><span class="pre">ansible-core</span></code>.
+To check whether it is installed, run <code class="code docutils literal notranslate"><span class="pre">ansible-galaxy</span> <span class="pre">collection</span> <span class="pre">list</span></code>.</p>
+<p>To install it use: <code class="code docutils literal notranslate"><span class="pre">ansible-galaxy</span> <span class="pre">collection</span> <span class="pre">install</span> <span class="pre">fedora.linux_system_roles</span></code>.</p>
+<p>To use it in a playbook, specify: <code class="code docutils literal notranslate"><span class="pre">fedora.linux_system_roles.bootloader</span></code>.</p>
+</div>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#entry-point-main-the-bootloader-role" id="id5">Entry point <code class="docutils literal notranslate"><span class="pre">main</span></code> – The bootloader role.</a></p>
+<ul>
+<li><p><a class="reference internal" href="#synopsis" id="id6">Synopsis</a></p></li>
+<li><p><a class="reference internal" href="#parameters" id="id7">Parameters</a></p></li>
+<li><p><a class="reference internal" href="#supported-architectures" id="id8">Supported Architectures</a></p></li>
+<li><p><a class="reference internal" href="#considerations" id="id9">Considerations</a></p></li>
+<li><p><a class="reference internal" href="#configuring-grub-boot-loader-settings" id="id10">Configuring GRUB Boot Loader Settings</a></p></li>
+<li><p><a class="reference internal" href="#bootloader-password-protection" id="id11">Bootloader Password Protection</a></p></li>
+<li><p><a class="reference internal" href="#system-reboot-behavior" id="id12">System Reboot Behavior</a></p></li>
+<li><p><a class="reference internal" href="#return-variables" id="id13">Return Variables</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<span class="target" id="ansible-collections-fedora-linux-system-roles-bootloader-role-entrypoint-main"></span><section id="entry-point-main-the-bootloader-role">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Entry point <code class="docutils literal notranslate"><span class="pre">main</span></code> – The bootloader role.</a><a class="headerlink" href="#entry-point-main-the-bootloader-role" title="Link to this heading"></a></h2>
+<section id="synopsis">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Synopsis</a><a class="headerlink" href="#synopsis" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>The bootloader role allows you to manage GRUB2 boot loader settings, kernel command line parameters, boot loader timeout, and boot loader password.</p></li>
+</ul>
+</section>
+<section id="parameters">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Parameters</a><a class="headerlink" href="#parameters" title="Link to this heading"></a></h3>
+<table class="longtable ansible-option-table docutils align-default" style="width: 100%">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Comments</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_gather_facts"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-gather-facts"><strong>bootloader_gather_facts</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_gather_facts" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">boolean</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Whether to gather bootloader facts containing boot information for all kernels. The facts are returned in the `bootloader_facts` variable.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">false</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">true</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_password"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-password"><strong>bootloader_password</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_password" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">any</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>The password to protect boot parameters. When set to `null` or left unset, the current password configuration is not modified. The boot loader username is always `root`. This value should come from an Ansible vault.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_reboot_ok"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-reboot-ok"><strong>bootloader_reboot_ok</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_reboot_ok" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">boolean</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Whether the role is allowed to reboot the managed host when changes require a reboot to take effect. If `false`, the role sets `bootloader_reboot_required` to `true` instead.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">false</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">true</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_remove_password"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-remove-password"><strong>bootloader_remove_password</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_remove_password" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">boolean</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Whether to remove the boot loader password configuration.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">false</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">true</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_secure_logging"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-secure-logging"><strong>bootloader_secure_logging</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_secure_logging" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">boolean</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Whether to suppress potentially sensitive output from tasks that handle credentials by setting `no_log` to `true` on those tasks.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">false</span></code></p></li>
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">true</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-settings"><strong>bootloader_settings</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">list</span> / <span class="ansible-option-elements">elements=dictionary</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>List of kernel entries and their command line parameters to configure. Each entry specifies a kernel and the boot loader settings to apply.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">[]</span></code></p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/default"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-settings-default"><strong>default</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/default" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">boolean</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Whether to make this kernel the default boot entry.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">false</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">true</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/kernel"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-settings-kernel"><strong>kernel</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/kernel" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">any</span> / <span class="ansible-option-required">required</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>The kernel to update settings for. Accepts the string `DEFAULT` or `ALL` to target the default or all kernels, or a dictionary with keys `path`, `index`, `title`, and `initrd` to identify a specific kernel.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/options"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-settings-options"><strong>options</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/options" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">list</span> / <span class="ansible-option-elements">elements=dictionary</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>List of boot loader arguments to apply to the specified kernel.</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/options/copy_default"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-settings-options-copy-default"><strong>copy_default</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/options/copy_default" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">boolean</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Whether to copy the default arguments to the created kernel.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">false</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">true</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/options/name"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-settings-options-name"><strong>name</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/options/name" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>The name of the boot loader setting. Not required when using `previous: replaced`.</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/options/previous"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-settings-options-previous"><strong>previous</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/options/previous" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Whether to replace all previous settings with the given settings. The only supported value is `replaced`.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">&quot;replaced&quot;</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/options/state"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-settings-options-state"><strong>state</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/options/state" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Whether the setting should be present (`present`) or removed (`absent`). The value `absent` removes the setting with the given `name`.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">&quot;present&quot;</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">&quot;absent&quot;</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/options/value"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-settings-options-value"><strong>value</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/options/value" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">any</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>The value for the setting. Not required when the setting has no value, for example `quiet`. The value must not be a YAML boolean or null type.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/state"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-settings-state"><strong>state</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/state" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Whether the kernel entry should be present (`present`) or removed (`absent`).</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">&quot;present&quot;</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">&quot;absent&quot;</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_timeout"></div><p class="ansible-option-title" id="ansible-collections-fedora-linux-system-roles-bootloader-role-parameter-main-bootloader-timeout"><strong>bootloader_timeout</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_timeout" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">any</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>The GRUB boot loader timeout in seconds. When set to `null` or left unset, the role does not change the timeout setting.</p>
+</div></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="supported-architectures">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Supported Architectures</a><a class="headerlink" href="#supported-architectures" title="Link to this heading"></a></h3>
+<p>This role currently supports configuring <code class="docutils literal notranslate"><span class="pre">grub2</span></code> boot loader which runs on the following architectures:</p>
+<ul class="simple">
+<li><p>AMD and Intel 64-bit architectures (x86-64)</p></li>
+<li><p>The 64-bit ARM architecture (ARMv8.0)</p></li>
+<li><p>IBM Power Systems, Little Endian (POWER9)</p></li>
+</ul>
+</section>
+<section id="considerations">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Considerations</a><a class="headerlink" href="#considerations" title="Link to this heading"></a></h3>
+<p>Since Fedora 42, or grubby-8.40-82.fc42.x86_64, there is a bug <a class="reference external" href="https://bugzilla.redhat.com/show_bug.cgi?id=2361624">BZ#2361624</a> that causes the default kernel to change to a newly added kernel.
+You can ensure that a particular kernel is booted by setting the <code class="docutils literal notranslate"><span class="pre">default:</span> <span class="pre">true</span></code> entry for the kernel within the <a class="reference external" href="#bootloader_settings">bootloader_settings</a> variable.</p>
+</section>
+<section id="configuring-grub-boot-loader-settings">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Configuring GRUB Boot Loader Settings</a><a class="headerlink" href="#configuring-grub-boot-loader-settings" title="Link to this heading"></a></h3>
+<p>These variables control the core GRUB boot loader configuration.
+This includes kernel command line parameters, timeout, and boot information gathering.</p>
+<section id="variables">
+<h4>Variables<a class="headerlink" href="#variables" title="Link to this heading"></a></h4>
+<table class="longtable ansible-option-table docutils align-default" style="width: 100%">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Comments</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings"></div><p class="ansible-option-title"><strong>bootloader_settings</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">list</span> / <span class="ansible-option-elements">elements=dict</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>List of kernel entries and their command line parameters to configure. Each entry specifies a kernel and the boot loader settings to apply.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">[]</span></code></p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/kernel"></div><p class="ansible-option-title"><strong>kernel</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/kernel" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">raw</span> / <span class="ansible-option-required">required</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>The kernel to update settings for. Accepts the string `DEFAULT` or `ALL` to target the default or all kernels, or a dictionary with keys `path`, `index`, `title`, and `initrd` to identify a specific kernel.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/state"></div><p class="ansible-option-title"><strong>state</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/state" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">str</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Whether the kernel entry should be present (`present`) or removed (`absent`).</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">present</span></strong></code> <span class="ansible-option-choices-default-mark">u2190 (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">absent</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/options"></div><p class="ansible-option-title"><strong>options</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/options" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">list</span> / <span class="ansible-option-elements">elements=dict</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>List of boot loader arguments to apply to the specified kernel.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/options/name"></div><p class="ansible-option-title"><strong>name</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/options/name" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">str</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>The name of the boot loader setting. Not required when using `previous: replaced`.</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/options/value"></div><p class="ansible-option-title"><strong>value</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/options/value" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">raw</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>The value for the setting. Not required when the setting has no value, for example `quiet`. The value must not be a YAML boolean or null type.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/options/state"></div><p class="ansible-option-title"><strong>state</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/options/state" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">str</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Whether the setting should be present (`present`) or removed (`absent`). The value `absent` removes the setting with the given `name`.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">present</span></strong></code> <span class="ansible-option-choices-default-mark">u2190 (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">absent</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/options/previous"></div><p class="ansible-option-title"><strong>previous</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/options/previous" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">str</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Whether to replace all previous settings with the given settings. The only supported value is `replaced`.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">replaced</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/options/copy_default"></div><p class="ansible-option-title"><strong>copy_default</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/options/copy_default" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">bool</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Whether to copy the default arguments to the created kernel.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">false</span></code></p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_settings/default"></div><p class="ansible-option-title"><strong>default</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_settings/default" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">bool</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Whether to make this kernel the default boot entry.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">false</span></code></p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_timeout"></div><p class="ansible-option-title"><strong>bootloader_timeout</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_timeout" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">raw</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>The GRUB boot loader timeout in seconds. When set to `null` or left unset, the role does not change the timeout setting.</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_gather_facts"></div><p class="ansible-option-title"><strong>bootloader_gather_facts</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_gather_facts" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">bool</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Whether to gather bootloader facts containing boot information for all kernels. The facts are returned in the `bootloader_facts` variable.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">false</span></code></p>
+</div></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="example-playbooks">
+<h4>Example Playbooks<a class="headerlink" href="#example-playbooks" title="Link to this heading"></a></h4>
+<p><strong>Updating Kernel Command Line Parameters</strong></p>
+<p>This example shows how to update settings for specific kernels, add and remove kernels, and update all or default kernels.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">hosts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">all</span>
+<span class="w">  </span><span class="nt">vars</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">bootloader_settings</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">kernel</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/boot/vmlinuz-6.5.7-100.fc37.x86_64</span>
+<span class="w">        </span><span class="nt">options</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">console</span>
+<span class="w">            </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tty0</span>
+<span class="w">            </span><span class="nt">state</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">present</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">previous</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">replaced</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">kernel</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ALL</span>
+<span class="w">        </span><span class="nt">options</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">debug</span>
+<span class="w">            </span><span class="nt">state</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">present</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">kernel</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DEFAULT</span>
+<span class="w">        </span><span class="nt">options</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">quiet</span>
+<span class="w">            </span><span class="nt">state</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">present</span>
+<span class="w">    </span><span class="nt">bootloader_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">    </span><span class="nt">bootloader_reboot_ok</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">roles</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">linux-system-roles.bootloader</span>
+</pre></div>
+</div>
+<p><strong>Gathering Boot Information</strong></p>
+<p>This example gathers bootloader facts for all kernels without making any changes.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">hosts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">all</span>
+<span class="w">  </span><span class="nt">vars</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">bootloader_gather_facts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">roles</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">linux-system-roles.bootloader</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="bootloader-password-protection">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Bootloader Password Protection</a><a class="headerlink" href="#bootloader-password-protection" title="Link to this heading"></a></h3>
+<p>Use these variables to protect GRUB boot parameters with a password or to manage secure Ansible logging.
+The bootloader username is always <code class="docutils literal notranslate"><span class="pre">root</span></code>.</p>
+<section id="id1">
+<h4>Variables<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
+<table class="longtable ansible-option-table docutils align-default" style="width: 100%">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Comments</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_password"></div><p class="ansible-option-title"><strong>bootloader_password</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_password" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">raw</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>The password to protect boot parameters. When set to `null` or left unset, the current password configuration is not modified. The boot loader username is always `root`. This value should come from an Ansible vault.</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_password_hash"></div><p class="ansible-option-title"><strong>bootloader_password_hash</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_password_hash" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">raw</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Precomputed GRUB PBKDF2 SHA512 password hash for the root boot loader user. When null or unset, no hash is written. Setting the same hash repeatedly is idempotent. Store the hash in Ansible Vault. Cannot be combined with bootloader_password or bootloader_remove_password=true.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_remove_password"></div><p class="ansible-option-title"><strong>bootloader_remove_password</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_remove_password" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">bool</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Whether to remove the boot loader password configuration.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">false</span></code></p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_secure_logging"></div><p class="ansible-option-title"><strong>bootloader_secure_logging</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_secure_logging" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">bool</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Whether to suppress potentially sensitive output from tasks that handle credentials by setting `no_log` to `true` on those tasks.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">true</span></code></p>
+</div></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id2">
+<h4>Example Playbooks<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
+<p><strong>Setting a Bootloader Password</strong></p>
+<p>In a real environment, pull the password from Ansible Vault.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">hosts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">all</span>
+<span class="w">  </span><span class="nt">vars</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">bootloader_password</span><span class="p">:</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">vault_bootloader_password</span><span class="nv"> </span><span class="s">}}"</span>
+<span class="w">    </span><span class="nt">bootloader_secure_logging</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">roles</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">linux-system-roles.bootloader</span>
+</pre></div>
+</div>
+<p><strong>Setting an Idempotent Password Hash</strong></p>
+<p>Generate the hash with <code class="docutils literal notranslate"><span class="pre">grub2-mkpasswd-pbkdf2</span></code> and store it in Ansible Vault for idempotent password configuration.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">hosts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">all</span>
+<span class="w">  </span><span class="nt">vars</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">bootloader_password_hash</span><span class="p">:</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">vault_bootloader_password_hash</span><span class="nv"> </span><span class="s">}}"</span>
+<span class="w">    </span><span class="nt">bootloader_secure_logging</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">roles</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">linux-system-roles.bootloader</span>
+</pre></div>
+</div>
+<p><strong>Removing the Bootloader Password</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">hosts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">all</span>
+<span class="w">  </span><span class="nt">vars</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">bootloader_remove_password</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">roles</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">linux-system-roles.bootloader</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="system-reboot-behavior">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">System Reboot Behavior</a><a class="headerlink" href="#system-reboot-behavior" title="Link to this heading"></a></h3>
+<p>Use this variable to control whether the role is permitted to automatically reboot the managed host when GRUB changes require a restart to take effect.</p>
+<section id="id3">
+<h4>Variables<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
+<table class="longtable ansible-option-table docutils align-default" style="width: 100%">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Comments</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-main--bootloader_reboot_ok"></div><p class="ansible-option-title"><strong>bootloader_reboot_ok</strong></p>
+<a class="ansibleOptionLink" href="#parameter-main--bootloader_reboot_ok" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">bool</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Whether the role is allowed to reboot the managed host when changes require a reboot to take effect. If `false`, the role sets `bootloader_reboot_required` to `true` instead.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">false</span></code></p>
+</div></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id4">
+<h4>Example Playbooks<a class="headerlink" href="#id4" title="Link to this heading"></a></h4>
+<p><strong>Allowing Automatic Reboot</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">hosts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">all</span>
+<span class="w">  </span><span class="nt">vars</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">bootloader_reboot_ok</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">bootloader_settings</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">kernel</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DEFAULT</span>
+<span class="w">        </span><span class="nt">options</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">crashkernel</span>
+<span class="w">            </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512M</span>
+<span class="w">  </span><span class="nt">roles</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">linux-system-roles.bootloader</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="return-variables">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Return Variables</a><a class="headerlink" href="#return-variables" title="Link to this heading"></a></h3>
+<p>The following variables are set by the role and can be used in subsequent tasks.</p>
+<table class="longtable ansible-option-table docutils align-default" style="width: 100%">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return--bootloader_reboot_required"></div><p class="ansible-option-title"><strong>bootloader_reboot_required</strong></p>
+<a class="ansibleOptionLink" href="#return--bootloader_reboot_required" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">bool</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>If `true`, a reboot is needed to apply the changes made by the role.
+Set when `bootloader_reboot_ok` is `false` and changes were made.</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> changed</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return--bootloader_facts"></div><p class="ansible-option-title"><strong>bootloader_facts</strong></p>
+<a class="ansibleOptionLink" href="#return--bootloader_facts" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">list</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Contains boot information for all kernels.
+Returned when `bootloader_gather_facts` is set to `true`.</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> when bootloader_gather_facts is true</p>
+<p class="ansible-option-line"><strong>Example:</strong></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">[</span>
+<span class="w">    </span><span class="p p-Indicator">{</span>
+<span class="w">        </span><span class="s">"args"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">"ro</span><span class="nv"> </span><span class="s">rootflags=subvol=root</span><span class="nv"> </span><span class="s">rhgb</span><span class="nv"> </span><span class="s">quiet"</span><span class="p p-Indicator">,</span>
+<span class="w">        </span><span class="s">"index"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">"0"</span><span class="p p-Indicator">,</span>
+<span class="w">        </span><span class="s">"initrd"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">"/boot/initramfs-6.5.7-100.fc37.x86_64.img"</span><span class="p p-Indicator">,</span>
+<span class="w">        </span><span class="s">"kernel"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">"/boot/vmlinuz-6.5.7-100.fc37.x86_64"</span><span class="p p-Indicator">,</span>
+<span class="w">        </span><span class="s">"root"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">"UUID=65c70529-..."</span><span class="p p-Indicator">,</span>
+<span class="w">        </span><span class="s">"title"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">"Fedora</span><span class="nv"> </span><span class="s">Linux</span><span class="nv"> </span><span class="s">(6.5.7-100.fc37.x86_64)</span><span class="nv"> </span><span class="s">37"</span><span class="p p-Indicator">,</span>
+<span class="w">        </span><span class="s">"default"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nv">true</span>
+<span class="w">    </span><span class="p p-Indicator">}</span>
+<span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+</div></td>
+</tr>
+</tbody>
+</table>
+<section id="collection-links">
+<h4>Collection links<a class="headerlink" href="#collection-links" title="Link to this heading"></a></h4>
+<ul class="ansible-links">
+<li><span><a aria-role="button" class="ansible-link reference external" href="https://github.com/linux-system-roles/linux-system-roles.github.io/issues" rel="noopener external" target="_blank">Issue Tracker</a></span></li>
+<li><span><a aria-role="button" class="ansible-link reference external" href="https://linux-system-roles.github.io" rel="noopener external" target="_blank">Homepage</a></span></li>
+<li><span><a aria-role="button" class="ansible-link reference external" href="https://github.com/linux-system-roles/linux-system-roles.github.io/" rel="noopener external" target="_blank">Repository (Sources)</a></span></li>
+</ul>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          
+
+<footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="linux-system-roles.bootloader" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script><!-- extra footer elements for Ansible beyond RTD Sphinx Theme -->
+
+</body>
+</html>
