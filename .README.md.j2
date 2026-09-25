@@ -1,0 +1,170 @@
+{# ---- Helper macros ---- #}
+
+{# Normalize Python booleans/None to yaml-style strings for display #}
+{% macro fmt_default(val) %}
+{%- if val is none %}null
+{%- elif val is sameas true %}true
+{%- elif val is sameas false %}false
+{%- elif val is string %}{{ val }}
+{%- elif val == [] %}[]
+{%- else %}{{ val }}
+{%- endif %}
+{%- endmacro %}
+
+{# Format type + elements + required as inline string #}
+{% macro fmt_type(details) %}
+`{{ details.get('type', 'raw') }}`
+{%- if details.get('elements') %} / `{{ details['elements'] }}`{% endif %}
+{%- if details.get('required') %} / required{% endif %}
+{%- endmacro %}
+
+{# Format metadata line: choices, default - all on one line #}
+{% macro fmt_meta(details) %}
+{%- if details.get('choices') %}Choices: {% for c in details['choices'] %}`{{ c }}`{% if not loop.last %}, {% endif %}{% endfor %}.{% endif %}
+{%- if details.get('default') is not none or details.get('default') == false %} Default: `{{ fmt_default(details.get('default', None)) | trim }}`.{% endif %}
+{%- endmacro %}
+
+{# Render a variable with sub-options using blockquotes for nesting #}
+{% macro render_variable(name, details, depth=0) %}
+{% set prefix = '> ' * depth %}
+{% set desc = details.get('description', '') | trim %}
+{% set meta_line = fmt_meta(details) | trim %}
+
+{{ prefix }}{% if depth == 0 %}<a id="{{ name }}"></a>{% endif %}**{{ name }}** ({{ fmt_type(details) | trim }}) - {{ desc }}{% if meta_line %} {{ meta_line }}{% endif %}
+
+{% if details.get('options') %}
+{% for sub_name, sub_details in details['options'].items() %}
+{{ render_variable(sub_name, sub_details, depth + 1) }}
+{% endfor %}
+{% endif %}
+{%- endmacro %}
+
+{# ---- Header ---- #}
+{% set role_name = meta.get('galaxy_info', {}).get('role_name', '') | default(role_name_fallback, true) %}
+{% set description = meta.get('galaxy_info', {}).get('description', '') %}
+{% set main_spec = specs.get('argument_specs', {}).get('main', {}) %}
+{% set long_desc = main_spec.get('description', '') %}
+{% set min_ansible = meta.get('galaxy_info', {}).get('min_ansible_version', '2.9') %}
+# linux-system-roles.{{ role_name }}
+
+[![citest.yml](https://github.com/linux-system-roles/{{ role_name }}/actions/workflows/citest.yml/badge.svg)](https://github.com/linux-system-roles/{{ role_name }}/actions/workflows/citest.yml)
+
+{{ long_desc | default(description, true) | trim }}
+
+## Supported Platforms
+
+This role supports managed nodes running the following operating systems:
+{% if platforms %}
+{%- for label, versions in platforms.items() %}{% if not loop.first %}, {% endif %}{{ label }}{% if versions %} {{ versions | join(', ') }}{% endif %}{% endfor %}.
+{% endif %}
+
+This role requires Ansible version {{ min_ansible }} or newer.
+{% if meta.get('dependencies') %}
+
+### Role Dependencies
+
+This role requires the following roles:
+
+{% for dep in meta['dependencies'] %}
+* `{{ dep.get('role', dep) if dep is mapping else dep }}`
+{% endfor %}
+{% endif %}
+{% if docs.get('extra_requirements') %}
+
+### {{ docs['extra_requirements'].get('title', 'Additional Requirements') }}
+
+{{ docs['extra_requirements'].get('content', docs['extra_requirements']) | trim }}
+{% endif %}
+{% if collection_reqs.get('collections') %}
+
+## Collection Requirements
+
+The role requires additional collections to manage `rpm-ostree` systems.
+Please run the following command to install them:
+
+```bash
+$ ansible-galaxy collection install -r meta/collection-requirements.yml
+```
+{% endif %}
+{# ---- Note sections first ---- #}
+{% for section in docs.get('doc_sections', []) %}
+{% if section['type'] == 'note' %}
+
+## {{ section['title'] }}
+
+{{ section['content'] | trim }}
+{% endif %}
+{% endfor %}
+{# ---- Scenario sections ---- #}
+{% for section in docs.get('doc_sections', []) %}
+{% if section['type'] == 'scenario' %}
+
+## {{ section['title'] }}
+
+{{ section.get('description', '') | trim }}
+{% if section.get('considerations') %}
+
+### Considerations
+
+{{ section['considerations'] | trim }}
+{% endif %}
+{% set vars = get_vars_for_tags(section.get('include_tags', []), section.get('exclude_vars')) %}
+{% if vars %}
+
+### Variables
+{% for var_name, var_details in vars.items() %}
+{{ render_variable(var_name, var_details) }}
+{% endfor %}
+{% endif %}
+{% if section.get('examples') %}
+
+### Example Playbooks
+{% for example in section['examples'] %}
+
+#### {{ example['title'] }}
+{% if example.get('description') %}
+
+{{ example['description'] | trim }}
+{% endif %}
+
+```yaml
+{{ example['playbook'] | trim }}
+```
+{% endfor %}
+{% endif %}
+{% endif %}
+{% endfor %}
+{# ---- Returns sections ---- #}
+{% for section in docs.get('doc_sections', []) %}
+{% if section['type'] == 'returns' %}
+
+## Return Variables
+{% if section.get('description') %}
+
+{{ section['description'] | trim }}
+{% endif %}
+{% for var in section.get('variables', []) %}
+
+<a id="{{ var['name'] }}"></a>**{{ var['name'] }}** (`{{ var.get('type', 'unknown') }}`)
+
+{{ var.get('description', '') | trim }}
+Returned: {{ var.get('returned', 'always') }}.
+{% if var.get('example') %}
+
+Example:
+
+```yaml
+{{ var['example'] | trim }}
+```
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+
+## rpm-ostree
+
+See README-ostree.md
+
+## License
+
+{{ meta.get('galaxy_info', {}).get('license', 'MIT') }}
