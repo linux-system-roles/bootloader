@@ -3,6 +3,10 @@
 argument_specs:
   main:
     short_description: Configure the GRUB2 boot loader
+    # description renders as the "Synopsis" at the top of the page. Use it for
+    # the role summary and any narrative that a reader should see up front:
+    # considerations and caveats, collection requirements, and pointers to
+    # other docs. Each list item becomes one bullet.
     description:
       - >
         The C(bootloader) role allows you to manage GRUB2 boot loader
@@ -23,6 +27,9 @@ argument_specs:
       - 'For rpm-ostree systems, see the C(README-ostree.md) file in the role.'
     author:
       - Sergei Petrosian (@spetrosi)
+    # notes renders as the "Notes" section near the bottom of the page. Roles
+    # cannot use a native "return:" field, so we use notes to document the
+    # values the role returns. Each list item becomes one bullet.
     notes:
       - "B(Values returned by the role):"
       - >
@@ -32,6 +39,9 @@ argument_specs:
       - >
         C(bootloader_facts) — contains boot information for all kernels.
         Returned when O(bootloader_gather_facts) is set to V(true).
+    # attributes renders as the "Attributes" table. Use it for support
+    # information such as which platforms and CPU architectures the role
+    # supports. Every attribute requires a "support" value.
     attributes:
       platform:
         support: full
@@ -47,6 +57,9 @@ argument_specs:
           the 64-bit ARM architecture (ARMv8.0), and IBM Power Systems,
           Little Endian (POWER9). Not supported on 32-bit x86 (i686) or
           other architectures.
+    # options renders as the "Parameters" table. List every role variable
+    # here with its type, default, choices, and description. Nested options
+    # (options within options) render as nested rows.
     options:
       bootloader_settings:
         type: list
@@ -200,6 +213,9 @@ argument_specs:
           Whether to suppress potentially sensitive output from
           tasks that handle credentials by setting C(no_log) to
           V(true) on those tasks.
+    # examples renders as the "Examples" section. It is a single YAML block
+    # (note the "|") holding one or more example plays. Give each play a
+    # "name" so the reader can tell the examples apart.
     examples: |
       - name: Manage kernels by path, index, and title, and add, remove, and copy defaults
         hosts: all
