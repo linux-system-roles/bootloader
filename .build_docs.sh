@@ -2,27 +2,29 @@
 # Build the README files for this role from meta/argument_specs.yml.
 #
 # antsibull-docs turns argument_specs.yml into RST, Sphinx renders that RST to
-# text and HTML (the same way the official Ansible website builds its docs),
-# and pandoc converts the HTML to Markdown. Requires antsibull-docs, sphinx
-# and pandoc on PATH.
+# HTML (the same way the official Ansible website builds its docs), and pandoc
+# converts the HTML to Markdown. Requires antsibull-docs, sphinx and pandoc on
+# PATH.
 #
 # The script creates these at the repo root:
-#   README.md    - Markdown page for Ansible Galaxy and Red Hat Automation Hub,
-#                  which display only Markdown. GitHub renders it too.
-#   README.txt   - plain text page, readable in any editor
-#   README.rst   - the RST antsibull produces (renders fully only with the
-#                  Sphinx + antsibull build; generic RST viewers and GitHub
-#                  drop its tables, so README.txt is the safe plain read)
+#   README.md    - the role's main README. People read it directly as plain
+#                  text in the repo, and Markdown viewers render it: GitHub,
+#                  Ansible Galaxy and Red Hat Automation Hub (the last two
+#                  display role docs only as Markdown). This is the canonical
+#                  README; it supersedes the plain-text and RST renderings,
+#                  which are intentionally not emitted.
 #   README.html  - link to the full styled page in sphinx_html/
 #   sphinx_html/ - the Sphinx HTML output (the page plus its _static assets)
 #
-# Markdown is produced from the Sphinx HTML with pandoc. antsibull has no
-# Markdown output and Sphinx has no Markdown builder that understands
-# antsibull's option tables, so we convert the finished HTML instead. The
-# Parameters and Attributes tables are too complex for Markdown pipe tables,
-# so they stay as HTML tables; Galaxy, Automation Hub and GitHub all render
-# HTML tables in Markdown (they drop the CSS classes, so the tables show
-# unstyled but complete).
+# RST is still produced internally (antsibull emits it and Sphinx consumes it to
+# build the HTML) but is not copied out as README.rst.
+#
+# Markdown is produced from the Sphinx HTML by the .html_to_md.py helper (which
+# calls pandoc). antsibull has no Markdown output and Sphinx has no Markdown
+# builder that understands antsibull's option tables, so we convert the finished
+# HTML instead. The Parameters and Attributes tables become real Markdown pipe
+# tables (Galaxy strips the CSS classes antsibull uses to indent nested options,
+# so .html_to_md.py encodes the nesting as dot markers in the Parameter column).
 #
 # NOTE: the HTML output (README.html + sphinx_html/) is included here only
 # to preview the styled page in the draft PR. Long term, the full styled
@@ -54,10 +56,13 @@ trap 'rm -rf "$WORK"' EXIT
 COLL="$WORK/collections/ansible_collections/fedora/linux_system_roles"
 mkdir -p "$COLL/roles"
 ln -s "$ROLE_DIR" "$COLL/roles/$ROLE_NAME"
+# version is mandatory but only used for the "part of the collection" note;
+# leave it empty so antsibull omits the version from that note (this per-role
+# build has no meaningful collection version).
 cat > "$COLL/galaxy.yml" <<EOF
 namespace: fedora
 name: linux_system_roles
-version: 1.0.0
+version: ""
 readme: README.md
 authors: [Linux System Roles]
 EOF
@@ -72,21 +77,17 @@ antsibull-docs sphinx-init --use-current --squash-hierarchy \
 cd "$WORK/site"
 
 # 1. antsibull turns argument_specs.yml into RST (same command as its build.sh).
+# The RST is a build intermediate (Sphinx input below); it is not copied out.
 chmod og-w rst   # antsibull-docs wants this directory writable only by its owner
 antsibull-docs --config-file antsibull-docs.cfg collection \
     --cleanup everything --use-current --squash-hierarchy \
     --dest-dir rst fedora.linux_system_roles
-cp "rst/${ROLE_NAME}_role.rst" "$ROLE_DIR/README.rst"
 
 # Ship only the rendered page, not its RST source. By default Sphinx copies
 # the .rst files into _sources/ and adds a "Show Source" link; turn both off.
 printf '\nhtml_copy_source = False\nhtml_show_sourcelink = False\n' >> conf.py
 
-# 2. Sphinx renders the RST to plain text.
-sphinx-build -b text -q -c . rst text
-cp "text/${ROLE_NAME}_role.txt" "$ROLE_DIR/README.txt"
-
-# 3. Sphinx renders the RST to the styled HTML site (for the draft PR preview).
+# 2. Sphinx renders the RST to the styled HTML site (for the draft PR preview).
 sphinx-build -M html rst build -q -c .
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
@@ -94,57 +95,10 @@ cp -r build/html/. "$OUT_DIR"             # styled page plus its _static assets
 rm -rf "$OUT_DIR/_sources"                # empty leftover dir (RST source is not shipped)
 ln -sfn "sphinx_html/${ROLE_NAME}_role.html" "$ROLE_DIR/README.html"
 
-# 4. pandoc turns the HTML page into Markdown for Galaxy / Automation Hub.
-# We feed pandoc the page body only, and clean up a few Sphinx-isms so the
-# Markdown renders cleanly through Galaxy's markdown + sanitizer pipeline:
-#   - Sphinx splits inline code into one <span class="pre"> per word; we unwrap
-#     those so each literal becomes a single clean `code` span.
-#   - pandoc wraps sections in <div> and adds empty permalink/anchor tags;
-#     Markdown does not process text inside block-level <div>, so we drop the
-#     wrapper divs and anchor junk (the HTML tables we want to keep have none).
-python3 - "build/html/${ROLE_NAME}_role.html" "$WORK/body.html" <<'PY'
-import re, sys
-html = open(sys.argv[1], encoding="utf-8").read()
-start = html.find('<div role="main"')
-depth = 0
-end = None
-for m in re.compile(r'<(/?)div\b', re.I).finditer(html, start):
-    depth += -1 if m.group(1) else 1
-    if depth == 0:
-        end = html.find('</div>', m.start()) + 6
-        break
-body = html[start:end]
-body = re.sub(r'<span class="pre">(.*?)</span>', r'\1', body, flags=re.S)
-
-# The Parameters table shows nesting with a CSS-indented class that the Galaxy
-# sanitizer strips, so child options would look top-level. Encode the nesting
-# as text instead: the option's anchor path (parent/child/grandchild) tells us
-# the depth, so we prefix nested option titles with indentation and a marker.
-def indent_nested(m):
-    depth = m.group("path").count("/")
-    if not depth:
-        return m.group(0)
-    return m.group("head") + "&nbsp;" * (4 * depth) + "↳ " + m.group("strong")
-body = re.sub(
-    r'(?P<head><div class="ansibleOptionAnchor" id="parameter-[^"]*?--(?P<path>[^"]*)"></div>'
-    r'<p class="ansible-option-title"[^>]*>)(?P<strong><strong>)',
-    indent_nested, body)
-
-open(sys.argv[2], "w", encoding="utf-8").write(body)
-PY
-pandoc -f html -t gfm --wrap=none "$WORK/body.html" -o "$WORK/README.md"
-python3 - "$WORK/README.md" "$ROLE_DIR/README.md" <<'PY'
-import re, sys
-md = open(sys.argv[1], encoding="utf-8").read()
-md = re.sub(r'</?div[^>]*>\n?', '', md)                               # wrapper divs
-md = re.sub(r'<span[^>]*class="target"[^>]*></span>\n?', '', md)      # empty anchors
-md = re.sub(r'<a[^>]*headerlink[^>]*>.*?</a>', '', md)                # permalink icons
-md = re.sub(r'<a[^>]*toc-backref[^>]*>(.*?)</a>', r'\1', md, flags=re.S)  # clean headings
-md = re.sub(r'\n{3,}', '\n\n', md)
-open(sys.argv[2], "w", encoding="utf-8").write(md)
-PY
+# 3. .html_to_md.py turns the HTML page into the main README.md (it calls pandoc
+# for the prose and rebuilds the option tables as pipe tables).
+python3 "$ROLE_DIR/.html_to_md.py" \
+    "build/html/${ROLE_NAME}_role.html" "$ROLE_DIR/README.md"
 
 echo "MD  : $ROLE_DIR/README.md"
-echo "Text: $ROLE_DIR/README.txt"
-echo "RST : $ROLE_DIR/README.rst"
 echo "HTML: $ROLE_DIR/README.html -> sphinx_html/${ROLE_NAME}_role.html"
