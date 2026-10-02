@@ -1,259 +1,83 @@
-# bootloader
 
-[![citest.yml](https://github.com/linux-system-roles/bootloader/actions/workflows/citest.yml/badge.svg)](https://github.com/linux-system-roles/bootloader/actions/workflows/citest.yml)
 
-An Ansible role for bootloader and kernel command line management.
+# fedora.linux_system_roles.bootloader role – Configure the GRUB2 boot loader
 
-## Supported architectures
+This role is part of the [fedora.linux_system_roles collection](https://galaxy.ansible.com/ui/repo/published/fedora/linux_system_roles/).
 
-This role currently supports configuring `grub2` boot loader which runs on the following architectures:
+It is not included in `ansible-core`. To check whether it is installed, run `ansible-galaxy collection list`.
 
-* AMD and Intel 64-bit architectures (x86-64)
-* The 64-bit ARM architecture (ARMv8.0)
-* IBM Power Systems, Little Endian (POWER9)
+To install it use: `ansible-galaxy collection install fedora.linux_system_roles`.
 
-## Requirements
+To use it in a playbook, specify: `fedora.linux_system_roles.bootloader`.
 
-See below
+- [Entry point `main` – Configure the GRUB2 boot loader](#entry-point-main--configure-the-grub2-boot-loader)
 
-### Collection requirements
+  - [Synopsis](#synopsis)
 
-If you don't want to manage `ostree` systems, the role has no requirements.
+  - [Parameters](#parameters)
 
-If you want to manage `ostree` systems, the role requires additional modules
-from external collections.  Please use the following command to install them:
+  - [Attributes](#attributes)
 
-```bash
-ansible-galaxy collection install -vv -r meta/collection-requirements.yml
-```
+  - [Notes](#notes)
 
-## Considerations
+  - [Examples](#examples)
 
-Since Fedora 42, or grubby-8.40-82.fc42.x86_64, there is a bug [BZ#2361624](https://bugzilla.redhat.com/show_bug.cgi?id=2361624) that causes the default kernel to change to a newly added kernel.
-You can ensure that a particular kernel is booted by setting the `default: true` entry for the kernel within the [bootloader_settings](#bootloader_settings) variable.
+  - [Authors](#authors)
 
-## Role Variables
+## Entry point `main` – Configure the GRUB2 boot loader
 
-### bootloader_gather_facts
+### Synopsis
 
-Whether to gather [bootloader_facts](#bootloader_facts) that contain boot information for all kernels.
+- The `bootloader` role manages GRUB2 boot loader settings: kernel command line parameters, the boot loader timeout, and the boot loader password.
 
-Default: `false`
+- **Considerations**: Fedora 42 (`grubby-8.40-82.fc42.x86_64`) introduced a bug, [BZ#2361624](https://bugzilla.redhat.com/show_bug.cgi?id=2361624), that changes the default kernel to a newly added kernel. To keep a specific kernel as the default, set `default: true` for that kernel in the **`bootloader_settings`** variable.
 
-Type: `bool`
+- **Collection requirements**: To manage `rpm-ostree` systems, the role needs extra modules from external collections. Install them with `ansible-galaxy collection install -vv -r meta/collection-requirements.yml`. Non-ostree systems need no extra collections.
 
-### bootloader_settings
+- For `rpm-ostree` systems, see the `README-ostree.md` file in the role.
 
-Use this variable to list kernels and their command line parameters.
+### Parameters
 
-Available keys:
+| Parameter                                            | Comments |
+| ---------------------------------------------------- | --- |
+| **bootloader_gather_facts** *boolean*                | Whether to gather bootloader facts containing boot information for all kernels. The role returns the facts in the `bootloader_facts` variable. **Choices:** `false` (default), `true` |
+| **bootloader_password** *any*                        | The password to protect boot parameters. When set to `null` or left unset, the role leaves the current password unchanged. The boot loader username is always `root`. Store this value in Ansible Vault. Changing the password is **not** idempotent; use **`bootloader_password_hash`** for idempotent password configuration. You cannot set this variable together with **`bootloader_password_hash`**. |
+| **bootloader_password_hash** *any*                   | Precomputed GRUB PBKDF2 SHA512 password hash for the root boot loader user. Generate the hash with `grub2-mkpasswd-pbkdf2` and store it in Ansible Vault. Supply only the resulting `grub.pbkdf2.sha512...` hash, without the command’s explanatory text or a trailing newline. The hash must have a positive iteration count, a nonempty hexadecimal salt consisting of whole bytes, and a 64-byte hexadecimal digest. Setting the same hash repeatedly is idempotent. When `null` or unset, the role writes no hash. An empty string is invalid; to remove a password set **`bootloader_remove_password`**=`true` with this variable unset or `null`. You cannot combine it with **`bootloader_password`** or **`bootloader_remove_password`**=`true`. |
+| **bootloader_reboot_ok** *boolean*                   | Whether the role is allowed to reboot the managed host when changes require a reboot to take effect. If `false`, the role sets `bootloader_reboot_required` to `true` instead. **Choices:** `false` (default), `true` |
+| **bootloader_remove_password** *boolean*             | Whether to remove the boot loader password configuration. **Choices:** `false` (default), `true` |
+| **bootloader_secure_logging** *boolean*              | Whether to suppress potentially sensitive output from tasks that handle credentials by setting `no_log` to `true` on those tasks. **Choices:** `false`, `true` (default) |
+| **bootloader_settings** *list / elements=dictionary* | List of kernel entries and their command line parameters to configure. Each entry specifies a kernel and the boot loader settings to apply. **Default:** `[]` |
+| • **default** *boolean*                              | Whether to make this kernel the default boot entry. **Choices:** `false` (default), `true` |
+| • **kernel** *any / required*                        | The kernel to update settings for. Accepts the string `DEFAULT` or `ALL` to target the default or all kernels, or a dictionary with keys `path`, `index`, `title`, and `initrd` to identify a specific kernel. To modify or remove a kernel, specify one or more of these keys; to add a kernel, specify `path`, `title`, and `initrd`. |
+| • **options** *list / elements=dictionary*           | List of boot loader arguments to apply to the specified kernel. |
+| • • **copy_default** *boolean*                       | Whether to copy the default arguments to the created kernel. **Choices:** `false` (default), `true` |
+| • • **name** *string*                                | The name of the boot loader setting. Not required when using `previous: replaced`. |
+| • • **previous** *string*                            | Whether to replace all previous settings with the given settings. The only supported value is `replaced`. **Choices:** `"replaced"` |
+| • • **state** *string*                               | Whether the setting is `present` or `absent`. `absent` removes the setting with the given `name`. **Choices:** `"present"` (default), `"absent"` |
+| • • **value** *any*                                  | The value for the setting. Not required when the setting has no value, for example `quiet`. The value must not be a YAML boolean; quote values such as `value: "on"` that YAML would parse as a boolean. The value must also not be null; `value:`, `value: ~`, and `value: null` raise an error. |
+| • **state** *string*                                 | Whether to keep the kernel entry (`present`) or remove it (`absent`). **Choices:** `"present"` (default), `"absent"` |
+| **bootloader_timeout** *any*                         | The GRUB boot loader timeout in seconds. When set to `null` or left unset, the role does not change the timeout setting. |
 
-1. `kernel` - with this, specify the kernel to update settings for.
-Each entry should specify a kernel using one or more keys.
+### Attributes
 
-    If you want to add a kernel, you must specify three keys: `path`, `title`, `initrd`.
+| Attribute         | Support                                         | Description |
+| ----------------- | ----------------------------------------------- | --- |
+| **architectures** | **partial**                                     | Supported on AMD and Intel 64-bit architectures (x86-64), the 64-bit ARM architecture (ARMv8.0), and IBM Power Systems, Little Endian (POWER9). Not supported on 32-bit x86 (i686) or other architectures. |
+| **platform**      | **Platforms:** **Fedora**, **RHEL**, **CentOS** | Target operating systems. |
 
-    If you want to modify or remove a kernel, you can specify one or more keys.
+### Notes
 
-    You can also specify `DEFAULT` or `ALL` to update the default or all kernels.
+- **Values returned by the role**:
 
-    Available keys:
-    * `path` - kernel path
-    * `index` - kernel index
-    * `title` - kernel title
-    * `initrd` - kernel initrd image
+- - `bootloader_reboot_required` — `true` means the host must reboot to apply the role’s changes. The role sets this when **`bootloader_reboot_ok`** is `false` and it made changes.
 
-    Available strings:
-    * `DEFAULT` - to update the default entry
-    * `ALL` - to update all of the entries
+- - `bootloader_facts` — boot information for all kernels. The role returns this when **`bootloader_gather_facts`** is `true`.
 
-2. `state` - state of the kernel.
-
-    Available values: `present`, `absent`
-
-    Default: `present`
-
-3. `options` - use this to specify settings to update
-
-    * `name` - The name of the setting. Omit `name` when using `replaced`.
-    * `value` - The value for the setting. You must omit `value` if the setting has no value, e.g. `quiet`.
-      **NOTE** - a value must not be [YAML bool type](https://yaml.org/type/bool.html).
-      One situation where this might be a problem is using `value: on` or other
-      YAML `bool` typed value.  You must quote these values, or otherwise pass
-      them as a value of `str` type e.g.  `value: "on"`.  The same applies to `null` values.
-      If you specify a value, it must not be `null` - values such as `value:` or `value: ~`
-      or `value: null` are not allowed and will raise an error.
-    * `state` - `present` (default) or `absent`. The value `absent` means to remove a setting with the given `name` - the name must be provided.
-    * `previous` - Optional - the only supported value is `replaced` - use this to specify that the previous settings should be replaced with the given settings.
-    * `copy_default` - Optional - when creating a kernel, you can specify `copy_default: true` to copy the default arguments to the created kernel.
-
-4. `default` - boolean that identifies whether to make this kernel the default.
-By default, the role does not change the default kernel.
-
-For an example, see [Example Playbook](#example-playbook).
-
-Default: `{}`
-
-Type: `dict`
-
-### bootloader_timeout
-
-Use this variable to customize the loading time of the GRUB bootloader.
-
-Usually the native setting for timeout is `5`.
-
-When this variable is not set by a user, the role doesn't change the timeout setting.
-
-Default: `null`
-
-Type: `int`
-
-### bootloader_password
-
-Use this variable to protect boot parameters with a password.
-
-**WARNING**: Changing the bootloader password is not idempotent.
-Use `bootloader_password_hash` for idempotent password configuration.
-These two inputs cannot be used together.
-
-The bootloader username is always `root`.
-
-This should come from vault.
-
-If unset, current configuration is not touched.
-
-Default: `null`
-
-Type: `string`
-
-### bootloader_password_hash
-
-Use this variable to set a precomputed GRUB PBKDF2 SHA512 password hash
-for the bootloader user `root`. Generate the hash with
-`grub2-mkpasswd-pbkdf2` and store it in Ansible Vault.
-Supply only the resulting `grub.pbkdf2.sha512...` hash, without the command's
-explanatory text or a trailing newline. The hash must have a positive iteration
-count, a nonempty hexadecimal salt consisting of whole bytes, and a 64-byte
-hexadecimal digest.
-
-Setting the same hash repeatedly is idempotent. If unset or `null`, no hash
-is written. An empty string is invalid; use `bootloader_remove_password: true`
-with this variable unset or `null` to remove a password.
-
-Do not combine this variable with a non-null `bootloader_password` or with
-`bootloader_remove_password: true`.
-
-For example, where `vault_bootloader_password_hash` contains the generated hash:
+### Examples
 
 ```yaml
-bootloader_password_hash: "{{ vault_bootloader_password_hash }}"
-```
-
-Default: `null`
-
-Type: `string`
-
-### bootloader_remove_password
-
-Set this variable to `true` to remove the bootloader password.
-
-Default: `false`
-
-Type: `bool`
-
-### bootloader_reboot_ok
-
-If `true`, the role will reboot the managed host when it detects that changes require a reboot to take effect.
-
-If `false`, it is up to you to determine when to reboot the managed host.
-
-The role will return the variable `bootloader_reboot_required` (see below) with a value of `true` to indicate that changes have occurred which need a reboot to take effect.
-
-Default: `false`
-
-Type: `bool`
-
-### bootloader_secure_logging
-
-If `true`, suppress potentially sensitive output from tasks that handle
-credentials, secrets, and other sensitive data by setting `no_log: true` on
-those tasks. This prevents passwords, API tokens, private keys, and similar
-sensitive information from appearing in Ansible logs and console output.
-
-If you need to debug issues with credential handling or secret management, you
-can temporarily set `bootloader_secure_logging: false` to see the full output from
-these tasks. However, be aware that this may expose sensitive information in
-logs, so it should only be used in development or troubleshooting scenarios.
-
-Default: `true`
-
-Type: `bool`
-
-## Variables Exported by the Role
-
-The role exports the following variables:
-
-### bootloader_reboot_needed
-
-Default: `false` - if `true`, this means a reboot is needed to apply the changes made by the role.
-
-### bootloader_facts
-
-Contains boot information for all kernels.
-
-The role returns this variable when you set `bootloader_gather_facts: true`.
-
-For example:
-
-```yaml
-"bootloader_facts": [
-    {
-        "args": "ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet",
-        "id": "luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet",
-        "index": "3",
-        "initrd": "/boot/initramfs-0-rescue-c44543d15b2c4e898912c2497f734e67.img",
-        "kernel": "/boot/vmlinuz-0-rescue-c44543d15b2c4e898912c2497f734e67",
-        "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
-        "title": "Fedora Linux (0-rescue-c44543d15b2c4e898912c2497f734e67) 36 (Workstation Edition)",
-        "default": True
-    },
-    {
-        "args": "ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
-        "id": "luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
-        "index": "2",
-        "initrd": "/boot/initramfs-6.3.12-100.fc37.x86_64.img $tuned_initrd",
-        "kernel": "/boot/vmlinuz-6.3.12-100.fc37.x86_64",
-        "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
-        "title": "Fedora Linux (6.3.12-100.fc37.x86_64) 37 (Workstation Edition)",
-        "default": False
-    },
-    {
-        "args": "ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
-        "id": "luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
-        "index": "1",
-        "initrd": "/boot/initramfs-6.4.15-100.fc37.x86_64.img $tuned_initrd",
-        "kernel": "/boot/vmlinuz-6.4.15-100.fc37.x86_64",
-        "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
-        "title": "Fedora Linux (6.4.15-100.fc37.x86_64) 37 (Workstation Edition)",
-        "default": False
-    },
-    {
-        "args": "ro rootflags=subvol=root rd.luks.uuid=luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
-        "id": "luks-9da1fdf5-14ac-49fd-a388-8b1ee48f3df1 rhgb quiet $tuned_params",
-        "index": "0",
-        "initrd": "/boot/initramfs-6.5.7-100.fc37.x86_64.img $tuned_initrd",
-        "kernel": "/boot/vmlinuz-6.5.7-100.fc37.x86_64",
-        "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
-        "title": "Fedora Linux (6.5.7-100.fc37.x86_64) 37 (Workstation Edition)",
-        "default": False
-    }
-]
-```
-
-## Example Playbook
-
-```yaml
-- hosts: all
+- name: Manage kernels by path, index, and title, and add, remove, and copy defaults
+  hosts: all
   vars:
     bootloader_settings:
       # Update an existing kernel using path and replacing previous settings
@@ -316,17 +140,53 @@ For example:
           - name: quiet
             state: present
     bootloader_timeout: 5
-    bootloader_password: null
-    bootloader_remove_password: false
     bootloader_reboot_ok: true
+  roles:
+    - linux-system-roles.bootloader
+
+- name: Gather bootloader facts for all kernels without making changes
+  hosts: all
+  vars:
+    bootloader_gather_facts: true
+  roles:
+    - linux-system-roles.bootloader
+
+- name: Set a bootloader password (pull the value from Ansible Vault)
+  hosts: all
+  vars:
+    bootloader_password: "{{ vault_bootloader_password }}"
+    bootloader_secure_logging: true
+  roles:
+    - linux-system-roles.bootloader
+
+- name: Set an idempotent password hash from grub2-mkpasswd-pbkdf2
+  hosts: all
+  vars:
+    bootloader_password_hash: "{{ vault_bootloader_password_hash }}"
+    bootloader_secure_logging: true
+  roles:
+    - linux-system-roles.bootloader
+
+- name: Remove the bootloader password
+  hosts: all
+  vars:
+    bootloader_remove_password: true
+  roles:
+    - linux-system-roles.bootloader
+
+- name: Allow the role to reboot the host automatically
+  hosts: all
+  vars:
+    bootloader_reboot_ok: true
+    bootloader_settings:
+      - kernel: DEFAULT
+        options:
+          - name: crashkernel
+            value: 512M
   roles:
     - linux-system-roles.bootloader
 ```
 
-## rpm-ostree
+### Authors
 
-See README-ostree.md
-
-## License
-
-MIT
+- Sergei Petrosian (@spetrosi)
