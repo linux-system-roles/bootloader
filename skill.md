@@ -152,7 +152,10 @@ an unresolved cross-reference). Undefined/undocumented variables → `C()`.
 
 The pipeline is: antsibull-docs → RST (intermediate) → Sphinx (HTML) →
 `.html_to_md.py` (pandoc) → `README.md` (plus `README.html` + `sphinx_html/`).
-`README.txt` and `README.rst` are not emitted.
+`README.txt` and `README.rst` are not emitted. The build also trims
+`sphinx_html/` to **woff2 fonts only** (the RTD theme bundles Lato, Roboto Slab +
+FontAwesome in four formats, ~9MB; woff2 is all modern browsers use), shrinking
+the committed preview from ~10MB to ~2.5MB with no visible change.
 
 1. Copy the two bundled scripts from this skill into the **role root**, keeping
    the leading dots:

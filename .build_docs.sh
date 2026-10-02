@@ -27,10 +27,11 @@
 # so .html_to_md.py encodes the nesting as dot markers in the Parameter column).
 #
 # NOTE: the HTML output (README.html + sphinx_html/) is included here only
-# to preview the styled page in the draft PR. Long term, the full styled
-# site is built once for the whole fedora.linux_system_roles collection,
-# not per role, to keep each role repo small. README.html is a link, so
-# commit the sphinx_html folder with it or the link will not resolve.
+# to preview the styled page in the draft PR. The site is trimmed to woff2
+# fonts only (see below), so it is ~2.5MB rather than ~10MB. Long term, the
+# full styled site is built once for the whole fedora.linux_system_roles
+# collection, not per role, to keep each role repo small. README.html is a
+# link, so commit the sphinx_html folder with it or the link will not resolve.
 #
 # antsibull-docs works with collections only. This repo has one role and
 # is not a collection, so we first copy the role into a temporary
@@ -93,6 +94,16 @@ rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
 cp -r build/html/. "$OUT_DIR"             # styled page plus its _static assets
 rm -rf "$OUT_DIR/_sources"                # empty leftover dir (RST source is not shipped)
+# Keep only woff2 web fonts. The sphinx_rtd_theme bundles Lato, Roboto Slab and
+# FontAwesome in four formats (ttf/woff/woff2/eot, ~9MB); every modern browser
+# uses woff2, which the theme's @font-face lists first, so the rest is dead
+# weight. Dropping it shrinks sphinx_html from ~10MB to ~2.5MB with no visible
+# change to the rendered page (text and icons still load from woff2). Scope the
+# delete to the font directories so it cannot touch SVG logos under _static.
+for fontdir in "$OUT_DIR/_static/fonts" "$OUT_DIR/_static/css/fonts"; do
+    [ -d "$fontdir" ] && find "$fontdir" -type f \
+        \( -name '*.ttf' -o -name '*.woff' -o -name '*.eot' -o -name '*.svg' \) -delete
+done
 ln -sfn "sphinx_html/${ROLE_NAME}_role.html" "$ROLE_DIR/README.html"
 
 # 3. .html_to_md.py turns the HTML page into the main README.md (it calls pandoc
