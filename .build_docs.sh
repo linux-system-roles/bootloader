@@ -40,8 +40,30 @@
 # not need this step.
 #
 # Usage: ./.build_docs.sh
+#
+# NOTE: rendering a role's native return: key (the "Return Variables" table) is
+# not yet in a released antsibull-docs. Until it is, this script builds with the
+# patched antsibull-docs from the fork branch, installed into a dedicated venv
+# (see below). Drop this once role return: support ships upstream and switch back
+# to the released antsibull-docs.
 
 set -euo pipefail
+
+# Build with the patched antsibull-docs from the fork branch, installed into a
+# dedicated venv that is created once and reused on later runs. Override the
+# location with ANTSIBULL_RV_VENV; force a refresh by deleting that directory.
+# First run needs network; pandoc is a system dependency and is not installed
+# here.
+ANTSIBULL_RV_SPEC='antsibull-docs @ git+https://github.com/spetrosi/antsibull-docs@role-return-values'
+ANTSIBULL_RV_VENV="${ANTSIBULL_RV_VENV:-${XDG_CACHE_HOME:-$HOME/.cache}/lsr-antsibull-docs}"
+if [ ! -x "$ANTSIBULL_RV_VENV/bin/antsibull-docs" ]; then
+    echo "Installing patched antsibull-docs into $ANTSIBULL_RV_VENV ..." >&2
+    python3 -m venv "$ANTSIBULL_RV_VENV"
+    "$ANTSIBULL_RV_VENV/bin/pip" install --quiet --upgrade pip
+    "$ANTSIBULL_RV_VENV/bin/pip" install --quiet \
+        "$ANTSIBULL_RV_SPEC" ansible-pygments sphinx sphinx-ansible-theme
+fi
+PATH="$ANTSIBULL_RV_VENV/bin:$PATH"
 
 for tool in antsibull-docs sphinx-build pandoc; do
     command -v "$tool" >/dev/null 2>&1 || { echo "error: $tool not found on PATH" >&2; exit 1; }

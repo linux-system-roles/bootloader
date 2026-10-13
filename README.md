@@ -18,9 +18,9 @@ To use it in a playbook, specify: `fedora.linux_system_roles.bootloader`.
 
   - [Attributes](#attributes)
 
-  - [Notes](#notes)
-
   - [Examples](#examples)
+
+  - [Return Variables](#return-variables)
 
   - [Authors](#authors)
 
@@ -64,14 +64,6 @@ To use it in a playbook, specify: `fedora.linux_system_roles.bootloader`.
 | ----------------- | ----------------------------------------------- | --- |
 | **architectures** | **partial**                                     | Supported on AMD and Intel 64-bit architectures (x86-64), the 64-bit ARM architecture (ARMv8.0), and IBM Power Systems, Little Endian (POWER9). Not supported on 32-bit x86 (i686) or other architectures. |
 | **platform**      | **Platforms:** **Fedora**, **RHEL**, **CentOS** | Target operating systems. |
-
-### Notes
-
-- **Values returned by the role**:
-
-- - `bootloader_reboot_required` — `true` means the host must reboot to apply the role’s changes. The role sets this when **`bootloader_reboot_ok`** is `false` and it made changes.
-
-- - `bootloader_facts` — boot information for all kernels. The role returns this when **`bootloader_gather_facts`** is `true`.
 
 ### Examples
 
@@ -186,6 +178,23 @@ To use it in a playbook, specify: `fedora.linux_system_roles.bootloader`.
   roles:
     - linux-system-roles.bootloader
 ```
+
+### Return Variables
+
+The following variables are set by this role:
+
+| Key                                               | Description |
+| ------------------------------------------------- | --- |
+| **bootloader_facts** *list / elements=dictionary* | Boot information for all kernels, as gathered by the `bootloader_facts` module. The role sets this in `ansible_facts` and also copies it to the `bootloader_facts` variable. **Returned:** When **`bootloader_gather_facts`** is `true`. **Sample:** `[{"args": "ro rootflags=subvol=root console=tty0 quiet", "default": true, "id": "890cea0fd7b140cf890eb0145b3caa72-6.6.4-100.fc38.x86_64", "index": "1", "initrd": "/boot/initramfs-6.6.4-100.fc38.x86_64.img", "kernel": "/boot/vmlinuz-6.6.4-100.fc38.x86_64", "root": "UUID=2b95a97a-3f73-4566-b0a3-a11b4e9c3663", "title": "Fedora Linux (6.6.4-100.fc38.x86_64) 38 (Cloud Edition)"}]` |
+| • **args** *string*                               | Command line arguments passed to the kernel. **Returned:** success |
+| • **default** *boolean*                           | Whether this kernel is the default boot entry. **Returned:** success |
+| • **id** *string*                                 | The kernel ID. **Returned:** success |
+| • **index** *string*                              | The kernel index. **Returned:** success |
+| • **initrd** *string*                             | Path to the kernel initrd image. **Returned:** success |
+| • **kernel** *string*                             | Path to the kernel image. **Returned:** success |
+| • **root** *string*                               | The root device for this kernel. **Returned:** success |
+| • **title** *string*                              | The boot entry title. **Returned:** success |
+| **bootloader_reboot_required** *boolean*          | `true` means the host must reboot to apply the role’s changes. The role sets this when **`bootloader_reboot_ok`** is `false` and it made changes. **Returned:** always **Sample:** `true` |
 
 ### Authors
 

@@ -26,18 +26,6 @@ argument_specs:
       - 'For C(rpm-ostree) systems, see the C(README-ostree.md) file in the role.'
     author:
       - Sergei Petrosian (@spetrosi)
-    # notes renders as the "Notes" section near the bottom of the page. Roles
-    # cannot use a native "return:" field, so we use notes to document the
-    # values the role returns. Each list item becomes one bullet.
-    notes:
-      - "B(Values returned by the role):"
-      - >
-        • C(bootloader_reboot_required) — V(true) means the host must reboot to
-        apply the role's changes. The role sets this when O(bootloader_reboot_ok)
-        is V(false) and it made changes.
-      - >
-        • C(bootloader_facts) — boot information for all kernels. The role returns
-        this when O(bootloader_gather_facts) is V(true).
     # attributes renders as the "Attributes" table. Use it for support
     # information such as which platforms and CPU architectures the role
     # supports. Every attribute requires a "support" value.
@@ -56,6 +44,62 @@ argument_specs:
           the 64-bit ARM architecture (ARMv8.0), and IBM Power Systems,
           Little Endian (POWER9). Not supported on 32-bit x86 (i686) or
           other architectures.
+    # return renders as the "Return Variables" table. List every variable the
+    # role sets, with its type, when it is returned, and a sample. Nested
+    # dictionary fields are described under "contains" and render as a nested
+    # sub-table.
+    return:
+      bootloader_reboot_required:
+        description:
+          - V(true) means the host must reboot to apply the role's changes.
+          - The role sets this when O(bootloader_reboot_ok) is V(false) and it
+            made changes.
+        type: bool
+        returned: always
+        sample: true
+      bootloader_facts:
+        description:
+          - Boot information for all kernels, as gathered by the
+            C(bootloader_facts) module.
+          - The role sets this in C(ansible_facts) and also copies it to the
+            C(bootloader_facts) variable.
+        type: list
+        elements: dict
+        returned: When O(bootloader_gather_facts) is V(true).
+        contains:
+          args:
+            description: Command line arguments passed to the kernel.
+            type: str
+          default:
+            description: Whether this kernel is the default boot entry.
+            type: bool
+          id:
+            description: The kernel ID.
+            type: str
+          index:
+            description: The kernel index.
+            type: str
+          initrd:
+            description: Path to the kernel initrd image.
+            type: str
+          kernel:
+            description: Path to the kernel image.
+            type: str
+          root:
+            description: The root device for this kernel.
+            type: str
+          title:
+            description: The boot entry title.
+            type: str
+        sample:
+          - args: ro rootflags=subvol=root console=tty0 quiet
+            default: true
+            id: 890cea0fd7b140cf890eb0145b3caa72-6.6.4-100.fc38.x86_64
+            index: "1"
+            initrd: /boot/initramfs-6.6.4-100.fc38.x86_64.img
+            kernel: /boot/vmlinuz-6.6.4-100.fc38.x86_64
+            root: UUID=2b95a97a-3f73-4566-b0a3-a11b4e9c3663
+            title: Fedora Linux (6.6.4-100.fc38.x86_64) 38 (Cloud Edition)
     # options renders as the "Parameters" table. List every role variable
     # here with its type, default, choices, and description. Nested options
     # (options within options) render as nested rows.

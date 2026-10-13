@@ -15,6 +15,12 @@ kinds:
 skip_list:
   - fqcn-builtins
   - var-naming[no-role-prefix]
+  # Temporary: the native `return:` key in meta/argument_specs.yml is not yet
+  # accepted by the released ansible-lint role-arg-spec schema. Remove once
+  # https://github.com/ansible/ansible-lint role-arg-spec.json supports it.
+  # See https://github.com/ansible-community/antsibull-docs/issues/491.
+  # (schema rules cannot be disabled with inline noqa, only via skip_list.)
+  - schema[role-arg-spec]
 exclude_paths:
   - tests/roles/
   - .github/

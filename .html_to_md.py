@@ -13,8 +13,8 @@ understands antsibull's option tables, so we convert the finished HTML instead:
 
   - The prose sections (Synopsis, Notes, Examples, Authors) are a straight
     pandoc HTML -> GitHub-Flavored-Markdown conversion.
-  - The Parameters and Attributes tables are rebuilt as real Markdown pipe
-    tables (not embedded HTML). Galaxy sanitizes the Markdown it renders
+  - The Parameters, Attributes and Return Values tables are rebuilt as real
+    Markdown pipe tables (not embedded HTML). Galaxy sanitizes the Markdown it renders
     (markdown + nh3) and strips the CSS classes antsibull uses for indentation,
     which would flatten nested options, so we encode the nesting ourselves: an
     option's anchor path (parent/child/grandchild) gives its depth, shown with
@@ -172,21 +172,42 @@ def require(match, what):
     return match.group(1)
 
 
-def param_label(param_td):
-    """Build the Parameter-column label: bullet-nesting + **name** *type*."""
-    path = require(
-        re.search(r'id="parameter-main--([^"]*)"', param_td),
-        'an option anchor id ("parameter-main--...")',
-    )
+def nested_label(cell_td, id_regex, what):
+    """Build a name-column label: bullet-nesting + **name** *type*.
+
+    Shared by the Parameters ("parameter-main--...") and Return Values
+    ("return-...") tables, which have the same cell markup but different
+    anchor-id prefixes. id_regex must capture the slash-separated anchor path;
+    the number of slashes gives the nesting depth.
+    """
+    path = require(re.search(id_regex, cell_td), what)
     name = path.split("/")[-1]
     type_line = re.search(
-        r'<p class="ansible-option-type-line">(.*?)</p>', param_td, re.S
+        r'<p class="ansible-option-type-line">(.*?)</p>', cell_td, re.S
     )
     type_text = " ".join(strip_tags(type_line.group(1)).split()) if type_line else ""
     label = f"**{name}**"
     if type_text:
         label += f" *{type_text}*"  # type inline after the name, italic
     return NEST_MARKER * path.count("/") + label  # one marker per nesting level
+
+
+def param_label(param_td):
+    """Build the Parameter-column label: bullet-nesting + **name** *type*."""
+    return nested_label(
+        param_td,
+        r'id="parameter-main--([^"]*)"',
+        'an option anchor id ("parameter-main--...")',
+    )
+
+
+def return_label(return_td):
+    """Build the Key-column label for a return value: nesting + **name** *type*."""
+    return nested_label(
+        return_td,
+        r'id="return-([^"]*)"',
+        'a return-value anchor id ("return-...")',
+    )
 
 
 def comment_description_html(cell):
@@ -255,6 +276,26 @@ def build_attributes(table_html):
         for name, support, description in zip(names, supports, descriptions)
     ]
     return format_pipe_table(["Attribute", "Support", "Description"], rows)
+
+
+def build_returns(table_html):
+    """Rebuild the Return Values table (Key / Description) with nesting.
+
+    The return-value table shares the Parameters cell markup: a name/type Key
+    column and a Description column. The description cell carries the
+    "Returned:" (and any "Sample:") lines as extra paragraphs, which
+    pandoc_inline_many folds onto the single line a pipe-table cell requires.
+    """
+    labels, descriptions_html = [], []
+    for tds in cell_rows(table_html):
+        labels.append(return_label(tds[0]))
+        descriptions_html.append(cell_inner(tds[1]))
+    descriptions = pandoc_inline_many(descriptions_html)
+    rows = [
+        [esc_cell(label), esc_cell(description)]
+        for label, description in zip(labels, descriptions)
+    ]
+    return format_pipe_table(["Key", "Description"], rows)
 
 
 # --- page body extraction and cleanup --------------------------------------
@@ -359,7 +400,8 @@ def replace_option_tables(body, replacements):
 
     The built tables are stored in `replacements` (keyed by placeholder) and
     spliced back after pandoc so pandoc never sees — and never mangles — an HTML
-    table. Parameters and Attributes tables are told apart by their anchor ids.
+    table. Parameters, Attributes and Return Values tables are told apart by
+    their anchor ids (parameter-main--, attribute-, return-).
     """
     tables = re.findall(
         r"<table[^>]*ansible-option-table[^>]*>.*?</table>", body, re.S
@@ -368,6 +410,8 @@ def replace_option_tables(body, replacements):
         key = f"@@TABLE{index}@@"
         if "parameter-main--" in table:
             replacements[key] = build_parameters(table)
+        elif 'id="return-' in table:
+            replacements[key] = build_returns(table)
         else:
             replacements[key] = build_attributes(table)
         body = body.replace(table, f"<p>{key}</p>", 1)
