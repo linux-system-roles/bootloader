@@ -44,7 +44,9 @@
   register: __bootloader_default_grub_stat
 
 - name: If missing, add {{ __bootloader_default_grub }}
-  when: not __bootloader_default_grub_stat.stat.exists
+  when:
+    - not __bootloader_default_grub_stat.stat.exists
+    - __bootloader_backend == 'grubby'
   block:
     - name: Get bootloader args of the default kernel
       shell: >-
@@ -115,7 +117,9 @@
         mode: "{{ __bootloader_conf_mode }}"
 
 - name: Update boot loader timeout configuration
-  when: bootloader_timeout is not none
+  when:
+    - bootloader_timeout is not none
+    - __bootloader_backend == 'grubby'
   block:
     - name: Update timeout configuration in {{ __bootloader_default_grub }}
       replace:
@@ -136,12 +140,30 @@
 - name: Ensure boot loader settings
   bootloader_settings:
     bootloader_settings: "{{ bootloader_settings }}"
+    backend: "{{ __bootloader_backend }}"
+    transactional: "{{ __bootloader_is_transactional }}"
+    timeout: "{{ bootloader_timeout if __bootloader_backend == 'pbl'
+      and bootloader_timeout is not none else omit }}"
+    password: "{{ bootloader_password if __bootloader_backend == 'pbl'
+      and bootloader_password is not none else omit }}"
+    password_hash: "{{ bootloader_password_hash if __bootloader_backend == 'pbl'
+      and bootloader_password_hash is not none else omit }}"
+    remove_password: "{{ (__bootloader_backend == 'pbl') and
+      bootloader_remove_password | bool }}"
+  register: __bootloader_settings_result
   notify:
     - Fix default kernel boot parameters
     - Reboot system
 
+- name: Set flag if the changes need a reboot
+  set_fact:
+    __bootloader_needs_reboot: true
+  when: __bootloader_settings_result.reboot_required
+
 - name: Update boot loader password
-  when: bootloader_password is not none
+  when:
+    - bootloader_password is not none
+    - __bootloader_backend == 'grubby'
   block:
     - name: Generate boot loader password
       shell: >-
@@ -168,18 +190,24 @@
     content: "GRUB2_PASSWORD={{ bootloader_password_hash }}"
     dest: "{{ __bootloader_user_conf }}"
     mode: "{{ __bootloader_conf_mode }}"
-  when: bootloader_password_hash is not none
+  when:
+    - bootloader_password_hash is not none
+    - __bootloader_backend == 'grubby'
   no_log: "{{ bootloader_secure_logging }}"
 
 - name: Remove boot loader password configuration
   file:
     path: "{{ __bootloader_user_conf }}"
     state: absent
-  when: bootloader_remove_password | bool
+  when:
+    - bootloader_remove_password | bool
+    - __bootloader_backend == 'grubby'
 
 # Keep at the end of tasks to collect latest info
 - name: Collect bootloader facts
   bootloader_facts:
+    backend: "{{ __bootloader_backend }}"
+    transactional: "{{ __bootloader_is_transactional }}"
   when: bootloader_gather_facts | bool
 
 # With Ansible 2.20, creating variables from facts is deprecated.

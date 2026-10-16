@@ -10,6 +10,10 @@
     - name: Skip on s390x architecture
       include_tasks: tasks/skip_on_s390x.yml
 
+    - name: Skip on SUSE, where boot entries come from the installed kernels
+      meta: end_host
+      when: ansible_facts['os_family'] == 'Suse'
+
     - name: Run in a block to clean up afterwards
       block:
         - name: Get bootloader_facts

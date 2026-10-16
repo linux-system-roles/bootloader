@@ -18,10 +18,11 @@ See below
 
 ### Collection requirements
 
-If you don't want to manage `ostree` systems, the role has no requirements.
+If you don't want to manage `ostree` or SUSE systems, the role has no requirements.
 
-If you want to manage `ostree` systems, the role requires additional modules
-from external collections.  Please use the following command to install them:
+If you want to manage `ostree` or SUSE systems, the role requires additional modules
+from external collections, such as `community.general` for `zypper` on SUSE.
+Please use the following command to install them:
 
 ```bash
 ansible-galaxy collection install -vv -r meta/collection-requirements.yml
@@ -115,6 +116,7 @@ Use this variable to protect boot parameters with a password.
 **WARNING**: Changing the bootloader password is not idempotent.
 Use `bootloader_password_hash` for idempotent password configuration.
 These two inputs cannot be used together.
+On SUSE, setting the same password again changes nothing (see README-suse.md).
 
 The bootloader username is always `root`.
 
@@ -326,6 +328,10 @@ For example:
 ## rpm-ostree
 
 See README-ostree.md
+
+## SUSE
+
+See README-suse.md
 
 ## License
 

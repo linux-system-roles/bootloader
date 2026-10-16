@@ -14,3 +14,4 @@
 - name: Set bootloader_reboot_required
   set_fact:
     bootloader_reboot_required: "{{ not bootloader_reboot_ok }}"
+    __bootloader_needs_reboot: false
