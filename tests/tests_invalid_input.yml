@@ -2,6 +2,13 @@
 ---
 - name: Verify invalid parameters are rejected
   hosts: all
+  vars:
+    __invalid_input_failure_messages: >-
+      {{ ([ansible_failed_result.msg | default(''),
+           ansible_failed_result.msg.msg | default('')]
+          + (ansible_failed_result.results | default([])
+             | map(attribute='msg') | map('default', '') | list))
+         | join(' ') }}
   tasks:
     - name: Skip on s390x
       meta: end_host
@@ -34,6 +41,11 @@
                 - name: Mark non-list bootloader_settings rejected
                   ansible.builtin.set_fact:
                     __invalid_input_settings_type_failed: true
+                  when: >-
+                    "Elements value for option 'bootloader_settings' is of type" in
+                    __invalid_input_failure_messages and
+                    "we were unable to convert to dict" in
+                    __invalid_input_failure_messages
 
             - name: Assert non-list bootloader_settings was rejected
               ansible.builtin.assert:
@@ -58,8 +70,8 @@
                   ansible.builtin.set_fact:
                     __invalid_input_missing_kernel_failed: true
                   when: >-
-                    'missing required arguments' in
-                    (ansible_failed_result | default({}) | to_json)
+                    "missing required arguments: kernel found in bootloader_settings" in
+                    __invalid_input_failure_messages
 
             - name: Assert missing kernel was rejected
               ansible.builtin.assert:
@@ -83,6 +95,9 @@
                 - name: Mark invalid state choice rejected
                   ansible.builtin.set_fact:
                     __invalid_input_state_choice_failed: true
+                  when: >-
+                    "value of state must be one of: present, absent, got: invalid_state found in bootloader_settings" in
+                    __invalid_input_failure_messages
 
             - name: Assert invalid state choice was rejected
               ansible.builtin.assert:
@@ -108,6 +123,11 @@
                 - name: Mark invalid option state choice rejected
                   ansible.builtin.set_fact:
                     __invalid_input_option_state_choice_failed: true
+                  when: >-
+                    "value of state must be one of: present, absent, got: invalid_option_state" in
+                    __invalid_input_failure_messages and
+                    "found in bootloader_settings -> options" in
+                    __invalid_input_failure_messages
 
             - name: Assert invalid option state choice was rejected
               ansible.builtin.assert:
@@ -134,6 +154,11 @@
                 - name: Mark invalid previous choice rejected
                   ansible.builtin.set_fact:
                     __invalid_input_previous_choice_failed: true
+                  when: >-
+                    "value of previous must be one of: replaced, got: invalid_previous" in
+                    __invalid_input_failure_messages and
+                    "found in bootloader_settings -> options" in
+                    __invalid_input_failure_messages
 
             - name: Assert invalid previous choice was rejected
               ansible.builtin.assert:
@@ -159,6 +184,13 @@
                 - name: Mark non-bool default suboption rejected
                   ansible.builtin.set_fact:
                     __invalid_input_default_subopt_type_failed: true
+                  when: >-
+                    "argument 'default' is of type" in
+                    __invalid_input_failure_messages and
+                    "found in 'bootloader_settings'" in
+                    __invalid_input_failure_messages and
+                    "we were unable to convert to bool" in
+                    __invalid_input_failure_messages
 
             - name: Assert non-bool default suboption was rejected
               ansible.builtin.assert:
@@ -186,6 +218,13 @@
                 - name: Mark non-bool copy_default suboption rejected
                   ansible.builtin.set_fact:
                     __invalid_input_copy_default_type_failed: true
+                  when: >-
+                    "argument 'copy_default' is of type" in
+                    __invalid_input_failure_messages and
+                    "found in 'bootloader_settings -> options'" in
+                    __invalid_input_failure_messages and
+                    "we were unable to convert to bool" in
+                    __invalid_input_failure_messages
 
             - name: Assert non-bool copy_default suboption was rejected
               ansible.builtin.assert:
@@ -209,6 +248,11 @@
                 - name: Mark non-bool bootloader_remove_password rejected
                   ansible.builtin.set_fact:
                     __invalid_input_remove_password_type_failed: true
+                  when: >-
+                    "argument 'bootloader_remove_password' is of type" in
+                    __invalid_input_failure_messages and
+                    "we were unable to convert to bool" in
+                    __invalid_input_failure_messages
 
             - name: Assert non-bool bootloader_remove_password was rejected
               ansible.builtin.assert:
@@ -232,6 +276,11 @@
                 - name: Mark non-bool bootloader_reboot_ok rejected
                   ansible.builtin.set_fact:
                     __invalid_input_reboot_ok_type_failed: true
+                  when: >-
+                    "argument 'bootloader_reboot_ok' is of type" in
+                    __invalid_input_failure_messages and
+                    "we were unable to convert to bool" in
+                    __invalid_input_failure_messages
 
             - name: Assert non-bool bootloader_reboot_ok was rejected
               ansible.builtin.assert:
@@ -255,6 +304,11 @@
                 - name: Mark non-bool bootloader_gather_facts rejected
                   ansible.builtin.set_fact:
                     __invalid_input_gather_facts_type_failed: true
+                  when: >-
+                    "argument 'bootloader_gather_facts' is of type" in
+                    __invalid_input_failure_messages and
+                    "we were unable to convert to bool" in
+                    __invalid_input_failure_messages
 
             - name: Assert non-bool bootloader_gather_facts was rejected
               ansible.builtin.assert:
@@ -278,6 +332,11 @@
                 - name: Mark non-bool bootloader_secure_logging rejected
                   ansible.builtin.set_fact:
                     __invalid_input_secure_logging_type_failed: true
+                  when: >-
+                    "argument 'bootloader_secure_logging' is of type" in
+                    __invalid_input_failure_messages and
+                    "we were unable to convert to bool" in
+                    __invalid_input_failure_messages
 
             - name: Assert non-bool bootloader_secure_logging was rejected
               ansible.builtin.assert:
@@ -305,6 +364,11 @@
             - name: Mark bootloader_timeout string rejected
               ansible.builtin.set_fact:
                 __invalid_input_timeout_string_failed: true
+              when: >-
+                "bootloader_timeout must be null or a non-negative integer" in
+                __invalid_input_failure_messages and
+                ("got str" in __invalid_input_failure_messages or
+                 "got AnsibleUnicode" in __invalid_input_failure_messages)
 
         - name: Assert bootloader_timeout as string was rejected
           ansible.builtin.assert:
@@ -328,6 +392,9 @@
             - name: Mark bootloader_timeout boolean rejected
               ansible.builtin.set_fact:
                 __invalid_input_timeout_bool_failed: true
+              when: >-
+                "bootloader_timeout must be null or a non-negative integer, got bool" in
+                __invalid_input_failure_messages
 
         - name: Assert bootloader_timeout as boolean was rejected
           ansible.builtin.assert:
@@ -351,6 +418,9 @@
             - name: Mark bootloader_password integer rejected
               ansible.builtin.set_fact:
                 __invalid_input_password_int_failed: true
+              when: >-
+                "bootloader_password must be null or a string, got int" in
+                __invalid_input_failure_messages
 
         - name: Assert bootloader_password as integer was rejected
           ansible.builtin.assert:
@@ -374,6 +444,9 @@
             - name: Mark bootloader_password boolean rejected
               ansible.builtin.set_fact:
                 __invalid_input_password_bool_failed: true
+              when: >-
+                "bootloader_password must be null or a string, got bool" in
+                __invalid_input_failure_messages
 
         - name: Assert bootloader_password as boolean was rejected
           ansible.builtin.assert:
@@ -420,6 +493,9 @@
             - name: Mark kernel integer rejected
               ansible.builtin.set_fact:
                 __invalid_input_kernel_int_failed: true
+              when: >-
+                "bootloader_settings[0].kernel is required and must be a string or dictionary, got int" in
+                __invalid_input_failure_messages
 
         - name: Assert kernel as integer was rejected
           ansible.builtin.assert:
@@ -449,6 +525,9 @@
             - name: Mark value list rejected
               ansible.builtin.set_fact:
                 __invalid_input_value_list_failed: true
+              when: >-
+                "bootloader_settings options value must be a string or integer, got list" in
+                __invalid_input_failure_messages
 
         - name: Assert value as list was rejected
           ansible.builtin.assert:
