@@ -9,23 +9,26 @@ argument_specs:
     # other docs. Each list item becomes one bullet.
     description:
       - >
-        The C(bootloader) role manages GRUB2 boot loader settings: kernel
-        command line parameters, the boot loader timeout, and the boot loader
-        password.
+        The C(bootloader) role manages GRUB2 boot loader settings: kernel command line parameters, the boot loader timeout, and the boot loader password.
       - >
-        B(Considerations): Fedora 42 (C(grubby-8.40-82.fc42.x86_64)) introduced
-        a bug, L(BZ#2361624,https://bugzilla.redhat.com/show_bug.cgi?id=2361624),
-        that changes the default kernel to a newly added kernel. To keep a
-        specific kernel as the default, set C(default: true) for that kernel in
-        the O(bootloader_settings) variable.
+        B(Considerations): Fedora 42 (C(grubby-8.40-82.fc42.x86_64)) introduced a bug, L(BZ#2361624,https://bugzilla.redhat.com/show_bug.cgi?id=2361624), that changes the default kernel to a newly added kernel.
+        To keep a specific kernel as the default, set C(default: true) for that kernel in the O(bootloader_settings) variable.
       - >
-        B(Collection requirements): To manage C(rpm-ostree) systems, the role
-        needs extra modules from external collections. Install them with
-        C(ansible-galaxy collection install -vv -r meta/collection-requirements.yml).
+        B(Collection requirements): To manage C(rpm-ostree) systems, the role needs extra modules from external collections.
+        Install them with C(ansible-galaxy collection install -vv -r meta/collection-requirements.yml).
         Non-ostree systems need no extra collections.
       - 'For C(rpm-ostree) systems, see the C(README-ostree.md) file in the role.'
     author:
       - Sergei Petrosian (@spetrosi)
+    # notes renders as the "Notes" section. The variables this role sets
+    # (returns) are documented separately in meta/set_vars_specs.yml so that
+    # this file stays accepted by the released ansible-lint role-arg-spec
+    # schema, which does not yet allow the native return: key. The
+    # .build_docs.sh script merges that file back in as return: (and drops the
+    # pointer note below) when rendering the READMEs.
+    notes:
+      - >
+        This role sets variables, for the full list of returned variables see "Return Variables" in README.html and README.md, or C(meta/set_vars_specs.yml).
     # attributes renders as the "Attributes" table. Use it for support
     # information such as which platforms and CPU architectures the role
     # supports. Every attribute requires a "support" value.
@@ -40,66 +43,8 @@ argument_specs:
       architectures:
         support: partial
         description: >
-          Supported on AMD and Intel 64-bit architectures (x86-64),
-          the 64-bit ARM architecture (ARMv8.0), and IBM Power Systems,
-          Little Endian (POWER9). Not supported on 32-bit x86 (i686) or
-          other architectures.
-    # return renders as the "Return Variables" table. List every variable the
-    # role sets, with its type, when it is returned, and a sample. Nested
-    # dictionary fields are described under "contains" and render as a nested
-    # sub-table.
-    return:
-      bootloader_reboot_required:
-        description:
-          - V(true) means the host must reboot to apply the role's changes.
-          - The role sets this when O(bootloader_reboot_ok) is V(false) and it
-            made changes.
-        type: bool
-        returned: always
-        sample: true
-      bootloader_facts:
-        description:
-          - Boot information for all kernels, as gathered by the
-            C(bootloader_facts) module.
-          - The role sets this in C(ansible_facts) and also copies it to the
-            C(bootloader_facts) variable.
-        type: list
-        elements: dict
-        returned: When O(bootloader_gather_facts) is V(true).
-        contains:
-          args:
-            description: Command line arguments passed to the kernel.
-            type: str
-          default:
-            description: Whether this kernel is the default boot entry.
-            type: bool
-          id:
-            description: The kernel ID.
-            type: str
-          index:
-            description: The kernel index.
-            type: str
-          initrd:
-            description: Path to the kernel initrd image.
-            type: str
-          kernel:
-            description: Path to the kernel image.
-            type: str
-          root:
-            description: The root device for this kernel.
-            type: str
-          title:
-            description: The boot entry title.
-            type: str
-        sample:
-          - args: ro rootflags=subvol=root console=tty0 quiet
-            default: true
-            id: 890cea0fd7b140cf890eb0145b3caa72-6.6.4-100.fc38.x86_64
-            index: "1"
-            initrd: /boot/initramfs-6.6.4-100.fc38.x86_64.img
-            kernel: /boot/vmlinuz-6.6.4-100.fc38.x86_64
-            root: UUID=2b95a97a-3f73-4566-b0a3-a11b4e9c3663
-            title: Fedora Linux (6.6.4-100.fc38.x86_64) 38 (Cloud Edition)
+          Supported on AMD and Intel 64-bit architectures (x86-64), the 64-bit ARM architecture (ARMv8.0), and IBM Power Systems, Little Endian (POWER9).
+          Not supported on 32-bit x86 (i686) or other architectures.
     # options renders as the "Parameters" table. List every role variable
     # here with its type, default, choices, and description. Nested options
     # (options within options) render as nested rows.
@@ -109,21 +54,16 @@ argument_specs:
         elements: dict
         default: []
         description: >
-          List of kernel entries and their command line parameters
-          to configure. Each entry specifies a kernel and the
-          boot loader settings to apply.
+          List of kernel entries and their command line parameters to configure.
+          Each entry specifies a kernel and the boot loader settings to apply.
         options:
           kernel:
             type: raw
             required: true
             description: >
-              The kernel to update settings for. Accepts the
-              string V(DEFAULT) or V(ALL) to target the default or
-              all kernels, or a dictionary with keys C(path),
-              C(index), C(title), and C(initrd) to identify a
-              specific kernel. To modify or remove a kernel, specify
-              one or more of these keys; to add a kernel, specify
-              C(path), C(title), and C(initrd).
+              The kernel to update settings for.
+              Accepts the string V(DEFAULT) or V(ALL) to target the default or all kernels, or a dictionary with keys C(path), C(index), C(title), and C(initrd) to identify a specific kernel.
+              To modify or remove a kernel, specify one or more of these keys; to add a kernel, specify C(path), C(title), and C(initrd).
           state:
             type: str
             choices:
@@ -131,29 +71,25 @@ argument_specs:
               - absent
             default: present
             description: >
-              Whether to keep the kernel entry (V(present)) or
-              remove it (V(absent)).
+              Whether to keep the kernel entry (V(present)) or remove it (V(absent)).
           options:
             type: list
             elements: dict
             description: >
-              List of boot loader arguments to apply to the
-              specified kernel.
+              List of boot loader arguments to apply to the specified kernel.
             options:
               name:
                 type: str
                 description: >
-                  The name of the boot loader setting. Not
-                  required when using C(previous: replaced).
+                  The name of the boot loader setting.
+                  Not required when using C(previous: replaced).
               value:
                 type: raw
                 description: >
-                  The value for the setting. Not required when
-                  the setting has no value, for example V(quiet).
-                  The value must not be a YAML boolean; quote values
-                  such as C(value: "on") that YAML would parse as a
-                  boolean. The value must also not be null; C(value:),
-                  C(value: ~), and C(value: null) raise an error.
+                  The value for the setting.
+                  Not required when the setting has no value, for example V(quiet).
+                  The value must not be a YAML boolean; quote values such as C(value: "on") that YAML would parse as a boolean.
+                  The value must also not be null; C(value:), C(value: ~), and C(value: null) raise an error.
               state:
                 type: str
                 choices:
@@ -168,91 +104,75 @@ argument_specs:
                 choices:
                   - replaced
                 description: >
-                  Whether to replace all previous settings with
-                  the given settings. The only supported value
-                  is V(replaced).
+                  Whether to replace all previous settings with the given settings.
+                  The only supported value is V(replaced).
               copy_default:
                 type: bool
                 default: false
                 description: >
-                  Whether to copy the default arguments to the
-                  created kernel.
+                  Whether to copy the default arguments to the created kernel.
           default:
             type: bool
             default: false
             description: >
-              Whether to make this kernel the default boot
-              entry.
+              Whether to make this kernel the default boot entry.
 
       bootloader_timeout:
         type: raw
         default: null
         description: >
-          The GRUB boot loader timeout in seconds. When set to
-          V(null) or left unset, the role does not change the
-          timeout setting.
+          The GRUB boot loader timeout in seconds.
+          When set to V(null) or left unset, the role does not change the timeout setting.
 
       bootloader_password:
         type: raw
         default: null
         description: >
-          The password to protect boot parameters. When set to
-          V(null) or left unset, the role leaves the current password
-          unchanged. The boot loader username is always V(root). Store
-          this value in Ansible Vault. Changing the password is B(not)
-          idempotent; use O(bootloader_password_hash) for idempotent
-          password configuration. You cannot set this variable together
-          with O(bootloader_password_hash).
+          The password to protect boot parameters.
+          When set to V(null) or left unset, the role leaves the current password unchanged.
+          The boot loader username is always V(root).
+          Store this value in Ansible Vault.
+          Changing the password is B(not) idempotent; use O(bootloader_password_hash) for idempotent password configuration.
+          You cannot set this variable together with O(bootloader_password_hash).
 
       bootloader_password_hash:
         type: raw
         default: null
         description: >
-          Precomputed GRUB PBKDF2 SHA512 password hash for the root
-          boot loader user. Generate the hash with
-          C(grub2-mkpasswd-pbkdf2) and store it in Ansible Vault.
-          Supply only the resulting C(grub.pbkdf2.sha512...) hash,
-          without the command's explanatory text or a trailing newline.
-          The hash must have a positive iteration count, a nonempty
-          hexadecimal salt consisting of whole bytes, and a 64-byte
-          hexadecimal digest. Setting the same hash repeatedly is
-          idempotent. When V(null) or unset, the role writes no hash. An
-          empty string is invalid; to remove a password set
-          O(bootloader_remove_password)=V(true) with this variable unset
-          or V(null). You cannot combine it with O(bootloader_password) or
-          O(bootloader_remove_password)=V(true).
+          Precomputed GRUB PBKDF2 SHA512 password hash for the root boot loader user.
+          Generate the hash with C(grub2-mkpasswd-pbkdf2) and store it in Ansible Vault.
+          Supply only the resulting C(grub.pbkdf2.sha512...) hash, without the command's explanatory text or a trailing newline.
+          The hash must have a positive iteration count, a nonempty hexadecimal salt consisting of whole bytes, and a 64-byte hexadecimal digest.
+          Setting the same hash repeatedly is idempotent.
+          When V(null) or unset, the role writes no hash.
+          An empty string is invalid; to remove a password set O(bootloader_remove_password)=V(true) with this variable unset or V(null).
+          You cannot combine it with O(bootloader_password) or O(bootloader_remove_password)=V(true).
 
       bootloader_remove_password:
         type: bool
         default: false
         description: >
-          Whether to remove the boot loader password
-          configuration.
+          Whether to remove the boot loader password configuration.
 
       bootloader_reboot_ok:
         type: bool
         default: false
         description: >
-          Whether the role is allowed to reboot the managed host
-          when changes require a reboot to take effect. If
-          V(false), the role sets C(bootloader_reboot_required) to
-          V(true) instead.
+          Whether the role is allowed to reboot the managed host when changes require a reboot to take effect.
+          If V(false), the role sets C(bootloader_reboot_required) to V(true) instead.
 
       bootloader_gather_facts:
         type: bool
         default: false
         description: >
-          Whether to gather bootloader facts containing boot
-          information for all kernels. The role returns the facts
-          in the C(bootloader_facts) variable.
+          Whether to gather bootloader facts containing boot information for all kernels.
+          The role returns the facts in the C(bootloader_facts) variable.
 
       bootloader_secure_logging:
         type: bool
         default: true
         description: >
-          Whether to suppress potentially sensitive output from
-          tasks that handle credentials by setting C(no_log) to
-          V(true) on those tasks.
+          Whether to suppress potentially sensitive output from tasks that handle credentials by setting C(no_log) to V(true) on those tasks.
     # examples renders as the "Examples" section. It is a single YAML block
     # (note the "|") holding one or more example plays. Give each play a
     # "name" so the reader can tell the examples apart.

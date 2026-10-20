@@ -13,8 +13,12 @@
 #                  display role docs only as Markdown). This is the canonical
 #                  README; it supersedes the plain-text and RST renderings,
 #                  which are intentionally not emitted.
-#   README.html  - link to the full styled page in sphinx_html/
-#   sphinx_html/ - the Sphinx HTML output (the page plus its _static assets)
+#   README.html  - a single, self-contained styled preview of the page. All CSS
+#                  and the FontAwesome icon font are inlined as data: URIs, the
+#                  JavaScript is dropped, and the docsite chrome (collection
+#                  sidebar/tree, breadcrumb, prev/next) is hidden, so it is just
+#                  this role's page with zero in-repo dependencies (no
+#                  sphinx_html/ or _static/ to commit). See .html_to_singlefile.py.
 #
 # RST is still produced internally (antsibull emits it and Sphinx consumes it to
 # build the HTML) but is not copied out as README.rst.
@@ -25,14 +29,6 @@
 # HTML instead. The Parameters and Attributes tables become real Markdown pipe
 # tables (Galaxy strips the CSS classes antsibull uses to indent nested options,
 # so .html_to_md.py encodes the nesting as dot markers in the Parameter column).
-#
-# NOTE: the HTML output (README.html + sphinx_html/) is included here only
-# to preview the styled page in the draft PR. The bundled fonts are trimmed to
-# just the FontAwesome icon font (see below), so it is ~0.6MB rather than ~10MB;
-# body text falls back to the system sans-serif. Long term, the
-# full styled site is built once for the whole fedora.linux_system_roles
-# collection, not per role, to keep each role repo small. README.html is a
-# link, so commit the sphinx_html folder with it or the link will not resolve.
 #
 # antsibull-docs works with collections only. This repo has one role and
 # is not a collection, so we first copy the role into a temporary
@@ -71,15 +67,38 @@ done
 
 ROLE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 ROLE_NAME="$(basename "$ROLE_DIR")"
-OUT_DIR="$ROLE_DIR/sphinx_html"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-# Copy this single role into a temporary collection.
+# Copy this single role into a temporary collection. The role is mirrored with
+# symlinks (so the committed tree is never modified) EXCEPT for
+# meta/argument_specs.yml: the committed spec intentionally has no return: key
+# (it points at meta/set_vars_specs.yml via a note, to stay accepted by the
+# released ansible-lint role-arg-spec schema). .merge_set_vars.py writes a
+# merged argument_specs.yml that restores return: from set_vars_specs.yml and
+# drops that pointer note, and antsibull renders the "Return Variables" table
+# from this merged copy.
 COLL="$WORK/collections/ansible_collections/fedora/linux_system_roles"
-mkdir -p "$COLL/roles"
-ln -s "$ROLE_DIR" "$COLL/roles/$ROLE_NAME"
+ROLE_LINK="$COLL/roles/$ROLE_NAME"
+mkdir -p "$ROLE_LINK/meta"
+# symlink every top-level entry except meta (which needs a modified copy)
+for item in "$ROLE_DIR"/*; do
+    name="$(basename "$item")"
+    [ "$name" = "meta" ] && continue
+    ln -s "$item" "$ROLE_LINK/$name"
+done
+# symlink every meta entry except argument_specs.yml, which we generate below
+for item in "$ROLE_DIR"/meta/*; do
+    name="$(basename "$item")"
+    [ "$name" = "argument_specs.yml" ] && continue
+    ln -s "$item" "$ROLE_LINK/meta/$name"
+done
+# generate the merged argument_specs.yml (return: restored, pointer note dropped)
+python3 "$ROLE_DIR/.merge_set_vars.py" \
+    "$ROLE_DIR/meta/argument_specs.yml" \
+    "$ROLE_DIR/meta/set_vars_specs.yml" \
+    "$ROLE_LINK/meta/argument_specs.yml"
 # version is mandatory but only used for the "part of the collection" note;
 # leave it empty so antsibull omits the version from that note (this per-role
 # build has no meaningful collection version).
@@ -111,29 +130,22 @@ antsibull-docs --config-file antsibull-docs.cfg collection \
 # the .rst files into _sources/ and adds a "Show Source" link; turn both off.
 printf '\nhtml_copy_source = False\nhtml_show_sourcelink = False\n' >> conf.py
 
-# 2. Sphinx renders the RST to the styled HTML site (for the draft PR preview).
+# 2. Sphinx renders the RST to the styled HTML site.
 sphinx-build -M html rst build -q -c .
-rm -rf "$OUT_DIR"
-mkdir -p "$OUT_DIR"
-cp -r build/html/. "$OUT_DIR"             # styled page plus its _static assets
-rm -rf "$OUT_DIR/_sources"                # empty leftover dir (RST source is not shipped)
-# Trim the bundled fonts to just the FontAwesome icon font (woff2). The
-# sphinx_rtd_theme ships Lato and Roboto Slab (body/heading text) plus
-# FontAwesome (the UI icons: menu, home, previous/next) in four formats
-# (ttf/woff/woff2/eot, ~9MB). The icon font is only ~75KB and has no system
-# fallback, so keep it; the text fonts are ~1.8MB and fall back cleanly to the
-# system sans-serif, so drop them. This cuts sphinx_html from ~10MB to ~0.6MB
-# while keeping every UI icon. Scope the delete to the font directories so it
-# cannot touch the SVG logos under _static/images.
-for fontdir in "$OUT_DIR/_static/fonts" "$OUT_DIR/_static/css/fonts"; do
-    [ -d "$fontdir" ] && find "$fontdir" -type f ! -iname 'fontawesome-webfont.woff2' -delete
-done
-ln -sfn "sphinx_html/${ROLE_NAME}_role.html" "$ROLE_DIR/README.html"
 
-# 3. .html_to_md.py turns the HTML page into the main README.md (it calls pandoc
+# 3. Collapse the Sphinx site (page + its _static tree) into ONE self-contained
+# README.html at the repo root: .html_to_singlefile.py inlines the CSS and the
+# FontAwesome icon font as data: URIs, drops the JavaScript, and hides the
+# docsite chrome (the collection sidebar/tree, breadcrumb and prev/next nav) so
+# only this role's page remains. No sphinx_html/ directory and no _static assets
+# are committed -- README.html has zero in-repo dependencies.
+python3 "$ROLE_DIR/.html_to_singlefile.py" --drop-scripts --standalone \
+    "build/html/${ROLE_NAME}_role.html" "$ROLE_DIR/README.html"
+
+# 4. .html_to_md.py turns the HTML page into the main README.md (it calls pandoc
 # for the prose and rebuilds the option tables as pipe tables).
 python3 "$ROLE_DIR/.html_to_md.py" \
     "build/html/${ROLE_NAME}_role.html" "$ROLE_DIR/README.md"
 
 echo "MD  : $ROLE_DIR/README.md"
-echo "HTML: $ROLE_DIR/README.html -> sphinx_html/${ROLE_NAME}_role.html"
+echo "HTML: $ROLE_DIR/README.html (single self-contained file)"

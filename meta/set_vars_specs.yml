@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: MIT
+---
+# Variables that the bootloader role sets (returns).
+#
+# This block lives outside meta/argument_specs.yml on purpose: the native
+# `return:` key is not yet accepted by the released ansible-lint role-arg-spec
+# schema, so keeping it in this separate file lets argument_specs.yml stay
+# lint-clean by default. (This file does not match the role-arg-spec schema, so
+# the `return:` key below is fine here.)
+#
+# When building the READMEs, .build_docs.sh injects this content back into a
+# throwaway copy of argument_specs.yml (and drops the note that points here), so
+# the rendered MD and HTML docs still show the "Return Variables" table.
+# See .build_docs.sh and .merge_set_vars.py.
+#
+# The structure under return: is exactly what argument_specs' `return:` key
+# expects: one entry per returned variable, with type, returned, sample, and
+# (for dicts) contains.
+return:
+  bootloader_reboot_required:
+    description:
+      - V(true) means the host must reboot to apply the role's changes.
+      - The role sets this when O(bootloader_reboot_ok) is V(false) and it made changes.
+    type: bool
+    returned: always
+    sample: true
+  bootloader_facts:
+    description:
+      - Boot information for all kernels, as gathered by the C(bootloader_facts) module.
+      - The role sets this in C(ansible_facts) and also copies it to the C(bootloader_facts) variable.
+    type: list
+    elements: dict
+    returned: When O(bootloader_gather_facts) is V(true).
+    contains:
+      args:
+        description: Command line arguments passed to the kernel.
+        type: str
+      default:
+        description: Whether this kernel is the default boot entry.
+        type: bool
+      id:
+        description: The kernel ID.
+        type: str
+      index:
+        description: The kernel index.
+        type: str
+      initrd:
+        description: Path to the kernel initrd image.
+        type: str
+      kernel:
+        description: Path to the kernel image.
+        type: str
+      root:
+        description: The root device for this kernel.
+        type: str
+      title:
+        description: The boot entry title.
+        type: str
+    sample:
+      - args: ro rootflags=subvol=root console=tty0 quiet
+        default: true
+        id: 890cea0fd7b140cf890eb0145b3caa72-6.6.4-100.fc38.x86_64
+        index: "1"
+        initrd: /boot/initramfs-6.6.4-100.fc38.x86_64.img
+        kernel: /boot/vmlinuz-6.6.4-100.fc38.x86_64
+        root: UUID=2b95a97a-3f73-4566-b0a3-a11b4e9c3663
+        title: Fedora Linux (6.6.4-100.fc38.x86_64) 38 (Cloud Edition)
