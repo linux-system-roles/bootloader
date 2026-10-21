@@ -31,8 +31,23 @@ argument_specs:
         This role sets variables, for the full list of returned variables see "Return Variables" in README.html and README.md, or C(meta/set_vars_specs.yml).
     # attributes renders as the "Attributes" table. Use it for support
     # information such as which platforms and CPU architectures the role
-    # supports. Every attribute requires a "support" value.
+    # supports, whether it runs in check mode, and whether it is idempotent.
+    # Every attribute requires a "support" value.
     attributes:
+      check_mode:
+        support: none
+        description: >
+          Can run in C(check_mode) and return a changed-status prediction without modifying the target.
+        details:
+          - The role does not support check mode.
+      idempotent:
+        support: partial
+        description:
+          - When run twice in a row outside check mode with the same arguments, the second run reports no change.
+          - This assumes the managed host has not changed in a relevant way between runs.
+        details:
+          - Kernel command line parameters, the boot loader timeout, and O(bootloader_password_hash) are applied idempotently.
+          - O(bootloader_password) is B(not) idempotent; each run regenerates and rewrites the password. Use O(bootloader_password_hash) for idempotent password configuration.
       platform:
         support: full
         platforms:
@@ -42,9 +57,12 @@ argument_specs:
         description: Target operating systems.
       architectures:
         support: partial
-        description: >
-          Supported on AMD and Intel 64-bit architectures (x86-64), the 64-bit ARM architecture (ARMv8.0), and IBM Power Systems, Little Endian (POWER9).
-          Not supported on 32-bit x86 (i686) or other architectures.
+        description: CPU architectures the role can run on.
+        details:
+          - C(x86-64) - supported
+          - C(ARMv8.0) - supported
+          - C(POWER9) - supported
+          - C(s390x) - not supported
     # options renders as the "Parameters" table. List every role variable
     # here with its type, default, choices, and description. Nested options
     # (options within options) render as nested rows.

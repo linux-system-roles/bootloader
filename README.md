@@ -60,10 +60,12 @@ To use it in a playbook, specify: `fedora.linux_system_roles.bootloader`.
 
 ### Attributes
 
-| Attribute         | Support                                         | Description |
-| ----------------- | ----------------------------------------------- | --- |
-| **architectures** | **partial**                                     | Supported on AMD and Intel 64-bit architectures (x86-64), the 64-bit ARM architecture (ARMv8.0), and IBM Power Systems, Little Endian (POWER9). Not supported on 32-bit x86 (i686) or other architectures. |
-| **platform**      | **Platforms:** **Fedora**, **RHEL**, **CentOS** | Target operating systems. |
+| Attribute         | Support                                                                                                                                                                                                                                                                                                      | Description |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- |
+| **architectures** | **partial** `x86-64` - supported `ARMv8.0` - supported `POWER9` - supported `s390x` - not supported                                                                                                                                                                                                          | CPU architectures the role can run on. |
+| **check_mode**    | **none** The role does not support check mode.                                                                                                                                                                                                                                                               | Can run in `check_mode` and return a changed-status prediction without modifying the target. |
+| **idempotent**    | **partial** Kernel command line parameters, the boot loader timeout, and **`bootloader_password_hash`** are applied idempotently. **`bootloader_password`** is **not** idempotent; each run regenerates and rewrites the password. Use **`bootloader_password_hash`** for idempotent password configuration. | When run twice in a row outside check mode with the same arguments, the second run reports no change. This assumes the managed host has not changed in a relevant way between runs. |
+| **platform**      | **Platforms:** **Fedora**, **RHEL**, **CentOS**                                                                                                                                                                                                                                                              | Target operating systems. |
 
 ### Examples
 

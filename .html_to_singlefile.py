@@ -23,15 +23,21 @@ tree, breadcrumb, mobile top bar and prev/next footer) and un-indents the
 content, so the result is just this role's page with no navigation to other
 pages or the collection root.
 
-Usage: .html_to_singlefile.py [--drop-scripts] [--standalone] INPUT.html OUTPUT.html
+With --drop-fonts no local font is inlined at all (not even the icon font),
+trading the FontAwesome admonition/nav icons for a much smaller file.
+
+Usage: .html_to_singlefile.py [--drop-scripts] [--standalone] [--drop-fonts] INPUT.html OUTPUT.html
 """
 
 # CSS injected by --standalone to hide the sphinx_rtd_theme chrome and the
 # cross-page navigation, leaving only this role's content.
 STANDALONE_CSS = """
 .wy-nav-side, .wy-nav-top, .wy-breadcrumbs, .rst-footer-buttons { display: none !important; }
+.wy-breadcrumbs + hr { display: none !important; }  /* rule left after hiding breadcrumbs */
 .wy-nav-content-wrap { margin-left: 0 !important; background: #fff !important; }
 .wy-nav-content { max-width: 900px; }
+.DocSite-globalNav, .DocSite-nav { display: none !important; }
+.rst-content .admonition-title:before { display: none !important; }
 """
 
 import base64
@@ -65,16 +71,16 @@ def clean_relpath(url):
     return re.split(r"[?#]", url.strip(), maxsplit=1)[0]
 
 
-def is_trimmed_font(url):
+def is_trimmed_font(url, keep_fonts):
     """True for a font asset we deliberately do not inline, to keep output small.
 
-    Any file living under a fonts/ directory other than a kept icon font
-    (KEEP_FONTS). This replaces the font-dir pruning the build used to do before
-    inlining.
+    Any file living under a fonts/ directory whose basename is not in keep_fonts
+    (an empty keep_fonts drops every font, e.g. with --drop-fonts). This replaces
+    the font-dir pruning the build used to do before inlining.
     """
     rel = clean_relpath(url)
     parts = rel.replace("\\", "/").split("/")
-    return "fonts" in parts[:-1] and os.path.basename(rel) not in KEEP_FONTS
+    return "fonts" in parts[:-1] and os.path.basename(rel) not in keep_fonts
 
 
 def read_bytes(base_dir, url):
@@ -89,7 +95,7 @@ def data_uri(base_dir, url):
     return f"data:{mime};base64,{b64}"
 
 
-def inline_css(css_text, css_dir):
+def inline_css(css_text, css_dir, keep_fonts):
     """Return CSS with @import inlined and url(...) turned into data: URIs."""
     def repl_import(m):
         ref = m.group("u1") or m.group("u3")
@@ -100,7 +106,7 @@ def inline_css(css_text, css_dir):
         except OSError:
             return ""
         sub_dir = os.path.dirname(os.path.join(css_dir, clean_relpath(ref)))
-        return inline_css(imported, sub_dir)
+        return inline_css(imported, sub_dir, keep_fonts)
 
     css_text = re.sub(
         r"""@import\s+(?:url\(\s*['"]?(?P<u3>[^'")]+)['"]?\s*\)"""
@@ -112,8 +118,8 @@ def inline_css(css_text, css_dir):
         raw = m.group(1).strip().strip("'\"")
         if is_external(raw):
             return m.group(0)
-        if is_trimmed_font(raw):
-            return "url(data:,)"  # trimmed font (not the icon font) -> neutralized
+        if is_trimmed_font(raw, keep_fonts):
+            return "url(data:,)"  # trimmed font -> neutralized
         try:
             return f"url({data_uri(css_dir, raw)})"
         except OSError:
@@ -126,12 +132,21 @@ def main():
     args = sys.argv[1:]
     drop_scripts = "--drop-scripts" in args
     standalone = "--standalone" in args
-    args = [a for a in args if a not in ("--drop-scripts", "--standalone")]
+    drop_fonts = "--drop-fonts" in args
+    args = [
+        a for a in args
+        if a not in ("--drop-scripts", "--standalone", "--drop-fonts")
+    ]
     if len(args) != 2:
         sys.exit(
-            f"usage: {sys.argv[0]} [--drop-scripts] [--standalone] INPUT.html OUTPUT.html"
+            f"usage: {sys.argv[0]} [--drop-scripts] [--standalone] [--drop-fonts] "
+            "INPUT.html OUTPUT.html"
         )
     in_path, out_path = args
+    # With --drop-fonts, keep no local fonts at all (icon font included); otherwise
+    # keep only the icon font (KEEP_FONTS). Dropping all fonts is much smaller but
+    # loses the FontAwesome admonition/nav icons (text falls back to system fonts).
+    keep_fonts = set() if drop_fonts else KEEP_FONTS
     base = os.path.dirname(os.path.abspath(in_path))
     with open(in_path, encoding="utf-8") as fh:
         html = fh.read()
@@ -146,7 +161,7 @@ def main():
             css = read_bytes(base, rel).decode("utf-8")
         except OSError:
             return tag
-        css = inline_css(css, os.path.dirname(os.path.join(base, rel)))
+        css = inline_css(css, os.path.dirname(os.path.join(base, rel)), keep_fonts)
         return f"<style>\n{css}\n</style>"
 
     html = re.sub(r'<link\b[^>]*rel="stylesheet"[^>]*>', repl_link, html)
@@ -198,6 +213,10 @@ def main():
         html = re.sub(
             r'<link\b[^>]*rel="(?:index|search|next|prev)"[^>]*>\s*', "", html
         )
+        # Drop the Ansible "beyond RTD" top bar: the global nav (Blog / forum /
+        # Documentation) and the logo+title link, including its inlined logo PNGs.
+        html = re.sub(r'<div class="DocSite-globalNav[^"]*".*?</div>\s*', "", html, flags=re.S)
+        html = re.sub(r'<a class="DocSite-nav[^"]*".*?</a>\s*', "", html, flags=re.S)
         # Neutralize links to the collection root or other local pages (the
         # "tree") so nothing navigates away from this single page; keep in-page
         # anchors (#...) and external links.

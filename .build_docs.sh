@@ -134,12 +134,15 @@ printf '\nhtml_copy_source = False\nhtml_show_sourcelink = False\n' >> conf.py
 sphinx-build -M html rst build -q -c .
 
 # 3. Collapse the Sphinx site (page + its _static tree) into ONE self-contained
-# README.html at the repo root: .html_to_singlefile.py inlines the CSS and the
-# FontAwesome icon font as data: URIs, drops the JavaScript, and hides the
-# docsite chrome (the collection sidebar/tree, breadcrumb and prev/next nav) so
-# only this role's page remains. No sphinx_html/ directory and no _static assets
-# are committed -- README.html has zero in-repo dependencies.
-python3 "$ROLE_DIR/.html_to_singlefile.py" --drop-scripts --standalone \
+# README.html at the repo root: .html_to_singlefile.py inlines the CSS and images
+# as data: URIs, drops the JavaScript, and hides the docsite chrome (the
+# collection sidebar/tree, breadcrumb and prev/next nav) so only this role's page
+# remains. No sphinx_html/ directory and no _static assets are committed --
+# README.html has zero in-repo dependencies. --drop-fonts drops all local fonts
+# (including the FontAwesome icon font) to keep README.html small; the only cost
+# is the admonition/nav icons, which this static preview does not need (text
+# falls back to system fonts).
+python3 "$ROLE_DIR/.html_to_singlefile.py" --drop-scripts --standalone --drop-fonts \
     "build/html/${ROLE_NAME}_role.html" "$ROLE_DIR/README.html"
 
 # 4. .html_to_md.py turns the HTML page into the main README.md (it calls pandoc
