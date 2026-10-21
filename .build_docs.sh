@@ -3,8 +3,8 @@
 #
 # antsibull-docs turns argument_specs.yml into RST, Sphinx renders that RST to
 # HTML (the same way the official Ansible website builds its docs), and pandoc
-# converts the HTML to Markdown. Requires antsibull-docs, sphinx and pandoc on
-# PATH.
+# converts the HTML to Markdown. All three are installed from PyPI into a venv,
+# so no system packages are required.
 #
 # The script creates these at the repo root:
 #   README.md    - the role's main README. People read it directly as plain
@@ -48,16 +48,21 @@ set -euo pipefail
 # Build with the patched antsibull-docs from the fork branch, installed into a
 # dedicated venv that is created once and reused on later runs. Override the
 # location with ANTSIBULL_RV_VENV; force a refresh by deleting that directory.
-# First run needs network; pandoc is a system dependency and is not installed
-# here.
+# First run needs network. Everything comes from PyPI into the venv, so no
+# system packages are required.
 ANTSIBULL_RV_SPEC='antsibull-docs @ git+https://github.com/spetrosi/antsibull-docs@role-return-values'
 ANTSIBULL_RV_VENV="${ANTSIBULL_RV_VENV:-${XDG_CACHE_HOME:-$HOME/.cache}/lsr-antsibull-docs}"
-if [ ! -x "$ANTSIBULL_RV_VENV/bin/antsibull-docs" ]; then
-    echo "Installing patched antsibull-docs into $ANTSIBULL_RV_VENV ..." >&2
+# Install if the venv is missing antsibull-docs or the pandoc symlink we add below.
+if [ ! -x "$ANTSIBULL_RV_VENV/bin/antsibull-docs" ] || [ ! -e "$ANTSIBULL_RV_VENV/bin/pandoc" ]; then
+    echo "Installing patched antsibull-docs and pandoc into $ANTSIBULL_RV_VENV ..." >&2
     python3 -m venv "$ANTSIBULL_RV_VENV"
     "$ANTSIBULL_RV_VENV/bin/pip" install --quiet --upgrade pip
     "$ANTSIBULL_RV_VENV/bin/pip" install --quiet \
-        "$ANTSIBULL_RV_SPEC" ansible-pygments sphinx sphinx-ansible-theme
+        "$ANTSIBULL_RV_SPEC" ansible-pygments sphinx sphinx-ansible-theme pypandoc-binary
+    # The pandoc executable lives inside the pypandoc package, so link it onto
+    # the venv bin (prepended to PATH below).
+    ln -sf "$("$ANTSIBULL_RV_VENV/bin/python" -c 'import pypandoc; print(pypandoc.get_pandoc_path())')" \
+        "$ANTSIBULL_RV_VENV/bin/pandoc"
 fi
 PATH="$ANTSIBULL_RV_VENV/bin:$PATH"
 
