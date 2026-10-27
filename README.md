@@ -1,5 +1,3 @@
-
-
 # fedora.linux_system_roles.bootloader role – Configure the GRUB2 boot loader
 
 This role is part of the [fedora.linux_system_roles collection](https://galaxy.ansible.com/ui/repo/published/fedora/linux_system_roles/).
