@@ -1,0 +1,68 @@
+---
+name: Check that README files are updated when specs change
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    paths:
+      - meta/argument_specs.yml
+      - meta/set_vars_specs.yml
+      - README.md
+      - README.html
+
+permissions:
+  contents: read
+
+jobs:
+  check_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if specs were modified
+        id: specs_changed
+        run: |
+          set -euo pipefail
+          if git diff origin/${{ github.base_ref }}...HEAD --name-only | \
+             grep -qE "meta/(argument_specs|set_vars_specs)\.yml"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Python
+        if: steps.specs_changed.outputs.changed == 'true'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install tox
+        if: steps.specs_changed.outputs.changed == 'true'
+        run: pip install tox
+
+      - name: Build documentation
+        if: steps.specs_changed.outputs.changed == 'true'
+        run: tox -e build-docs
+
+      - name: Check if README files changed
+        if: steps.specs_changed.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          if git diff --exit-code README.md README.html; then
+            echo "✓ README files are up-to-date"
+            exit 0
+          else
+            echo "✗ README files are out-of-date"
+            echo ""
+            echo "meta/argument_specs.yml or meta/set_vars_specs.yml was modified,"
+            echo "but README.md and/or README.html were not updated."
+            echo ""
+            echo "Please run the following command locally and commit the changes:"
+            echo "  tox -e build-docs"
+            echo ""
+            echo "For instructions on how to install tox-lsr, see:"
+            echo "  https://github.com/linux-system-roles/tox-lsr"
+            echo ""
+            exit 1
+          fi
