@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # SPDX-License-Identifier: MIT
+# Assisted by Claude Code using model(s) Claude Fable 5.1, Claude Opus 5.5
 #
 """Read and write the GRUB configuration that grub2-mkconfig generates, as on SUSE"""
 

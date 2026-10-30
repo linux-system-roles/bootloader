@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # SPDX-License-Identifier: MIT
+# Assisted by Claude Code using model(s) Claude Fable 5.1, Claude Opus 5.5
 #
 """Unit tests for the GRUB configuration helpers used with the pbl backend"""
 
