@@ -1,4 +1,4 @@
-# fedora.linux_system_roles.bootloader role – Configure the GRUB2 boot loader
+# fedora.linux_system_roles.bootloader role -- Configure the GRUB2 boot loader
 
 This role is part of the [fedora.linux_system_roles collection](https://galaxy.ansible.com/ui/repo/published/fedora/linux_system_roles/).
 
@@ -8,7 +8,7 @@ To install it use: `ansible-galaxy collection install fedora.linux_system_roles`
 
 To use it in a playbook, specify: `fedora.linux_system_roles.bootloader`.
 
-- [Entry point `main` – Configure the GRUB2 boot loader](#entry-point-main--configure-the-grub2-boot-loader)
+- [Entry point `main` -- Configure the GRUB2 boot loader](#entry-point-main----configure-the-grub2-boot-loader)
 
   - [Synopsis](#synopsis)
 
@@ -16,13 +16,15 @@ To use it in a playbook, specify: `fedora.linux_system_roles.bootloader`.
 
   - [Attributes](#attributes)
 
+  - [Notes](#notes)
+
   - [Examples](#examples)
 
   - [Return Variables](#return-variables)
 
   - [Authors](#authors)
 
-## Entry point `main` – Configure the GRUB2 boot loader
+## Entry point `main` -- Configure the GRUB2 boot loader
 
 ### Synopsis
 
@@ -40,7 +42,7 @@ To use it in a playbook, specify: `fedora.linux_system_roles.bootloader`.
 | ---------------------------------------------------- | --- |
 | **bootloader_gather_facts** *boolean*                | Whether to gather bootloader facts containing boot information for all kernels. The role returns the facts in the `bootloader_facts` variable. **Choices:** `false` (default), `true` |
 | **bootloader_password** *any*                        | The password to protect boot parameters. When set to `null` or left unset, the role leaves the current password unchanged. The boot loader username is always `root`. Store this value in Ansible Vault. Changing the password is **not** idempotent; use **`bootloader_password_hash`** for idempotent password configuration. You cannot set this variable together with **`bootloader_password_hash`**. |
-| **bootloader_password_hash** *any*                   | Precomputed GRUB PBKDF2 SHA512 password hash for the root boot loader user. Generate the hash with `grub2-mkpasswd-pbkdf2` and store it in Ansible Vault. Supply only the resulting `grub.pbkdf2.sha512...` hash, without the command’s explanatory text or a trailing newline. The hash must have a positive iteration count, a nonempty hexadecimal salt consisting of whole bytes, and a 64-byte hexadecimal digest. Setting the same hash repeatedly is idempotent. When `null` or unset, the role writes no hash. An empty string is invalid; to remove a password set **`bootloader_remove_password`**=`true` with this variable unset or `null`. You cannot combine it with **`bootloader_password`** or **`bootloader_remove_password`**=`true`. |
+| **bootloader_password_hash** *any*                   | Precomputed GRUB PBKDF2 SHA512 password hash for the root boot loader user. Generate the hash with `grub2-mkpasswd-pbkdf2` and store it in Ansible Vault. Supply only the resulting `grub.pbkdf2.sha512...` hash, without the command's explanatory text or a trailing newline. The hash must have a positive iteration count, a nonempty hexadecimal salt consisting of whole bytes, and a 64-byte hexadecimal digest. Setting the same hash repeatedly is idempotent. When `null` or unset, the role writes no hash. An empty string is invalid; to remove a password set **`bootloader_remove_password`**=`true` with this variable unset or `null`. You cannot combine it with **`bootloader_password`** or **`bootloader_remove_password`**=`true`. |
 | **bootloader_reboot_ok** *boolean*                   | Whether the role is allowed to reboot the managed host when changes require a reboot to take effect. If `false`, the role sets `bootloader_reboot_required` to `true` instead. **Choices:** `false` (default), `true` |
 | **bootloader_remove_password** *boolean*             | Whether to remove the boot loader password configuration. **Choices:** `false` (default), `true` |
 | **bootloader_secure_logging** *boolean*              | Whether to suppress potentially sensitive output from tasks that handle credentials by setting `no_log` to `true` on those tasks. **Choices:** `false`, `true` (default) |
@@ -64,6 +66,10 @@ To use it in a playbook, specify: `fedora.linux_system_roles.bootloader`.
 | **check_mode**    | **none** The role does not support check mode.                                                                                                                                                                                                                                                               | Can run in `check_mode` and return a changed-status prediction without modifying the target. |
 | **idempotent**    | **partial** Kernel command line parameters, the boot loader timeout, and **`bootloader_password_hash`** are applied idempotently. **`bootloader_password`** is **not** idempotent; each run regenerates and rewrites the password. Use **`bootloader_password_hash`** for idempotent password configuration. | When run twice in a row outside check mode with the same arguments, the second run reports no change. This assumes the managed host has not changed in a relevant way between runs. |
 | **platform**      | **Platforms:** **Fedora**, **RHEL**, **CentOS**                                                                                                                                                                                                                                                              | Target operating systems. |
+
+### Notes
+
+- When setting a kernel option value in **`bootloader_settings`**, the value must not be a [YAML bool type](https://yaml.org/type/bool.html). Quote values such as `value: on` as `value: "on"`, or otherwise pass them as `str`. A value must also not be `null`: `value:`, `value: ~`, and `value: null` are not allowed and raise an error.
 
 ### Examples
 
@@ -194,7 +200,7 @@ The following variables are set by this role:
 | • **kernel** *string*                             | Path to the kernel image. **Returned:** success |
 | • **root** *string*                               | The root device for this kernel. **Returned:** success |
 | • **title** *string*                              | The boot entry title. **Returned:** success |
-| **bootloader_reboot_required** *boolean*          | `true` means the host must reboot to apply the role’s changes. The role sets this when **`bootloader_reboot_ok`** is `false` and it made changes. **Returned:** always **Sample:** `true` |
+| **bootloader_reboot_required** *boolean*          | `true` means the host must reboot to apply the role's changes. The role sets this when **`bootloader_reboot_ok`** is `false` and it made changes. **Returned:** always **Sample:** `true` |
 
 ### Authors
 

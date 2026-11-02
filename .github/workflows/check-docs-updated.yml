@@ -4,7 +4,7 @@ on:  # yamllint disable-line rule:truthy
   pull_request:
     paths:
       - meta/argument_specs.yml
-      - meta/set_vars_specs.yml
+      - meta/extra_specs.yml
       - README.md
       - README.html
 
@@ -25,7 +25,7 @@ jobs:
         run: |
           set -euo pipefail
           if git diff origin/${{ github.base_ref }}...HEAD --name-only | \
-             grep -qE "meta/(argument_specs|set_vars_specs)\.yml"; then
+             grep -qE "meta/(argument_specs|extra_specs)\.yml"; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT
@@ -55,7 +55,7 @@ jobs:
           else
             echo "✗ README files are out-of-date"
             echo ""
-            echo "meta/argument_specs.yml or meta/set_vars_specs.yml was modified,"
+            echo "meta/argument_specs.yml or meta/extra_specs.yml was modified,"
             echo "but README.md and/or README.html were not updated."
             echo ""
             echo "Please run the following command locally and commit the changes:"

@@ -20,15 +20,6 @@ argument_specs:
       - 'For C(rpm-ostree) systems, see the C(README-ostree.md) file in the role.'
     author:
       - Sergei Petrosian (@spetrosi)
-    # notes renders as the "Notes" section. The variables this role sets
-    # (returns) are documented separately in meta/set_vars_specs.yml so that
-    # this file stays accepted by the released ansible-lint role-arg-spec
-    # schema, which does not yet allow the native return: key. The
-    # .build_docs.sh script merges that file back in as return: (and drops the
-    # pointer note below) when rendering the READMEs.
-    notes:
-      - >
-        This role sets variables, for the full list of returned variables see "Return Variables" in README.html and README.md, or C(meta/set_vars_specs.yml).
     # attributes renders as the "Attributes" table. Use it for support
     # information such as which platforms and CPU architectures the role
     # supports, whether it runs in check mode, and whether it is idempotent.
