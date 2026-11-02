@@ -39,13 +39,14 @@ argument_specs:
         details:
           - Kernel command line parameters, the boot loader timeout, and O(bootloader_password_hash) are applied idempotently.
           - O(bootloader_password) is B(not) idempotent; each run regenerates and rewrites the password. Use O(bootloader_password_hash) for idempotent password configuration.
-      platform:
+      # Named "platforms", not "platform", to avoid antsibull's special-case rendering of the "platform" attribute.
+      platforms:
         support: full
-        platforms:
-          - Fedora
-          - RHEL
-          - CentOS
         description: Target operating systems.
+        details:
+          - C(Fedora)
+          - C(RHEL)
+          - C(CentOS)
       architectures:
         support: partial
         description: CPU architectures the role can run on.
