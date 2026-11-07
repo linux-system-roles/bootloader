@@ -25,5 +25,8 @@ galaxy_info:
     - fedora
     - grub
     - grubby
+    - leap16
     - loader
+    - sles
+    - sles16
 dependencies: []

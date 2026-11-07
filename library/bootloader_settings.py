@@ -11,13 +11,13 @@ DOCUMENTATION = r"""
 ---
 module: bootloader_settings
 
-short_description: Configure grubby boot loader arguments for specified kernels
+short_description: Configure boot loader arguments for specified kernels
 
 version_added: "0.0.1"
 
 description:
     - "WARNING: Do not use this module directly! It is only for role internal use."
-    - Configure grubby boot loader arguments for specified kernels
+    - Configure boot loader arguments for specified kernels
 
 options:
     bootloader_settings:
@@ -46,6 +46,39 @@ options:
                 required: false
                 type: bool
                 default: false
+    backend:
+        description:
+            - How boot entries are changed. C(grubby) changes them with grubby. With
+              C(pbl), for SUSE, the module edits /etc/default/grub itself and regenerates
+              the GRUB configuration.
+        required: false
+        type: str
+        choices: ["grubby", "pbl"]
+        default: "grubby"
+    transactional:
+        description:
+            - Whether the system is a transactional system. With C(pbl), changes to /boot
+              and the GRUB configuration are then made in a new snapshot.
+        required: false
+        type: bool
+        default: false
+    timeout:
+        description: Boot loader timeout to set with the C(pbl) backend.
+        required: false
+        type: int
+    password:
+        description: Boot loader password to set with the C(pbl) backend.
+        required: false
+        type: str
+    password_hash:
+        description: GRUB PBKDF2 password hash to set with the C(pbl) backend.
+        required: false
+        type: str
+    remove_password:
+        description: Whether to remove the boot loader password with the C(pbl) backend.
+        required: false
+        type: bool
+        default: false
 author:
     - Sergei Petrosian (@spetrosi)
 """
@@ -63,6 +96,10 @@ actions:
     type: str
     returned: always
     # sample: 'hello world'
+reboot_required:
+    description: Whether the changes need a reboot to take effect
+    type: bool
+    returned: always
 """
 
 import re
@@ -72,6 +109,7 @@ from ansible.module_utils.basic import AnsibleModule
 # This is a bit of a mystery - bug in pylint?
 # pylint: disable=import-error
 import ansible.module_utils.six.moves as ansible_six_moves
+from ansible.module_utils.bootloader_lsr import pbl
 
 
 def get_facts(kernels_info, default_kernel_index):
@@ -500,7 +538,13 @@ def needs_replacement(bootloader_setting_options, kernel_info):
 def run_module():
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
-        bootloader_settings=dict(type="list", required=True, elements="dict")
+        bootloader_settings=dict(type="list", required=True, elements="dict"),
+        backend=dict(type="str", default="grubby", choices=["grubby", "pbl"]),
+        transactional=dict(type="bool", default=False),
+        timeout=dict(type="int"),
+        password=dict(type="str", no_log=True),
+        password_hash=dict(type="str", no_log=True),
+        remove_password=dict(type="bool", default=False, no_log=False),
     )
 
     # seed the result dict in the object
@@ -508,7 +552,7 @@ def run_module():
     # changed is if this module effectively modified the target
     # state will include any data that you want your module to pass back
     # for consumption, for example, in a subsequent task
-    result = dict(changed=False, actions=list())
+    result = dict(changed=False, actions=list(), reboot_required=False)
 
     # the AnsibleModule object will be our abstraction working with Ansible
     # this includes instantiation, a couple of common attr would be the
@@ -517,6 +561,19 @@ def run_module():
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
 
     validate_default_kernel(module, module.params["bootloader_settings"])
+
+    if module.params["backend"] == "pbl":
+        # a module_utils file cannot import the helpers that both backends use
+        shared = dict(
+            validate_kernels=validate_kernels,
+            get_setting_name=get_setting_name,
+            get_replaced_args=get_replaced_args,
+            get_duplicate_present_option_names=get_duplicate_present_option_names,
+            escapeval=escapeval,
+        )
+        pbl.run(module, result, shared)
+        result["changed"] = len(result["actions"]) > 0
+        module.exit_json(**result)
 
     for bootloader_setting in module.params["bootloader_settings"]:
         _unused, kernels_info, stderr = module.run_command("grubby --info=ALL")
@@ -558,6 +615,7 @@ def run_module():
             rm_kernel(module, result, kernel)
 
     result["changed"] = len(result["actions"]) > 0
+    result["reboot_required"] = result["changed"]
     module.exit_json(**result)
 
 

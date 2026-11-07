@@ -1,0 +1,207 @@
+# SPDX-License-Identifier: MIT
+# Assisted by Claude Code using model(s) Claude Fable 5.1, Claude Opus 5.5
+---
+- name: Test bootloader_settings on SUSE, where entries share one command line
+  hosts: all
+  tasks:
+    - name: Skip on s390x architecture
+      include_tasks: tasks/skip_on_s390x.yml
+
+    - name: Skip on platforms other than SUSE
+      meta: end_host
+      when: ansible_facts['os_family'] != 'Suse'
+
+    - name: Save /etc/default/grub
+      slurp:
+        path: /etc/default/grub
+      register: __default_grub_orig
+
+    - name: Get the mode of /etc/default/grub
+      stat:
+        path: /etc/default/grub
+      register: __default_grub_stat
+
+    - name: Check whether grubenv exists
+      stat:
+        path: /boot/grub2/grubenv
+      register: __grubenv_orig
+
+    - name: Run in a block to clean up afterwards
+      block:
+        - name: Get bootloader_facts
+          vars:
+            bootloader_gather_facts: true
+          include_tasks: tasks/run_role_with_clear_facts.yml
+
+        - name: Record the console arguments of a normal entry
+          set_fact:
+            __consoles: "{{ (bootloader_facts |
+              rejectattr('args', 'search', '^single') | first).args |
+              split | select('match', 'console=') | list }}"
+
+        - name: Add and remove options for all kernels
+          vars:
+            bootloader_gather_facts: true
+            bootloader_settings:
+              - kernel: ALL
+                options:
+                  - name: audit
+                    value: 1
+                  - name: quiet
+                    state: absent
+          include_tasks: tasks/run_role_with_clear_facts.yml
+
+        - name: Flush handlers
+          meta: flush_handlers
+
+        - name: Verify options on every entry
+          vars:
+            __entries: "{{ bootloader_facts |
+              rejectattr('args', 'search', '^single') | list }}"
+          assert:
+            that:
+              - bootloader_reboot_required
+              - __entries | length > 0
+              - __entries | rejectattr('args', 'search', '(^| )audit=1( |$)') |
+                list | length == 0
+              - __entries | selectattr('args', 'search', '(^| )quiet( |$)') |
+                list | length == 0
+
+        - name: Verify every entry keeps its console arguments
+          assert:
+            that: >-
+              item.args | split | select('match', 'console=') | list ==
+              __consoles
+          loop: "{{ bootloader_facts |
+            rejectattr('args', 'search', '^single') | list }}"
+
+        - name: Set fact with the kernel to use
+          set_fact:
+            __kernel_path: "{{ (bootloader_facts | first).kernel }}"
+
+        - name: Reset bootloader_reboot_required
+          set_fact:
+            bootloader_reboot_required: false
+
+        - name: Apply the same options again, should report not changed
+          vars:
+            bootloader_settings:
+              - kernel: ALL
+                options:
+                  - name: audit
+                    value: 1
+                  - name: quiet
+                    state: absent
+          include_tasks: tasks/run_role_with_clear_facts.yml
+
+        - name: Flush handlers
+          meta: flush_handlers
+
+        - name: Ensure the same options changed nothing
+          assert:
+            that:
+              - __bootloader_settings_result is not changed
+              - not bootloader_reboot_required
+
+        - name: Make the kernel's own entry the default
+          vars:
+            bootloader_gather_facts: true
+            bootloader_settings:
+              - kernel:
+                  path: "{{ __kernel_path }}"
+                default: true
+          include_tasks: tasks/run_role_with_clear_facts.yml
+
+        - name: Flush handlers
+          meta: flush_handlers
+
+        - name: Verify the saved default
+          vars:
+            __default: "{{ bootloader_facts | selectattr('default') | list }}"
+          assert:
+            that:
+              - __default | length == 1
+              - "'>' in __default[0].id"
+              - __default[0].args is not search('^single')
+
+        - name: Reset bootloader_reboot_required
+          set_fact:
+            bootloader_reboot_required: false
+
+        - name: Make the same entry the default again, should report not changed
+          vars:
+            bootloader_settings:
+              - kernel:
+                  path: "{{ __kernel_path }}"
+                default: true
+          include_tasks: tasks/run_role_with_clear_facts.yml
+
+        - name: Flush handlers
+          meta: flush_handlers
+
+        - name: Ensure the same default changed nothing
+          assert:
+            that:
+              - __bootloader_settings_result is not changed
+              - not bootloader_reboot_required
+
+        - name: Set the boot loader timeout
+          vars:
+            bootloader_timeout: 7
+            __sr_public: true
+          include_tasks: tasks/run_role_with_clear_facts.yml
+
+        - name: Flush handlers
+          meta: flush_handlers
+
+        - name: Verify the timeout needs a reboot only on transactional systems
+          assert:
+            that:
+              - __bootloader_settings_result is changed
+              - bootloader_reboot_required == __bootloader_is_transactional
+
+        - name: Read the generated GRUB configuration
+          slurp:
+            src: "{{ __bootloader_grub_conf }}"
+          register: __grub_cfg
+
+        - name: Verify the timeout reached the GRUB configuration
+          assert:
+            that: __grub_cfg.content | b64decode is search('set timeout=7')
+
+        - name: Reset bootloader_reboot_required
+          set_fact:
+            bootloader_reboot_required: false
+
+        - name: Set the same timeout again, should report not changed
+          vars:
+            bootloader_timeout: 7
+          include_tasks: tasks/run_role_with_clear_facts.yml
+
+        - name: Flush handlers
+          meta: flush_handlers
+
+        - name: Ensure the same timeout changed nothing
+          assert:
+            that:
+              - __bootloader_settings_result is not changed
+              - not bootloader_reboot_required
+      always:
+        - name: Restore /etc/default/grub
+          copy:
+            content: "{{ __default_grub_orig.content | b64decode }}"
+            dest: /etc/default/grub
+            mode: "{{ __default_grub_stat.stat.mode }}"
+          tags: tests::cleanup
+
+        - name: Remove grubenv when the test created it
+          file:
+            path: /boot/grub2/grubenv
+            state: absent
+          when: not __grubenv_orig.stat.exists
+          tags: tests::cleanup
+
+        - name: Regenerate the GRUB configuration
+          command: pbl --config
+          changed_when: true
+          tags: tests::cleanup
