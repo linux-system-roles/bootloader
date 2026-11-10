@@ -204,4 +204,11 @@
         - name: Regenerate the GRUB configuration
           command: pbl --config
           changed_when: true
+          when: not __bootloader_is_transactional
+          tags: tests::cleanup
+
+        - name: Regenerate the GRUB configuration in the next snapshot
+          command: transactional-update --continue --non-interactive grub.cfg
+          changed_when: true
+          when: __bootloader_is_transactional
           tags: tests::cleanup
