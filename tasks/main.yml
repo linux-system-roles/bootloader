@@ -151,6 +151,9 @@
     remove_password: "{{ (__bootloader_backend == 'pbl') and
       bootloader_remove_password | bool }}"
   register: __bootloader_settings_result
+  no_log: "{{ bootloader_secure_logging and __bootloader_backend == 'pbl'
+    and (bootloader_password is not none
+    or bootloader_password_hash is not none) }}"
   notify:
     - Fix default kernel boot parameters
     - Reboot system
