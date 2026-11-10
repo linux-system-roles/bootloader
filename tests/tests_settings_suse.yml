@@ -164,10 +164,12 @@
           slurp:
             src: "{{ __bootloader_grub_conf }}"
           register: __grub_cfg
+          when: not __bootloader_is_transactional
 
         - name: Verify the timeout reached the GRUB configuration
           assert:
             that: __grub_cfg.content | b64decode is search('set timeout=7')
+          when: not __bootloader_is_transactional
 
         - name: Reset bootloader_reboot_required
           set_fact:
