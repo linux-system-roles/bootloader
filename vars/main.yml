@@ -12,7 +12,6 @@ __bootloader_required_facts:
 # the 'gather_subset' parameter of the 'setup' module
 __bootloader_required_facts_subsets: "{{ ['!all', '!min'] +
   __bootloader_required_facts }}"
-__bootloader_backend: grubby
 __bootloader_packages:
   - grubby
 __bootloader_default_grub: /etc/default/grub

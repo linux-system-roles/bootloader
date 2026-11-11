@@ -38,6 +38,29 @@
     use: "{{ (__bootloader_is_ostree | d(false)) |
       ternary('ansible.posix.rhel_rpm_ostree', omit) }}"
 
+- name: Determine boot loader backend and set flag
+  when: not __bootloader_backend is defined
+  block:
+    - name: Check if update-bootloader exists in /sbin
+      stat:
+        path: /sbin/update-bootloader
+      register: __update_bootloader_stat
+
+    - name: Fail if update-bootloader is not active on a transactional system
+      fail:
+        msg: >-
+          update-bootloader is installed but not active.
+          Reboot the system and run the role again.
+      when:
+        - __bootloader_is_transactional | bool
+        - not __update_bootloader_stat.stat.exists
+
+    - name: Set boot loader backend
+      set_fact:
+        __bootloader_backend: "{{
+          __update_bootloader_stat.stat.exists |
+          ternary('pbl', 'grubby') }}"
+
 - name: Get stat of {{ __bootloader_default_grub }}
   stat:
     path: "{{ __bootloader_default_grub }}"

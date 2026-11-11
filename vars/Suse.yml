@@ -3,7 +3,6 @@
 ---
 # Internal variable overrides for SUSE.
 
-__bootloader_backend: pbl
 __bootloader_packages:
   - update-bootloader
 # the EFI system partition holds only a stub that sources this grub.cfg
