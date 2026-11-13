@@ -23,6 +23,16 @@ TRANSACTIONAL_UPDATE = ["transactional-update", "--continue", "--non-interactive
 
 MENU_HEADER = re.compile(r"\s*(menuentry|submenu)\s+(['\"])(.*?)\2(.*)\{\s*$")
 MENU_ID = re.compile(r"\$menuentry_id_option\s+['\"]([^'\"]*)['\"]")
+# tuned's bootloader plugin appends this line and removes it by this exact text
+TUNED_LINE = (
+    'GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT:+'
+    '$GRUB_CMDLINE_LINUX_DEFAULT }\\$tuned_params"'
+)
+
+
+def is_assignment(line, name):
+    """Whether line assigns NAME, leaving out tuned's own line"""
+    return bool(re.match(r"\s*" + name + r"=", line)) and line.strip() != TUNED_LINE
 
 
 def get_shell_var(text, name):
@@ -30,7 +40,7 @@ def get_shell_var(text, name):
     value = None
     for line in text.splitlines():
         match = re.match(r"\s*" + name + r"=(.*)$", line)
-        if match:
+        if match and line.strip() != TUNED_LINE:
             if re.search(r"[$`\\]", match.group(1)):
                 raise ValueError("%s uses shell expansion or escapes" % name)
             value = " ".join(shlex.split(match.group(1), comments=True))
@@ -42,11 +52,12 @@ def set_shell_var(text, name, value):
     new_line = '%s="%s"' % (name, value)
     lines = text.splitlines()
     for i in reversed(range(len(lines))):
-        if re.match(r"\s*" + name + r"=", lines[i]):
+        if is_assignment(lines[i], name):
             lines[i] = new_line
             break
     else:
-        lines.append(new_line)
+        tuned = [i for i, line in enumerate(lines) if line.strip() == TUNED_LINE]
+        lines.insert(tuned[0] if tuned else len(lines), new_line)
     return "\n".join(lines) + "\n"
 
 
