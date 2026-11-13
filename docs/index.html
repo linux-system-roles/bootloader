@@ -176,6 +176,7 @@ id="toc-bootloader_facts">bootloader_facts</a></li>
 <li><a href="#example-playbook" id="toc-example-playbook">Example
 Playbook</a></li>
 <li><a href="#rpm-ostree" id="toc-rpm-ostree">rpm-ostree</a></li>
+<li><a href="#suse" id="toc-suse">SUSE</a></li>
 <li><a href="#license" id="toc-license">License</a></li>
 </ul>
 </nav>
@@ -193,11 +194,12 @@ loader which runs on the following architectures:</p>
 <h1 id="requirements">Requirements</h1>
 <p>See below</p>
 <h2 id="collection-requirements">Collection requirements</h2>
-<p>If you don't want to manage <code>ostree</code> systems, the role has
-no requirements.</p>
-<p>If you want to manage <code>ostree</code> systems, the role requires
-additional modules from external collections. Please use the following
-command to install them:</p>
+<p>If you don't want to manage <code>ostree</code> or SUSE systems, the
+role has no requirements.</p>
+<p>If you want to manage <code>ostree</code> or SUSE systems, the role
+requires additional modules from external collections, such as
+<code>community.general</code> for <code>zypper</code> on SUSE. Please
+use the following command to install them:</p>
 <div class="sourceCode" id="cb1"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ansible-galaxy</span> collection install <span class="at">-vv</span> <span class="at">-r</span> meta/collection-requirements.yml</span></code></pre></div>
 <h1 id="considerations">Considerations</h1>
@@ -288,7 +290,9 @@ timeout setting.</p>
 <p>Use this variable to protect boot parameters with a password.</p>
 <p><strong>WARNING</strong>: Changing the bootloader password is not
 idempotent. Use <code>bootloader_password_hash</code> for idempotent
-password configuration. These two inputs cannot be used together.</p>
+password configuration. These two inputs cannot be used together. On
+SUSE, setting the same password again changes nothing (see
+README-suse.md).</p>
 <p>The bootloader username is always <code>root</code>.</p>
 <p>This should come from vault.</p>
 <p>If unset, current configuration is not touched.</p>
@@ -471,6 +475,8 @@ class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb4-1"><a href="
 <span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> linux-system-roles.bootloader</span></span></code></pre></div>
 <h1 id="rpm-ostree">rpm-ostree</h1>
 <p>See README-ostree.md</p>
+<h1 id="suse">SUSE</h1>
+<p>See README-suse.md</p>
 <h1 id="license">License</h1>
 <p>MIT</p>
 </article>
