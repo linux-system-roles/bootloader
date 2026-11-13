@@ -11,6 +11,8 @@
       {{ __bootloader_default_grub }}
     cat {{ __bootloader_default_grub }}
   changed_when: true
+  when: __bootloader_backend == 'grubby'
 
 - name: Reboot system
   include_tasks: tasks/reboot.yml
+  when: __bootloader_needs_reboot | d(false)

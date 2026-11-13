@@ -12,9 +12,9 @@ __metaclass__ = type
 import unittest
 
 try:
-    from unittest.mock import MagicMock
+    from unittest.mock import MagicMock, patch
 except ImportError:
-    from mock import MagicMock
+    from mock import MagicMock, patch
 
 import bootloader_settings
 
@@ -1168,3 +1168,31 @@ title="Fedora Linux"
                 options_with_absent, kernel_info_with_debug
             )
         )
+
+    def test_reboot_required(self):
+        """Test that every change with grubby asks for a reboot"""
+
+        def run_command(cmd, **kwargs):
+            if cmd == "grubby --default-index":
+                return 0, "0", ""
+            return 0, INFO, ""
+
+        module = MagicMock(check_mode=False)
+        module.exit_json.side_effect = SystemExit
+        module.run_command.side_effect = run_command
+        for option, changed in [
+            ({"name": "audit", "value": 1}, True),
+            ({"name": "arg_without_val_absent"}, False),
+        ]:
+            module.params = {
+                "bootloader_settings": [{"kernel": "ALL", "options": [option]}],
+                "backend": "grubby",
+            }
+            with patch.object(
+                bootloader_settings, "AnsibleModule", return_value=module
+            ):
+                with self.assertRaises(SystemExit):
+                    bootloader_settings.run_module()
+            result = module.exit_json.call_args[1]
+            self.assertEqual(changed, result["changed"])
+            self.assertEqual(changed, result["reboot_required"])

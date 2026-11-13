@@ -18,6 +18,24 @@ description:
     - "WARNING: Do not use this module directly! It is only for role internal use."
     - Gather information for kernels as Ansible facts
 
+options:
+    backend:
+        description:
+            - How boot entries are read. C(grubby) reads them with grubby. With C(pbl),
+              for SUSE, the module reads them from the GRUB configuration that
+              grub2-mkconfig generates.
+        required: false
+        type: str
+        choices: ["grubby", "pbl"]
+        default: "grubby"
+    transactional:
+        description:
+            - Whether the system is a transactional system. With C(pbl), facts then
+              describe the snapshot that the next boot uses.
+        required: false
+        type: bool
+        default: false
+
 author:
     - Sergei Petrosian (@spetrosi)
 """
@@ -100,6 +118,7 @@ ansible_facts:
 
 import re
 from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.bootloader_lsr.grub import check_loader, get_kernels
 
 
 def get_facts(kernels_info, default_kernel):
@@ -127,7 +146,10 @@ def get_facts(kernels_info, default_kernel):
 
 def run_module():
     # define available arguments/parameters a user can pass to the module
-    module_args = dict()
+    module_args = dict(
+        backend=dict(type="str", default="grubby", choices=["grubby", "pbl"]),
+        transactional=dict(type="bool", default=False),
+    )
 
     # seed the result dict in the object
     # we primarily care about changed and state
@@ -141,6 +163,16 @@ def run_module():
     # args/params passed to the execution, as well as if the module
     # supports check mode
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
+
+    if module.params["backend"] == "pbl":
+        check_loader(module)
+        try:
+            result["ansible_facts"]["bootloader_facts"] = get_kernels(
+                module, module.params["transactional"]
+            )
+        except IOError as e:
+            module.fail_json(msg="Cannot read boot loader configuration: %s" % e)
+        module.exit_json(**result)
 
     rc, kernels_info, stderr = module.run_command("grubby --info=ALL")
     if "Permission denied" in stderr:
