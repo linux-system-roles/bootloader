@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: MIT
+---
+# The native `return:` key, which the released ansible-lint role-arg-spec schema
+# rejects under meta/argument_specs.yml. Kept here so that file stays lint-clean;
+# `tox -e build-docs` merges it back in to render the "Return Variables" table.
+return:
+  bootloader_reboot_required:
+    description:
+      - V(true) means the host must reboot to apply the role's changes.
+      - Set to V(true) when changes require a reboot and O(bootloader_reboot_ok) is V(false); when O(bootloader_reboot_ok) is V(true) the role reboots and sets it to V(false).
+      - Unset when no change requires a reboot.
+    type: bool
+    returned: When the role makes changes that require a reboot.
+    sample: true
+  bootloader_facts:
+    description:
+      - Boot information for all kernels, as gathered by the C(bootloader_facts) module.
+      - The role sets this in C(ansible_facts) and also copies it to the C(bootloader_facts) variable.
+    type: list
+    elements: dict
+    returned: When O(bootloader_gather_facts) is V(true).
+    contains:
+      args:
+        description: Command line arguments passed to the kernel.
+        type: str
+      default:
+        description: Whether this kernel is the default boot entry.
+        type: bool
+      id:
+        description: The kernel ID.
+        type: str
+      index:
+        description: The kernel index.
+        type: str
+      initrd:
+        description: Path to the kernel initrd image.
+        type: str
+      kernel:
+        description: Path to the kernel image.
+        type: str
+      root:
+        description: The root device for this kernel.
+        type: str
+      title:
+        description: The boot entry title.
+        type: str
+    sample:
+      - args: ro rootflags=subvol=root console=tty0 quiet
+        default: true
+        id: 890cea0fd7b140cf890eb0145b3caa72-6.6.4-100.fc38.x86_64
+        index: "1"
+        initrd: /boot/initramfs-6.6.4-100.fc38.x86_64.img
+        kernel: /boot/vmlinuz-6.6.4-100.fc38.x86_64
+        root: UUID=2b95a97a-3f73-4566-b0a3-a11b4e9c3663
+        title: Fedora Linux (6.6.4-100.fc38.x86_64) 38 (Cloud Edition)
