@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: MIT
 ---
+# grubby reports /boot/boot/... when /boot is a btrfs subvolume, as on Fedora 44 Cloud
 - name: Copy kernel and initrd for test purposes from {{ __bootloader_kernel_source.kernel }}
   copy:
-    src: "{{ item.src }}"
+    src: "{{ item.src | regex_replace('^/boot/boot/', '/boot/') }}"
     remote_src: true
-    dest: "{{ item.dest }}"
+    dest: "{{ item.dest | regex_replace('^/boot/boot/', '/boot/') }}"
     mode: preserve
   loop:
     - src: "{{ __bootloader_kernel_source.kernel }}"
