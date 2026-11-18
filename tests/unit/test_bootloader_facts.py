@@ -2,6 +2,7 @@
 
 # Copyright: (c) 2023, Sergei Petrosian <spetrosi@redhat.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Assisted by goose using model glm-5-3
 #
 """Unit tests for the bootloader_settings module"""
 
