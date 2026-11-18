@@ -515,6 +515,19 @@ def get_default_kernel(module, type):
     return stdout.strip()
 
 
+def get_info_kernel(kernel):
+    """Get the kernel selector in the format expected by 'grubby --info='
+
+    grubby does not strip the extra /boot prefix from the --info value, so
+    the extra prefix is stripped from the path selectors, to pass the real
+    kernel path; the title, index and other selectors are not paths, so
+    they are used as is, to keep matching the corresponding entries.
+    """
+    if kernel.startswith("/"):
+        return strip_extra_boot_prefix(kernel)
+    return kernel
+
+
 def get_replaced_args(bootloader_setting_options):
     """Get the sorted list of desired arg tokens for a replacement check."""
     tokens = []
@@ -610,7 +623,7 @@ def run_module():
             # grubby does not strip the extra /boot prefix from the --info
             # value, so it needs the real kernel path
             rc, kernel_info, stderr = module.run_command(
-                "grubby --info=" + strip_extra_boot_prefix(kernel)
+                "grubby --info=" + get_info_kernel(kernel)
             )
             if needs_replacement(bootloader_setting.get("options", []), kernel_info):
                 rm_boot_args(module, result, kernel_info, kernel)
@@ -624,7 +637,7 @@ def run_module():
             # grubby does not strip the extra /boot prefix from the --info
             # value, so it needs the real kernel path
             _unused, kernel_info, _unused = module.run_command(
-                "grubby --info=" + strip_extra_boot_prefix(kernel)
+                "grubby --info=" + get_info_kernel(kernel)
             )
             mod_boot_args(module, result, bootloader_setting, kernel, kernel_info)
 
