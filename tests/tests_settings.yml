@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MIT
+# Assisted by goose using model glm-5-3
 ---
 - name: Test bootloader_settings variable
   hosts: all
@@ -101,7 +102,7 @@
               first) }}"
           assert:
             that:
-              - cloned_kernel != default_bootloader
+              - cloned_kernel.kernel != default_bootloader.kernel
               - >-
                 (bootloader_facts |
                 selectattr('kernel', 'search', cloned_kernel.kernel) | first).args |
@@ -193,9 +194,11 @@
           register: __bootloader_default_grub_content
           changed_when: false
       always:
+        # use the title to match the kernel: on platforms where grubby
+        # reports the extra /boot prefix it cannot match the kernel path
         - name: Remove cloned kernels
           command: >-
-            grubby --remove-kernel={{ __default_kernel.kernel }}_clone1
+            grubby --remove-kernel=TITLE=Clone1
           changed_when: true
           failed_when: false
           tags: tests::cleanup

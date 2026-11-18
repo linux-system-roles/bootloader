@@ -2,6 +2,7 @@
 
 # Copyright: (c) 2023, Sergei Petrosian <spetrosi@redhat.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Assisted by goose using model glm-5-3
 #
 """Unit tests for the bootloader_settings module"""
 
@@ -169,6 +170,48 @@ initrd=/boot/initramfs-6.5.12-100.fc37.x86_64.img $tuned_initrd
 title=Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)
 id=c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64
 """ % changed_args
+
+# some versions of grubby report the kernel and initrd paths with an extra
+# /boot prefix
+INFO_EXTRA_BOOT_PREFIX = """
+index=0
+kernel="/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64"
+args="ro rootflags=subvol=root rhgb quiet"
+root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
+initrd="/boot/boot/initramfs-7.2.10-200.fc44.x86_64.img $tuned_initrd"
+title="Fedora Linux (7.2.10-200.fc44.x86_64) 44 (Cloud Edition)"
+id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"
+index=1
+kernel="/boot/boot/vmlinuz-7.2.8-200.fc44.x86_64"
+args="ro rootflags=subvol=root rhgb quiet"
+root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
+initrd="/boot/boot/initramfs-7.2.8-200.fc44.x86_64.img $tuned_initrd"
+title="Fedora Linux (7.2.8-200.fc44.x86_64) 44 (Cloud Edition)"
+id="c44543d15b2c4e898912c2497f734e67-7.2.8-200.fc44.x86_64"
+"""
+
+FACTS_EXTRA_BOOT_PREFIX = [
+    {
+        "args": "ro rootflags=subvol=root rhgb quiet",
+        "id": "c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64",
+        "index": "0",
+        "initrd": "/boot/initramfs-7.2.10-200.fc44.x86_64.img $tuned_initrd",
+        "kernel": "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+        "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
+        "title": "Fedora Linux (7.2.10-200.fc44.x86_64) 44 (Cloud Edition)",
+        "default": True,
+    },
+    {
+        "args": "ro rootflags=subvol=root rhgb quiet",
+        "id": "c44543d15b2c4e898912c2497f734e67-7.2.8-200.fc44.x86_64",
+        "index": "1",
+        "initrd": "/boot/initramfs-7.2.8-200.fc44.x86_64.img $tuned_initrd",
+        "kernel": "/boot/vmlinuz-7.2.8-200.fc44.x86_64",
+        "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
+        "title": "Fedora Linux (7.2.8-200.fc44.x86_64) 44 (Cloud Edition)",
+        "default": False,
+    },
+]
 
 kernels_keys = ["kernel_index", "kernel_path", "kernel_title", "DEFAULT", "ALL"]
 
@@ -1196,3 +1239,274 @@ title="Fedora Linux"
             result = module.exit_json.call_args[1]
             self.assertEqual(changed, result["changed"])
             self.assertEqual(changed, result["reboot_required"])
+
+
+class ExtraBootPrefix(unittest.TestCase):
+    """test handling of the extra /boot prefix that some versions of grubby add"""
+
+    mock_module = MagicMock(
+        run_command=MagicMock(return_value=("test_rc", "test_stdout", "test_err")),
+        fail_json=MagicMock(side_effect=SystemExit),
+        check_mode=False,
+    )
+    result = dict(changed=False, actions=list())
+
+    def reset_vars(self):
+        self.mock_module.run_command.reset_mock()
+        self.mock_module.fail_json.reset_mock()
+        self.mock_module.check_mode = False
+        self.result = dict(changed=False, actions=list())
+
+    def test_get_single_kernel_extra_boot_prefix(self):
+        # kernel paths get the extra prefix, to modify or remove the kernel
+        kernel = {"path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64"}
+        self.assertEqual(
+            bootloader_settings.get_single_kernel(kernel),
+            "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+        )
+        self.assertEqual(
+            bootloader_settings.get_single_kernel(kernel, True),
+            "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+        )
+        # titles and indexes are used as is
+        self.assertEqual(
+            bootloader_settings.get_single_kernel({"title": "Fedora Linux"}, True),
+            "TITLE='Fedora Linux'",
+        )
+        self.assertEqual(
+            bootloader_settings.get_single_kernel({"index": 1}, True),
+            "1",
+        )
+
+    def test_get_create_kernel_extra_boot_prefix(self):
+        # kernel and initrd paths get the extra prefix, to create the kernel
+        kernel = {
+            "title": "Fedora Linux",
+            "path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+            "initrd": "/boot/initramfs-7.2.10-200.fc44.x86_64.img",
+        }
+        self.assertEqual(
+            bootloader_settings.get_create_kernel(kernel),
+            "--initrd=/boot/initramfs-7.2.10-200.fc44.x86_64.img "
+            "--add-kernel=/boot/vmlinuz-7.2.10-200.fc44.x86_64 "
+            "--title='Fedora Linux'",
+        )
+        self.assertEqual(
+            bootloader_settings.get_create_kernel(kernel, True),
+            "--initrd=/boot/boot/initramfs-7.2.10-200.fc44.x86_64.img "
+            "--add-kernel=/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64 "
+            "--title='Fedora Linux'",
+        )
+
+    def test_validate_kernels_extra_boot_prefix(self):
+        self.reset_vars()
+        # a single path: the kernel is modified, and the grubby command gets
+        # the extra prefix
+        kernel_action, kernel = bootloader_settings.validate_kernels(
+            self.mock_module,
+            {"kernel": {"path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64"}},
+            FACTS_EXTRA_BOOT_PREFIX,
+            True,
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(kernel_action, "modify")
+        self.assertEqual(kernel, "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64")
+        self.reset_vars()
+
+        # the stripped facts match the paths of the user settings, so the
+        # kernel is modified and not created again
+        kernel_action, kernel = bootloader_settings.validate_kernels(
+            self.mock_module,
+            {
+                "kernel": {
+                    "path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+                    "title": "Fedora Linux (7.2.10-200.fc44.x86_64) 44 (Cloud Edition)",
+                }
+            },
+            FACTS_EXTRA_BOOT_PREFIX,
+            True,
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(kernel_action, "modify")
+        self.reset_vars()
+
+        # a kernel that no fact matches is created, with the extra prefix in
+        # the kernel and initrd paths of the grubby command
+        kernel_action, kernel = bootloader_settings.validate_kernels(
+            self.mock_module,
+            {
+                "kernel": {
+                    "path": "/boot/vmlinuz-new",
+                    "title": "New Kernel",
+                    "initrd": "/boot/initramfs-new.img",
+                }
+            },
+            FACTS_EXTRA_BOOT_PREFIX,
+            True,
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(kernel_action, "create")
+        self.assertEqual(
+            kernel,
+            "--initrd=/boot/boot/initramfs-new.img "
+            "--add-kernel=/boot/boot/vmlinuz-new --title='New Kernel'",
+        )
+
+    def test_get_default_kernel_strips_extra_boot_prefix(self):
+        self.reset_vars()
+        self.mock_module.run_command.return_value = (
+            "0",
+            "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+            "",
+        )
+        self.assertEqual(
+            bootloader_settings.get_default_kernel(self.mock_module, "kernel"),
+            "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+        )
+
+    def test_mod_default_kernel_extra_boot_prefix(self):
+        self.reset_vars()
+        kernel_info = '''
+index=0
+kernel="/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64"
+args="ro rootflags=subvol=root rhgb quiet"
+root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
+initrd="/boot/boot/initramfs-7.2.10-200.fc44.x86_64.img"
+title="Fedora Linux (7.2.10-200.fc44.x86_64) 44 (Cloud Edition)"
+id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
+        bootloader_setting = {
+            "kernel": {"path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64"},
+            "default": True,
+        }
+
+        # the current default kernel, which grubby reports with the extra
+        # prefix, is another kernel: set this kernel as default; grubby does
+        # not strip the extra prefix from the --set-default value, so the
+        # grubby command uses the real kernel path
+        self.mock_module.run_command.return_value = (
+            "0",
+            "/boot/boot/vmlinuz-7.2.8-200.fc44.x86_64",
+            "",
+        )
+        bootloader_settings.mod_default_kernel(
+            self.mock_module, self.result, bootloader_setting, kernel_info
+        )
+        self.mock_module.run_command.assert_any_call("grubby --default-kernel")
+        self.mock_module.run_command.assert_any_call(
+            "grubby --set-default=/boot/vmlinuz-7.2.10-200.fc44.x86_64"
+        )
+        self.assertEqual(
+            self.result["actions"],
+            ["grubby --set-default=/boot/vmlinuz-7.2.10-200.fc44.x86_64"],
+        )
+        self.reset_vars()
+
+        # the current default kernel is this kernel, which grubby reports
+        # with the extra prefix: nothing is changed
+        self.mock_module.run_command.return_value = (
+            "0",
+            "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+            "",
+        )
+        bootloader_settings.mod_default_kernel(
+            self.mock_module, self.result, bootloader_setting, kernel_info
+        )
+        self.mock_module.run_command.assert_called_once_with("grubby --default-kernel")
+        self.assertEqual(self.result["actions"], [])
+
+    def test_run_module_extra_boot_prefix(self):
+        """grubby commands that grubby strips the /boot prefix from use the
+        extra /boot prefix when grubby reports one; the other commands use
+        the real kernel path"""
+
+        def run_command(cmd, **kwargs):
+            if cmd == "grubby --default-index":
+                return 0, "0", ""
+            if cmd == "grubby --default-kernel":
+                # another kernel is the current default, with the extra
+                # prefix that grubby reports
+                return 0, "/boot/boot/vmlinuz-7.2.8-200.fc44.x86_64", ""
+            if cmd == "grubby --info=ALL":
+                return 0, INFO_EXTRA_BOOT_PREFIX, ""
+            if cmd.startswith("grubby --info="):
+                # grubby does not strip the extra /boot prefix from the
+                # --info value, so the module passes the real kernel path
+                self.assertEqual(
+                    cmd, "grubby --info=/boot/vmlinuz-7.2.10-200.fc44.x86_64"
+                )
+                return 0, INFO_EXTRA_BOOT_PREFIX, ""
+            return 0, "", ""
+
+        for bootloader_setting, actions in [
+            (
+                # modify: the path of the user setting matches the stripped
+                # fact path, and the grubby command gets the extra prefix
+                {
+                    "kernel": {"path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64"},
+                    "options": [{"name": "debug"}],
+                },
+                [
+                    "grubby --update-kernel=/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64 "
+                    "--args=debug"
+                ],
+            ),
+            (
+                # an argument that the kernel already has changes nothing
+                {
+                    "kernel": {"path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64"},
+                    "options": [{"name": "rhgb"}],
+                },
+                [],
+            ),
+            (
+                # modify with default: grubby does not strip the extra
+                # prefix from the --set-default value, so it uses the real
+                # kernel path
+                {
+                    "kernel": {"path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64"},
+                    "default": True,
+                },
+                ["grubby --set-default=/boot/vmlinuz-7.2.10-200.fc44.x86_64"],
+            ),
+            (
+                # remove: the grubby command gets the extra prefix
+                {
+                    "kernel": {"path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64"},
+                    "state": "absent",
+                },
+                ["grubby --remove-kernel=/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64"],
+            ),
+            (
+                # create: the kernel and initrd paths of the grubby command
+                # get the extra prefix
+                {
+                    "kernel": {
+                        "path": "/boot/vmlinuz-new",
+                        "title": "New Kernel",
+                        "initrd": "/boot/initramfs-new.img",
+                    },
+                    "options": [{"name": "debug"}],
+                },
+                [
+                    "grubby --initrd=/boot/boot/initramfs-new.img "
+                    "--add-kernel=/boot/boot/vmlinuz-new --title='New Kernel' "
+                    "--args=debug"
+                ],
+            ),
+        ]:
+            module = MagicMock(check_mode=False)
+            module.exit_json.side_effect = SystemExit
+            module.run_command.side_effect = run_command
+            module.params = {
+                "bootloader_settings": [bootloader_setting],
+                "backend": "grubby",
+            }
+            with patch.object(
+                bootloader_settings, "AnsibleModule", return_value=module
+            ):
+                with self.assertRaises(SystemExit):
+                    bootloader_settings.run_module()
+            result = module.exit_json.call_args[1]
+            self.assertEqual(actions, result["actions"])
+            self.assertEqual(bool(actions), result["changed"])
+            self.assertEqual(bool(actions), result["reboot_required"])

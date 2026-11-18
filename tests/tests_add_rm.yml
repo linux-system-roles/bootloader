@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MIT
+# Assisted by goose using model glm-5-3
 ---
 - name: Test creating, modifying, and removing kernels
   hosts: all
@@ -151,14 +152,13 @@
           tags: tests::cleanup
 
         - name: Remove cloned kernels
+          # use the title to match the kernel: on platforms where grubby
+          # reports the extra /boot prefix it cannot match the kernel path
           command: >-
-            grubby --remove-kernel={{ __default_kernel.kernel }}_clone{{ item }}
+            grubby --remove-kernel=TITLE=Clone{{ item }}
           loop:
             - 1
             - 2
           changed_when: true
           failed_when: false
-          when:
-            - __default_kernel is defined
-            - __default_kernel.kernel is defined
           tags: tests::cleanup

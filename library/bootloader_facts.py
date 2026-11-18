@@ -2,6 +2,7 @@
 
 # Copyright: (c) 2023, Sergei Petrosian <spetrosi@redhat.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+# Assisted by goose using model glm-5-3
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -116,32 +117,9 @@ ansible_facts:
 """
 
 
-import re
 from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.bootloader_lsr.bootloader_common import get_facts
 from ansible.module_utils.bootloader_lsr.grub import check_loader, get_kernels
-
-
-def get_facts(kernels_info, default_kernel):
-    """Get kernel facts"""
-    kernels_info_lines = kernels_info.strip().split("\n")
-    kernels = []
-    index_count = 0
-
-    for line in kernels_info_lines:
-        index = re.search(r"index=(\d+)", line)
-        if index:
-            is_default = index.group(1) == default_kernel.strip()
-            index_count += 1
-            kernels.append({})
-        search = re.search(r"(.*?)=(.*)", line)
-        if search:
-            key = search.group(1).strip('"')
-            value = search.group(2).strip('"')
-            kernels[index_count - 1].update({key: value})
-        else:
-            kernels[index_count - 1].update({"kernel": line})
-        kernels[index_count - 1].update({"default": is_default})
-    return kernels
 
 
 def run_module():
