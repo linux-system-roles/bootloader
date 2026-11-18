@@ -14,9 +14,13 @@ import re
 # Some versions of grubby, on platforms where /boot is a separate mount point
 # and the BootLoaderSpec entries store the kernel and initrd paths with the
 # /boot prefix, report the paths with an extra /boot prefix; for example
-# /boot/boot/vmlinuz-7.2.10-200.fc44.x86_64. Strip the extra prefix from the
-# grubby output, and add it back to the kernel and initrd paths of the grubby
-# commands, so that the modules work on the platforms affected by the issue.
+# /boot/boot/vmlinuz-7.2.10-200.fc44.x86_64. grubby can report the paths of
+# only some of the entries with the extra prefix, for example when the
+# entries store some of the paths with the /boot prefix and others without
+# it, so the extra prefix is handled for each entry: strip the extra prefix
+# from the grubby output, and add it back to the kernel and initrd paths of
+# the grubby commands for the entries that grubby reports with it, so that
+# the modules work on the platforms affected by the issue.
 GRUBBY_BOOT_PREFIX = "/boot"
 GRUBBY_EXTRA_BOOT_PREFIX = "/boot/boot/"
 
@@ -45,22 +49,24 @@ def strip_extra_boot_prefix(value):
     )
 
 
-def has_extra_boot_prefix(kernels_info):
-    """Check whether grubby reports kernel paths with an extra /boot prefix
+def get_extra_boot_prefix_paths(kernels_info):
+    """Get the real kernel paths that grubby reports with an extra /boot prefix
 
-    Detect the platforms affected by the grubby issue by looking at the
-    kernel paths of the output of 'grubby --info=ALL', so that the extra
-    prefix can be added back to the kernel and initrd paths of the grubby
-    commands.
+    grubby can report the paths of only some of the entries with the extra
+    /boot prefix, for example when the BootLoaderSpec entries store some of
+    the kernel paths with the /boot prefix and others without it, so the
+    extra prefix has to be handled for each entry. Look at the kernel paths
+    of the output of 'grubby --info=ALL', and return the set of the real
+    paths of the entries whose reported path has the extra prefix, so that
+    the extra prefix can be added back to the kernel and initrd paths of
+    the grubby commands for those entries.
     """
-    return (
-        re.search(
-            r'^kernel="?' + re.escape(GRUBBY_EXTRA_BOOT_PREFIX),
-            kernels_info,
-            re.MULTILINE,
-        )
-        is not None
-    )
+    paths = set()
+    for match in re.finditer(r'^kernel="?([^"\n]*)', kernels_info, re.MULTILINE):
+        path = match.group(1)
+        if path.startswith(GRUBBY_EXTRA_BOOT_PREFIX):
+            paths.add(strip_extra_boot_prefix(path))
+    return paths
 
 
 def add_extra_boot_prefix(value, extra_boot_prefix):
@@ -74,6 +80,10 @@ def add_extra_boot_prefix(value, extra_boot_prefix):
     like --info and --set-default, require the real kernel path instead.
     The value can be a space separated list of paths, as the initrd value
     can be, so the extra prefix is added to every /boot path of the list.
+    The caller decides, for each kernel entry, whether grubby reports its
+    path with the extra prefix, and applies the extra prefix only to the
+    paths of those entries, leaving the real paths of the other entries,
+    like /boot/vmlinuz-b, unchanged.
     """
     if not extra_boot_prefix:
         return value

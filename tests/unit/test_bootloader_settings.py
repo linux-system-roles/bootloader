@@ -214,6 +214,68 @@ FACTS_EXTRA_BOOT_PREFIX = [
     },
 ]
 
+# the real paths of the entries of INFO_EXTRA_BOOT_PREFIX, which grubby
+# reports with the extra /boot prefix
+EXTRA_BOOT_PREFIX_PATHS = {
+    "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+    "/boot/vmlinuz-7.2.8-200.fc44.x86_64",
+}
+
+# grubby can report the paths of only some of the entries with the extra
+# /boot prefix, for example when the entries store some of the paths with
+# the /boot prefix and others without it
+INFO_MIXED_EXTRA_BOOT_PREFIX = """
+index=0
+kernel="/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64"
+args="ro rootflags=subvol=root rhgb quiet"
+root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
+initrd="/boot/boot/initramfs-7.2.10-200.fc44.x86_64.img $tuned_initrd"
+title="Fedora Linux (7.2.10-200.fc44.x86_64) 44 (Cloud Edition)"
+id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"
+index=1
+kernel="/boot/vmlinuz-6.19.10-300.fc44.x86_64"
+args="ro rootflags=subvol=root rhgb quiet"
+root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
+initrd="/boot/initramfs-6.19.10-300.fc44.x86_64.img $tuned_initrd"
+title="Fedora Linux (6.19.10-300.fc44.x86_64) 44 (Cloud Edition)"
+id="c44543d15b2c4e898912c2497f734e67-6.19.10-300.fc44.x86_64"
+"""
+
+# the entry of INFO_MIXED_EXTRA_BOOT_PREFIX that grubby reports with the
+# real path
+INFO_MIXED_EXTRA_BOOT_PREFIX_ENTRY_B = """
+index=1
+kernel="/boot/vmlinuz-6.19.10-300.fc44.x86_64"
+args="ro rootflags=subvol=root rhgb quiet"
+root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
+initrd="/boot/initramfs-6.19.10-300.fc44.x86_64.img $tuned_initrd"
+title="Fedora Linux (6.19.10-300.fc44.x86_64) 44 (Cloud Edition)"
+id="c44543d15b2c4e898912c2497f734e67-6.19.10-300.fc44.x86_64"
+"""
+
+MIXED_FACTS_EXTRA_BOOT_PREFIX = [
+    {
+        "args": "ro rootflags=subvol=root rhgb quiet",
+        "id": "c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64",
+        "index": "0",
+        "initrd": "/boot/initramfs-7.2.10-200.fc44.x86_64.img $tuned_initrd",
+        "kernel": "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+        "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
+        "title": "Fedora Linux (7.2.10-200.fc44.x86_64) 44 (Cloud Edition)",
+        "default": True,
+    },
+    {
+        "args": "ro rootflags=subvol=root rhgb quiet",
+        "id": "c44543d15b2c4e898912c2497f734e67-6.19.10-300.fc44.x86_64",
+        "index": "1",
+        "initrd": "/boot/initramfs-6.19.10-300.fc44.x86_64.img $tuned_initrd",
+        "kernel": "/boot/vmlinuz-6.19.10-300.fc44.x86_64",
+        "root": "UUID=65c70529-e9ad-4778-9001-18fe8c525285",
+        "title": "Fedora Linux (6.19.10-300.fc44.x86_64) 44 (Cloud Edition)",
+        "default": False,
+    },
+]
+
 kernels_keys = ["kernel_index", "kernel_path", "kernel_title", "DEFAULT", "ALL"]
 
 
@@ -1259,28 +1321,45 @@ class ExtraBootPrefix(unittest.TestCase):
         self.result = dict(changed=False, actions=list())
 
     def test_get_single_kernel_extra_boot_prefix(self):
-        # kernel paths get the extra prefix, to modify or remove the kernel
+        # the paths of the entries that grubby reports with the extra prefix
+        # get the extra prefix, to modify or remove the kernel
         kernel = {"path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64"}
+        extra_boot_prefix_paths = {"/boot/vmlinuz-7.2.10-200.fc44.x86_64"}
         self.assertEqual(
             bootloader_settings.get_single_kernel(kernel),
             "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
         )
         self.assertEqual(
-            bootloader_settings.get_single_kernel(kernel, True),
+            bootloader_settings.get_single_kernel(kernel, extra_boot_prefix_paths),
             "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+        )
+        # the real paths of the entries that grubby reports without the
+        # extra prefix are unchanged
+        other_kernel = {"path": "/boot/vmlinuz-b"}
+        self.assertEqual(
+            bootloader_settings.get_single_kernel(
+                other_kernel, extra_boot_prefix_paths
+            ),
+            "/boot/vmlinuz-b",
         )
         # titles and indexes are used as is
         self.assertEqual(
-            bootloader_settings.get_single_kernel({"title": "Fedora Linux"}, True),
+            bootloader_settings.get_single_kernel(
+                {"title": "Fedora Linux"}, extra_boot_prefix_paths
+            ),
             "TITLE='Fedora Linux'",
         )
         self.assertEqual(
-            bootloader_settings.get_single_kernel({"index": 1}, True),
+            bootloader_settings.get_single_kernel(
+                {"index": 1}, extra_boot_prefix_paths
+            ),
             "1",
         )
 
     def test_get_create_kernel_extra_boot_prefix(self):
-        # kernel and initrd paths get the extra prefix, to create the kernel
+        # a new kernel has no reported path yet, so it follows the
+        # convention of the existing entries: the kernel and initrd paths
+        # get the extra prefix when any entry is reported with it
         kernel = {
             "title": "Fedora Linux",
             "path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
@@ -1293,7 +1372,9 @@ class ExtraBootPrefix(unittest.TestCase):
             "--title='Fedora Linux'",
         )
         self.assertEqual(
-            bootloader_settings.get_create_kernel(kernel, True),
+            bootloader_settings.get_create_kernel(
+                kernel, {"/boot/vmlinuz-7.2.10-200.fc44.x86_64"}
+            ),
             "--initrd=/boot/boot/initramfs-7.2.10-200.fc44.x86_64.img "
             "--add-kernel=/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64 "
             "--title='Fedora Linux'",
@@ -1307,7 +1388,7 @@ class ExtraBootPrefix(unittest.TestCase):
             self.mock_module,
             {"kernel": {"path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64"}},
             FACTS_EXTRA_BOOT_PREFIX,
-            True,
+            EXTRA_BOOT_PREFIX_PATHS,
         )
         self.mock_module.fail_json.assert_not_called()
         self.assertEqual(kernel_action, "modify")
@@ -1325,7 +1406,7 @@ class ExtraBootPrefix(unittest.TestCase):
                 }
             },
             FACTS_EXTRA_BOOT_PREFIX,
-            True,
+            EXTRA_BOOT_PREFIX_PATHS,
         )
         self.mock_module.fail_json.assert_not_called()
         self.assertEqual(kernel_action, "modify")
@@ -1343,7 +1424,7 @@ class ExtraBootPrefix(unittest.TestCase):
                 }
             },
             FACTS_EXTRA_BOOT_PREFIX,
-            True,
+            EXTRA_BOOT_PREFIX_PATHS,
         )
         self.mock_module.fail_json.assert_not_called()
         self.assertEqual(kernel_action, "create")
@@ -1365,7 +1446,7 @@ class ExtraBootPrefix(unittest.TestCase):
             self.mock_module,
             {"kernel": {"path": "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64"}},
             facts,
-            True,
+            EXTRA_BOOT_PREFIX_PATHS,
         )
         self.mock_module.fail_json.assert_not_called()
         self.assertEqual(kernel_action, "modify")
@@ -1378,7 +1459,7 @@ class ExtraBootPrefix(unittest.TestCase):
             self.mock_module,
             {"kernel": {"path": "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64"}},
             facts,
-            False,
+            frozenset(),
         )
         self.mock_module.fail_json.assert_not_called()
         self.assertEqual(kernel_action, "modify")
@@ -1398,7 +1479,7 @@ class ExtraBootPrefix(unittest.TestCase):
                 }
             },
             facts,
-            True,
+            EXTRA_BOOT_PREFIX_PATHS,
         )
         self.mock_module.fail_json.assert_not_called()
         self.assertEqual(kernel_action, "modify")
@@ -1418,7 +1499,7 @@ class ExtraBootPrefix(unittest.TestCase):
                 }
             },
             facts,
-            True,
+            EXTRA_BOOT_PREFIX_PATHS,
         )
         self.mock_module.fail_json.assert_not_called()
         self.assertEqual(kernel_action, "create")
@@ -1437,11 +1518,78 @@ class ExtraBootPrefix(unittest.TestCase):
                 "state": "absent",
             },
             facts,
-            True,
+            EXTRA_BOOT_PREFIX_PATHS,
         )
         self.mock_module.fail_json.assert_not_called()
         self.assertEqual(kernel_action, "remove")
         self.assertEqual(kernel, "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64")
+
+    def test_validate_kernels_mixed_extra_boot_prefix(self):
+        """Only the paths of the entries that grubby reports with the extra
+        /boot prefix get the extra prefix; the real paths of the other
+        entries, like /boot/vmlinuz-b, are unchanged"""
+        facts = copy.deepcopy(MIXED_FACTS_EXTRA_BOOT_PREFIX)
+        # only the first entry is reported with the extra prefix
+        extra_boot_prefix_paths = {"/boot/vmlinuz-7.2.10-200.fc44.x86_64"}
+
+        # a single path of an entry that grubby reports with the extra
+        # prefix: the grubby command gets the extra prefix
+        kernel_action, kernel = bootloader_settings.validate_kernels(
+            self.mock_module,
+            {"kernel": {"path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64"}},
+            facts,
+            extra_boot_prefix_paths,
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(kernel_action, "modify")
+        self.assertEqual(kernel, "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64")
+        self.reset_vars()
+
+        # a single path of an entry that grubby reports with the real path:
+        # the grubby command keeps the real path
+        kernel_action, kernel = bootloader_settings.validate_kernels(
+            self.mock_module,
+            {"kernel": {"path": "/boot/vmlinuz-6.19.10-300.fc44.x86_64"}},
+            facts,
+            extra_boot_prefix_paths,
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(kernel_action, "modify")
+        self.assertEqual(kernel, "/boot/vmlinuz-6.19.10-300.fc44.x86_64")
+        self.reset_vars()
+
+        # the same, with a multi-key setting
+        kernel_action, kernel = bootloader_settings.validate_kernels(
+            self.mock_module,
+            {
+                "kernel": {
+                    "path": "/boot/vmlinuz-6.19.10-300.fc44.x86_64",
+                    "title": "Fedora Linux (6.19.10-300.fc44.x86_64) "
+                    "44 (Cloud Edition)",
+                }
+            },
+            facts,
+            extra_boot_prefix_paths,
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(kernel_action, "modify")
+        self.assertEqual(kernel, "/boot/vmlinuz-6.19.10-300.fc44.x86_64")
+        self.reset_vars()
+
+        # remove a kernel that grubby reports with the real path: the
+        # grubby command keeps the real path
+        kernel_action, kernel = bootloader_settings.validate_kernels(
+            self.mock_module,
+            {
+                "kernel": {"path": "/boot/vmlinuz-6.19.10-300.fc44.x86_64"},
+                "state": "absent",
+            },
+            facts,
+            extra_boot_prefix_paths,
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(kernel_action, "remove")
+        self.assertEqual(kernel, "/boot/vmlinuz-6.19.10-300.fc44.x86_64")
 
     def test_get_default_kernel_strips_extra_boot_prefix(self):
         self.reset_vars()
@@ -1556,7 +1704,9 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                 # prefix that grubby reports
                 return 0, "/boot/boot/vmlinuz-7.2.8-200.fc44.x86_64", ""
             if cmd == "grubby --info=ALL":
-                return 0, INFO_EXTRA_BOOT_PREFIX, ""
+                # grubby reports the path of only one of the entries with
+                # the extra prefix
+                return 0, INFO_MIXED_EXTRA_BOOT_PREFIX, ""
             if cmd.startswith("grubby --info=TITLE="):
                 # title selectors are passed to grubby --info as is
                 self.assertEqual(
@@ -1571,6 +1721,9 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                 # unquoted path, quoted again
                 self.assertEqual(cmd, "grubby --info='/boot/vmlinuz with space'")
                 return 0, INFO_EXTRA_BOOT_PREFIX, ""
+            if cmd == "grubby --info=/boot/vmlinuz-6.19.10-300.fc44.x86_64":
+                # the entry that grubby reports with the real path
+                return 0, INFO_MIXED_EXTRA_BOOT_PREFIX_ENTRY_B, ""
             if cmd.startswith("grubby --info="):
                 # grubby does not strip the extra /boot prefix from the
                 # --info value, so the module passes the real kernel path
@@ -1621,17 +1774,26 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                 ],
             ),
             (
-                # modify a path with a space: the selector is quoted; the
-                # 'grubby --info=' command gets the real path, stripped of
-                # the extra prefix from the raw, unquoted path and quoted
-                # again, while the write command keeps the doubled, quoted
-                # path
+                # modify a path with a space, of an entry that grubby does
+                # not report with the extra prefix: the selector is quoted;
+                # both the 'grubby --info=' command and the write command
+                # use the real path, stripped of the extra prefix from the
+                # raw, unquoted path and quoted again
                 {
                     "kernel": {"path": "/boot/boot/vmlinuz with space"},
                     "options": [{"name": "debug"}],
                 },
+                ["grubby --update-kernel='/boot/vmlinuz with space' " "--args=debug"],
+            ),
+            (
+                # modify the kernel of the entry that grubby reports with
+                # the real path: the grubby command keeps the real path
+                {
+                    "kernel": {"path": "/boot/vmlinuz-6.19.10-300.fc44.x86_64"},
+                    "options": [{"name": "debug"}],
+                },
                 [
-                    "grubby --update-kernel='/boot/boot/vmlinuz with space' "
+                    "grubby --update-kernel=/boot/vmlinuz-6.19.10-300.fc44.x86_64 "
                     "--args=debug"
                 ],
             ),

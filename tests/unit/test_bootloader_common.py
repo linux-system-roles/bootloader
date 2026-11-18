@@ -120,6 +120,26 @@ title=Fedora Linux (6.5.12-100.fc37.x86_64) 37 (Workstation Edition)
 id=c44543d15b2c4e898912c2497f734e67-6.5.12-100.fc37.x86_64
 """
 
+# grubby can report the paths of only some of the entries with the extra
+# /boot prefix, for example when the entries store some of the paths with
+# the /boot prefix and others without it
+INFO_MIXED_EXTRA_BOOT_PREFIX = """
+index=0
+kernel="/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64"
+args="ro rootflags=subvol=root rhgb quiet"
+root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
+initrd="/boot/boot/initramfs-7.2.10-200.fc44.x86_64.img $tuned_initrd"
+title="Fedora Linux (7.2.10-200.fc44.x86_64) 44 (Cloud Edition)"
+id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"
+index=1
+kernel="/boot/vmlinuz-6.19.10-300.fc44.x86_64"
+args="ro rootflags=subvol=root rhgb quiet"
+root="UUID=65c70529-e9ad-4778-9001-18fe8c525285"
+initrd="/boot/initramfs-6.19.10-300.fc44.x86_64.img $tuned_initrd"
+title="Fedora Linux (6.19.10-300.fc44.x86_64) 44 (Cloud Edition)"
+id="c44543d15b2c4e898912c2497f734e67-6.19.10-300.fc44.x86_64"
+"""
+
 FACTS_EXTRA_BOOT_PREFIX = [
     {
         "args": "ro rootflags=subvol=root rhgb quiet",
@@ -196,25 +216,43 @@ class ExtraBootPrefix(unittest.TestCase):
         )
         self.assertEqual(bootloader_common.strip_extra_boot_prefix(""), "")
 
-    def test_has_extra_boot_prefix(self):
-        self.assertTrue(bootloader_common.has_extra_boot_prefix(INFO_EXTRA_BOOT_PREFIX))
-        # unquoted kernel paths, as RHEL 7 grubby reports them, are detected too
-        self.assertTrue(
-            bootloader_common.has_extra_boot_prefix(INFO_EXTRA_BOOT_PREFIX_RHEL7)
+    def test_get_extra_boot_prefix_paths(self):
+        # the real paths of all the entries whose reported path has the
+        # extra prefix
+        self.assertEqual(
+            bootloader_common.get_extra_boot_prefix_paths(INFO_EXTRA_BOOT_PREFIX),
+            {
+                "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+                "/boot/vmlinuz-7.2.8-200.fc44.x86_64",
+            },
         )
-        self.assertFalse(bootloader_common.has_extra_boot_prefix(INFO))
-        self.assertFalse(bootloader_common.has_extra_boot_prefix(""))
-        # kernel paths without the extra prefix are not detected, whether
+        # only the path of the entry with the extra prefix, not the real
+        # path of the other entry
+        self.assertEqual(
+            bootloader_common.get_extra_boot_prefix_paths(INFO_MIXED_EXTRA_BOOT_PREFIX),
+            {"/boot/vmlinuz-7.2.10-200.fc44.x86_64"},
+        )
+        # unquoted kernel paths, as RHEL 7 grubby reports them, are handled too
+        self.assertEqual(
+            bootloader_common.get_extra_boot_prefix_paths(INFO_EXTRA_BOOT_PREFIX_RHEL7),
+            {"/boot/vmlinuz-6.5.12-100.fc37.x86_64"},
+        )
+        # no paths without the extra prefix
+        self.assertEqual(bootloader_common.get_extra_boot_prefix_paths(INFO), set())
+        self.assertEqual(bootloader_common.get_extra_boot_prefix_paths(""), set())
+        # kernel paths without the extra prefix are not reported, whether
         # grubby reports them quoted or not
-        self.assertFalse(
-            bootloader_common.has_extra_boot_prefix(
+        self.assertEqual(
+            bootloader_common.get_extra_boot_prefix_paths(
                 'kernel="/boot/vmlinuz-6.5.12-100.fc37.x86_64"\n'
-            )
+            ),
+            set(),
         )
-        self.assertFalse(
-            bootloader_common.has_extra_boot_prefix(
+        self.assertEqual(
+            bootloader_common.get_extra_boot_prefix_paths(
                 "kernel=/boot/vmlinuz-6.5.12-100.fc37.x86_64\n"
-            )
+            ),
+            set(),
         )
 
     def test_add_extra_boot_prefix(self):
