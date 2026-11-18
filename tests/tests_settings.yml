@@ -102,7 +102,7 @@
               first) }}"
           assert:
             that:
-              - cloned_kernel.kernel != default_bootloader.kernel
+              - cloned_kernel != default_bootloader
               - >-
                 (bootloader_facts |
                 selectattr('kernel', 'search', cloned_kernel.kernel) | first).args |

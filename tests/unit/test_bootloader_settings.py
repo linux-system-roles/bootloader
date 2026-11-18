@@ -1742,8 +1742,7 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                     "options": [{"name": "debug"}],
                 },
                 [
-                    "grubby --update-kernel=/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64 "
-                    "--args=debug"
+                    "grubby --update-kernel=/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64 --args=debug"
                 ],
             ),
             (
@@ -1754,8 +1753,7 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                     "options": [{"name": "debug"}],
                 },
                 [
-                    "grubby --update-kernel=/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64 "
-                    "--args=debug"
+                    "grubby --update-kernel=/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64 --args=debug"
                 ],
             ),
             (
@@ -1769,8 +1767,7 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                     "options": [{"name": "debug"}],
                 },
                 [
-                    "grubby --update-kernel=TITLE='Fedora Linux "
-                    "(7.2.10-200.fc44.x86_64) 44 (Cloud Edition)' --args=debug"
+                    "grubby --update-kernel=TITLE='Fedora Linux (7.2.10-200.fc44.x86_64) 44 (Cloud Edition)' --args=debug"
                 ],
             ),
             (
@@ -1783,7 +1780,7 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                     "kernel": {"path": "/boot/boot/vmlinuz with space"},
                     "options": [{"name": "debug"}],
                 },
-                ["grubby --update-kernel='/boot/vmlinuz with space' " "--args=debug"],
+                ["grubby --update-kernel='/boot/vmlinuz with space' --args=debug"],
             ),
             (
                 # modify the kernel of the entry that grubby reports with
@@ -1793,8 +1790,7 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                     "options": [{"name": "debug"}],
                 },
                 [
-                    "grubby --update-kernel=/boot/vmlinuz-6.19.10-300.fc44.x86_64 "
-                    "--args=debug"
+                    "grubby --update-kernel=/boot/vmlinuz-6.19.10-300.fc44.x86_64 --args=debug"
                 ],
             ),
             (
@@ -1835,9 +1831,7 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                     "options": [{"name": "debug"}],
                 },
                 [
-                    "grubby --initrd=/boot/boot/initramfs-new.img "
-                    "--add-kernel=/boot/boot/vmlinuz-new --title='New Kernel' "
-                    "--args=debug"
+                    "grubby --initrd=/boot/boot/initramfs-new.img --add-kernel=/boot/boot/vmlinuz-new --title='New Kernel' --args=debug"
                 ],
             ),
         ]:
