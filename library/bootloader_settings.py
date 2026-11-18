@@ -114,8 +114,8 @@ import ansible.module_utils.six.moves as ansible_six_moves
 from ansible.module_utils.bootloader_lsr import pbl
 from ansible.module_utils.bootloader_lsr.bootloader_common import (
     add_extra_boot_prefix,
+    get_extra_boot_prefix_paths,
     get_facts,
-    has_extra_boot_prefix,
     strip_extra_boot_prefix,
 )
 
@@ -156,20 +156,31 @@ def get_kernel_to_mod(bootloader_setting_kernel, kernel_mod_keys):
     }
 
 
-def get_single_kernel(bootloader_setting_kernel, extra_boot_prefix=False):
+def get_single_kernel(bootloader_setting_kernel, extra_boot_prefix_paths=frozenset()):
     """Get kernel in the format expected by 'grubby --update-kernel=' from a one-element dict"""
     kernel_key, kernel_val = list(bootloader_setting_kernel.items())[0]
     kernel_key_prefix = ""
     if kernel_key == "title":
         kernel_key_prefix = "TITLE="
     if kernel_key == "path":
-        kernel_val = add_extra_boot_prefix(kernel_val, extra_boot_prefix)
+        # add the extra prefix only when grubby reports the path of this
+        # kernel with it; grubby cannot match the real paths of the entries
+        # that it reports with the extra prefix, and it cannot match the
+        # paths with the extra prefix of the entries that it reports with
+        # the real paths
+        kernel_val = add_extra_boot_prefix(
+            kernel_val, kernel_val in extra_boot_prefix_paths
+        )
     return kernel_key_prefix + escapeval(kernel_val)
 
 
-def get_create_kernel(bootloader_setting_kernel, extra_boot_prefix=False):
+def get_create_kernel(bootloader_setting_kernel, extra_boot_prefix_paths=frozenset()):
     """Get kernel in the format expected by 'grubby --add-kernel=' from a multiple-element dict"""
     kernel = ""
+    # a new kernel has no reported path yet, so it follows the convention of
+    # the existing entries: apply the extra prefix when grubby reports the
+    # path of any existing entry with it
+    extra_boot_prefix = bool(extra_boot_prefix_paths)
     for key in sorted(bootloader_setting_kernel.keys()):
         value = bootloader_setting_kernel[key]
         if key == "path":
@@ -214,7 +225,7 @@ def validate_default_kernel(module, bootloader_settings):
 
 
 def validate_kernels(
-    module, bootloader_setting, bootloader_facts, extra_boot_prefix=False
+    module, bootloader_setting, bootloader_facts, extra_boot_prefix_paths=frozenset()
 ):
     """Validate that user passes bootloader_setting correctly"""
     kernel_action = ""
@@ -284,7 +295,9 @@ def validate_kernels(
     # Validate with len(bootloader_setting["kernel"]) == 1
     if len(bootloader_setting["kernel"]) == 1:
         validate_kernel_initrd(module, bootloader_setting["kernel"], kernel_mod_keys)
-        kernel = get_single_kernel(bootloader_setting["kernel"], extra_boot_prefix)
+        kernel = get_single_kernel(
+            bootloader_setting["kernel"], extra_boot_prefix_paths
+        )
         kernel_action = "modify" if state == "present" else "remove"
         return kernel_action, kernel
 
@@ -316,13 +329,15 @@ def validate_kernels(
         kernel_action = "create" if state == "present" else "remove"
 
     if kernel_action == "create":
-        kernel = get_create_kernel(bootloader_setting["kernel"], extra_boot_prefix)
+        kernel = get_create_kernel(
+            bootloader_setting["kernel"], extra_boot_prefix_paths
+        )
 
     validate_kernel_initrd(module, bootloader_setting["kernel"], kernel_mod_keys)
 
     if kernel_action in ["remove", "modify"]:
         kernel_to_mod = get_kernel_to_mod(bootloader_setting["kernel"], kernel_mod_keys)
-        kernel = get_single_kernel(kernel_to_mod, extra_boot_prefix)
+        kernel = get_single_kernel(kernel_to_mod, extra_boot_prefix_paths)
     return kernel_action, kernel
 
 
@@ -609,15 +624,16 @@ def run_module():
 
         default_kernel_index = get_default_kernel(module, "index")
         bootloader_facts = get_facts(kernels_info, default_kernel_index)
-        # grubby may report the kernel and initrd paths with an extra /boot
-        # prefix; in that case the grubby commands whose values grubby strips
-        # the prefix from (--add-kernel, --initrd, --update-kernel,
-        # --remove-kernel) need the extra prefix too, while the other
-        # commands (--info, --set-default) need the real kernel path
-        extra_boot_prefix = has_extra_boot_prefix(kernels_info)
+        # grubby may report the paths of only some of the kernel entries
+        # with an extra /boot prefix; the grubby commands whose values
+        # grubby strips the prefix from (--add-kernel, --initrd,
+        # --update-kernel, --remove-kernel) need the extra prefix for those
+        # entries, while the other commands (--info, --set-default) always
+        # need the real kernel path
+        extra_boot_prefix_paths = get_extra_boot_prefix_paths(kernels_info)
 
         kernel_action, kernel = validate_kernels(
-            module, bootloader_setting, bootloader_facts, extra_boot_prefix
+            module, bootloader_setting, bootloader_facts, extra_boot_prefix_paths
         )
 
         # Remove all existing boot settings
