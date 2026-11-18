@@ -1455,6 +1455,30 @@ class ExtraBootPrefix(unittest.TestCase):
             "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
         )
 
+    def test_get_info_kernel(self):
+        """Only path selectors are stripped of the extra /boot prefix for
+        'grubby --info='; the other selectors are used as is"""
+        # path selectors: the extra prefix is stripped, and paths without
+        # it are used as is
+        self.assertEqual(
+            bootloader_settings.get_info_kernel(
+                "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64"
+            ),
+            "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+        )
+        self.assertEqual(
+            bootloader_settings.get_info_kernel("/boot/vmlinuz-7.2.10-200.fc44.x86_64"),
+            "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+        )
+        # title, index, ALL and DEFAULT selectors are used as is
+        self.assertEqual(
+            bootloader_settings.get_info_kernel("TITLE='Fedora Linux'"),
+            "TITLE='Fedora Linux'",
+        )
+        self.assertEqual(bootloader_settings.get_info_kernel("1"), "1")
+        self.assertEqual(bootloader_settings.get_info_kernel("ALL"), "ALL")
+        self.assertEqual(bootloader_settings.get_info_kernel("DEFAULT"), "DEFAULT")
+
     def test_mod_default_kernel_extra_boot_prefix(self):
         self.reset_vars()
         kernel_info = '''
@@ -1519,6 +1543,14 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                 return 0, "/boot/boot/vmlinuz-7.2.8-200.fc44.x86_64", ""
             if cmd == "grubby --info=ALL":
                 return 0, INFO_EXTRA_BOOT_PREFIX, ""
+            if cmd.startswith("grubby --info=TITLE="):
+                # title selectors are passed to grubby --info as is
+                self.assertEqual(
+                    cmd,
+                    "grubby --info=TITLE='Fedora Linux (7.2.10-200.fc44.x86_64) "
+                    "44 (Cloud Edition)'",
+                )
+                return 0, INFO_EXTRA_BOOT_PREFIX, ""
             if cmd.startswith("grubby --info="):
                 # grubby does not strip the extra /boot prefix from the
                 # --info value, so the module passes the real kernel path
@@ -1551,6 +1583,21 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                 [
                     "grubby --update-kernel=/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64 "
                     "--args=debug"
+                ],
+            ),
+            (
+                # modify by title: the title selector is passed to
+                # 'grubby --info=' as is, and the grubby command keeps it
+                {
+                    "kernel": {
+                        "title": "Fedora Linux (7.2.10-200.fc44.x86_64) "
+                        "44 (Cloud Edition)"
+                    },
+                    "options": [{"name": "debug"}],
+                },
+                [
+                    "grubby --update-kernel=TITLE='Fedora Linux "
+                    "(7.2.10-200.fc44.x86_64) 44 (Cloud Edition)' --args=debug"
                 ],
             ),
             (
