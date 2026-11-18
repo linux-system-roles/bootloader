@@ -104,6 +104,7 @@ reboot_required:
 """
 
 import re
+import shlex
 
 from ansible.module_utils.basic import AnsibleModule
 
@@ -521,11 +522,15 @@ def get_info_kernel(kernel):
     grubby does not strip the extra /boot prefix from the --info value, so
     the extra prefix is stripped from the path selectors, to pass the real
     kernel path; the title, index and other selectors are not paths, so
-    they are used as is, to keep matching the corresponding entries.
+    they are used as is, to keep matching the corresponding entries.  The
+    selector for a path is quoted, so the extra prefix is stripped from
+    the raw, unquoted path, and the result is quoted again.
     """
-    if kernel.startswith("/"):
-        return strip_extra_boot_prefix(kernel)
-    return kernel
+    if not kernel.startswith("/") and not kernel.startswith("'"):
+        return kernel
+    # the selector is a path, which escapeval may have quoted
+    raw_kernel = shlex.split(kernel)[0]
+    return escapeval(strip_extra_boot_prefix(raw_kernel))
 
 
 def get_replaced_args(bootloader_setting_options):
