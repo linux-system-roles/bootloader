@@ -1470,6 +1470,20 @@ class ExtraBootPrefix(unittest.TestCase):
             bootloader_settings.get_info_kernel("/boot/vmlinuz-7.2.10-200.fc44.x86_64"),
             "/boot/vmlinuz-7.2.10-200.fc44.x86_64",
         )
+        # quoted path selectors: the extra prefix is stripped from the
+        # raw, unquoted path, and the result is quoted again
+        self.assertEqual(
+            bootloader_settings.get_info_kernel("'/boot/boot/my kernel'"),
+            "'/boot/my kernel'",
+        )
+        self.assertEqual(
+            bootloader_settings.get_info_kernel("'/boot/my kernel'"),
+            "'/boot/my kernel'",
+        )
+        self.assertEqual(
+            bootloader_settings.get_info_kernel("'/boot/boot/vmlinuz-a'"),
+            "/boot/vmlinuz-a",
+        )
         # title, index, ALL and DEFAULT selectors are used as is
         self.assertEqual(
             bootloader_settings.get_info_kernel("TITLE='Fedora Linux'"),
@@ -1551,6 +1565,12 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                     "44 (Cloud Edition)'",
                 )
                 return 0, INFO_EXTRA_BOOT_PREFIX, ""
+            if cmd.startswith("grubby --info='"):
+                # a quoted path selector: the module passes the real kernel
+                # path, with the extra prefix stripped from the raw,
+                # unquoted path, quoted again
+                self.assertEqual(cmd, "grubby --info='/boot/vmlinuz with space'")
+                return 0, INFO_EXTRA_BOOT_PREFIX, ""
             if cmd.startswith("grubby --info="):
                 # grubby does not strip the extra /boot prefix from the
                 # --info value, so the module passes the real kernel path
@@ -1598,6 +1618,21 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                 [
                     "grubby --update-kernel=TITLE='Fedora Linux "
                     "(7.2.10-200.fc44.x86_64) 44 (Cloud Edition)' --args=debug"
+                ],
+            ),
+            (
+                # modify a path with a space: the selector is quoted; the
+                # 'grubby --info=' command gets the real path, stripped of
+                # the extra prefix from the raw, unquoted path and quoted
+                # again, while the write command keeps the doubled, quoted
+                # path
+                {
+                    "kernel": {"path": "/boot/boot/vmlinuz with space"},
+                    "options": [{"name": "debug"}],
+                },
+                [
+                    "grubby --update-kernel='/boot/boot/vmlinuz with space' "
+                    "--args=debug"
                 ],
             ),
             (
