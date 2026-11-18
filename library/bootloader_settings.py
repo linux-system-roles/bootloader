@@ -270,6 +270,16 @@ def validate_kernels(
                 msg="kernel value in '%s: %s' must be of type str or int" % (key, value)
             )
 
+    # Normalize the path and initrd values of the user setting with the same
+    # rules used for the paths that grubby reports, so that a value with the
+    # extra /boot prefix that grubby adds on some platforms matches the
+    # normalized path of the corresponding fact; the extra prefix is added
+    # back to the grubby commands, where needed, by add_extra_boot_prefix
+    for key in ["path", "initrd"]:
+        value = bootloader_setting["kernel"].get(key)
+        if isinstance(value, str):
+            bootloader_setting["kernel"][key] = strip_extra_boot_prefix(value)
+
     # Validate with len(bootloader_setting["kernel"]) == 1
     if len(bootloader_setting["kernel"]) == 1:
         validate_kernel_initrd(module, bootloader_setting["kernel"], kernel_mod_keys)
