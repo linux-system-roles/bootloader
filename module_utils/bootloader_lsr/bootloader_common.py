@@ -69,10 +69,11 @@ def add_extra_boot_prefix(value, extra_boot_prefix):
 
     On the platforms where grubby reports the paths with an extra /boot
     prefix, grubby also expects the extra prefix in the paths passed to its
-    --add-kernel, --initrd, --info, --remove-kernel, --set-default and
-    --update-kernel arguments. The value can be a space separated list of
-    paths, as the initrd value can be, so the extra prefix is added to every
-    /boot path of the list.
+    --add-kernel, --initrd, --remove-kernel and --update-kernel arguments,
+    whose values grubby itself strips the prefix from; the other arguments,
+    like --info and --set-default, require the real kernel path instead.
+    The value can be a space separated list of paths, as the initrd value
+    can be, so the extra prefix is added to every /boot path of the list.
     """
     if not extra_boot_prefix:
         return value
