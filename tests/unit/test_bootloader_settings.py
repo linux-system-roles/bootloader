@@ -10,6 +10,7 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+import copy
 import unittest
 
 try:
@@ -1352,6 +1353,96 @@ class ExtraBootPrefix(unittest.TestCase):
             "--add-kernel=/boot/boot/vmlinuz-new --title='New Kernel'",
         )
 
+    def test_validate_kernels_normalizes_setting_paths(self):
+        """User paths with the extra /boot prefix match the same facts as the
+        real paths"""
+        facts = copy.deepcopy(FACTS_EXTRA_BOOT_PREFIX)
+
+        # a single path with the extra prefix on a platform that grubby
+        # reports the extra prefix for: the kernel is modified, and the
+        # grubby command gets the extra prefix
+        kernel_action, kernel = bootloader_settings.validate_kernels(
+            self.mock_module,
+            {"kernel": {"path": "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64"}},
+            facts,
+            True,
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(kernel_action, "modify")
+        self.assertEqual(kernel, "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64")
+        self.reset_vars()
+
+        # the same single path on a platform that grubby does not report
+        # the extra prefix for: the grubby command uses the real path
+        kernel_action, kernel = bootloader_settings.validate_kernels(
+            self.mock_module,
+            {"kernel": {"path": "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64"}},
+            facts,
+            False,
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(kernel_action, "modify")
+        self.assertEqual(kernel, "/boot/vmlinuz-7.2.10-200.fc44.x86_64")
+        self.reset_vars()
+
+        # a path with the extra prefix and the title of the same fact: the
+        # setting matches the fact, so the kernel is modified and no error
+        # about different fields is reported
+        kernel_action, kernel = bootloader_settings.validate_kernels(
+            self.mock_module,
+            {
+                "kernel": {
+                    "path": "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64",
+                    "title": "Fedora Linux (7.2.10-200.fc44.x86_64) "
+                    "44 (Cloud Edition)",
+                }
+            },
+            facts,
+            True,
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(kernel_action, "modify")
+        self.assertEqual(kernel, "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64")
+        self.reset_vars()
+
+        # a path with the extra prefix and a new title: the kernel is
+        # created, with the extra prefix added once to the paths of the
+        # grubby command
+        kernel_action, kernel = bootloader_settings.validate_kernels(
+            self.mock_module,
+            {
+                "kernel": {
+                    "path": "/boot/boot/vmlinuz-new",
+                    "title": "New Kernel",
+                    "initrd": "/boot/boot/initramfs-new.img",
+                }
+            },
+            facts,
+            True,
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(kernel_action, "create")
+        self.assertEqual(
+            kernel,
+            "--initrd=/boot/boot/initramfs-new.img "
+            "--add-kernel=/boot/boot/vmlinuz-new --title='New Kernel'",
+        )
+        self.reset_vars()
+
+        # remove a kernel by a path with the extra prefix
+        kernel_action, kernel = bootloader_settings.validate_kernels(
+            self.mock_module,
+            {
+                "kernel": {"path": "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64"},
+                "state": "absent",
+            },
+            facts,
+            True,
+        )
+        self.mock_module.fail_json.assert_not_called()
+        self.assertEqual(kernel_action, "remove")
+        self.assertEqual(kernel, "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64")
+
     def test_get_default_kernel_strips_extra_boot_prefix(self):
         self.reset_vars()
         self.mock_module.run_command.return_value = (
@@ -1443,6 +1534,18 @@ id="c44543d15b2c4e898912c2497f734e67-7.2.10-200.fc44.x86_64"'''
                 # fact path, and the grubby command gets the extra prefix
                 {
                     "kernel": {"path": "/boot/vmlinuz-7.2.10-200.fc44.x86_64"},
+                    "options": [{"name": "debug"}],
+                },
+                [
+                    "grubby --update-kernel=/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64 "
+                    "--args=debug"
+                ],
+            ),
+            (
+                # modify: the path of the user setting has the extra prefix,
+                # and still matches the stripped fact path
+                {
+                    "kernel": {"path": "/boot/boot/vmlinuz-7.2.10-200.fc44.x86_64"},
                     "options": [{"name": "debug"}],
                 },
                 [
