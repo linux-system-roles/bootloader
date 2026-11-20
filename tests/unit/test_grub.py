@@ -120,6 +120,32 @@ class GrubCfgFacts(unittest.TestCase):
             grub.get_grubenv("# GRUB Environment Block\nsaved_entry=1\n####"),
         )
 
+    def test_shell_vars_tuned(self):
+        tuned = (
+            'GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT:+'
+            '$GRUB_CMDLINE_LINUX_DEFAULT }\\$tuned_params"'
+        )
+        name = "GRUB_CMDLINE_LINUX_DEFAULT"
+        text = 'GRUB_CMDLINE_LINUX_DEFAULT="quiet"\n' + tuned + "\n"
+        self.assertEqual("quiet", grub.get_shell_var(text, name))
+        self.assertIsNone(grub.get_shell_var(tuned + "\n", name))
+        edited = grub.set_shell_var(text, name, "quiet audit=1")
+        self.assertEqual(
+            'GRUB_CMDLINE_LINUX_DEFAULT="quiet audit=1"\n' + tuned + "\n", edited
+        )
+        self.assertEqual("quiet audit=1", grub.get_shell_var(edited, name))
+        self.assertEqual(
+            'X=1\nGRUB_CMDLINE_LINUX_DEFAULT="audit=1"\n' + tuned + "\n",
+            grub.set_shell_var("X=1\n" + tuned + "\n", name, "audit=1"),
+        )
+        later = tuned + '\nGRUB_CMDLINE_LINUX_DEFAULT="a"\n'
+        self.assertEqual(
+            tuned + '\nGRUB_CMDLINE_LINUX_DEFAULT="a b"\n',
+            grub.set_shell_var(later, name, "a b"),
+        )
+        with self.assertRaises(ValueError):
+            grub.get_shell_var(text.replace("tuned_params", "other_params"), name)
+
 
 class RunningSystem(unittest.TestCase):
     """test what the pbl backend reads from the running system"""

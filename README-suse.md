@@ -10,7 +10,7 @@ All boot entries share one kernel command line, so `options` need `kernel: ALL` 
 
 Options go to `GRUB_CMDLINE_LINUX_DEFAULT`, which the recovery entry does not read; setting a new value also takes the name out of `GRUB_CMDLINE_LINUX`, and a removal applies to both, so the recovery entry loses them. `previous: replaced` replaces `GRUB_CMDLINE_LINUX_DEFAULT` only. A value that is already on the command line is left as it is, together with the other values of its name, so an option such as `console` must list every value it should have, or be removed with `state: absent` first.
 
-The role fails instead of guessing: when an option name has different values in the two variables, when a name or value contains whitespace, quotes, or any of `$`, `` ` ``, `;`, `\`, `{`, `}`, `|`, `&`, `<`, `>` and `#`, or when a variable it reads in `/etc/default/grub` uses shell expansion or escapes, or a command line it changes holds a quoted kernel argument.
+The role fails instead of guessing: when an option name has different values in the two variables, when a name or value contains whitespace, quotes, or any of `$`, `` ` ``, `;`, `\`, `{`, `}`, `|`, `&`, `<`, `>` and `#`, or when a variable it reads in `/etc/default/grub` uses shell expansion or escapes (except the line tuned's bootloader plugin adds for `$tuned_params`, which it leaves in place; the options tuned sets are not seen by the role), or a command line it changes holds a quoted kernel argument.
 
 ## Default entry, timeout and password
 
