@@ -1,6 +1,41 @@
 Changelog
 =========
 
+[2.3.0] - 2026-11-23
+--------------------
+
+### New Features
+
+- feat: support precomputed bootloader password hashes (#252)
+- feat: Add SLE16 support (#270)
+
+### Bug Fixes
+
+- fix: handle the extra /boot prefix that grubby reports on some platforms (#277)
+
+### Other Changes
+
+- ci: no CI test by default - implement slash commands for CI tests [citest_skip] (#250)
+- ci: allow lsr org members to run ci tests (#253)
+- docs: Auto-generate README.md from meta files (#254)
+- ci: Run Dependabot monthly and group changes in a single PR (#260)
+- ci: bump tox-lsr version 3.21.0, myrotvorets/set-commit-status-action, support leap-16.0 (#261)
+- test: check invalid inputs for correct error message (#262)
+- ci: use shared actions and lock workflow dependencies (#263)
+- ci: use shared actions and lock workflow dependencies (#264)
+- ci: Use order 10 for centos vault task so that it runs first (#265)
+- docs: add AI policy; update setup-python, codeql actions (#266)
+- ci: retry centos vault repo failures using new package_retry yum/dnf plugin (#267)
+- docs: tag markdown plain text blocks correctly (#268)
+- ci: Use a fixed 5 minute backoff for CentOS vault repos (#269)
+- ci: support Fedora 45, Ansible 2.22; drop Fedora 43 (#271)
+- ci: use ubuntu 24.04 for test envs that use py39 (#272)
+- ci: Prepare for README files generated from argument_specs and extra_specs (#273)
+- ci: Bump tox-lsr (#275)
+- docs: add AGENTS.md with shared developer conventions from .github (#278)
+- docs: remove extra blank lines from .coderabbit.yaml (#279)
+- ci: update tox-lsr for support for tests/module_utils (#280)
+
 [2.2.0] - 2026-09-17
 --------------------
 
